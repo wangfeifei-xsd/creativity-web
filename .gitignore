@@ -1,0 +1,17 @@
+# 依赖与构建产物
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# 测试与覆盖率产物
+coverage/
+playwright-report/
+test-results/
+playwright/.cache/
+
+# 本地配置与日志
+.logs/
+*.log
+.idea/
+.DS_Store

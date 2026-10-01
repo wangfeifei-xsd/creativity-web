@@ -1,0 +1,21 @@
+html, body, #root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+* { box-sizing: border-box; }
+
+.app-layout { min-height: 100vh; }
+.app-header { display: flex; align-items: center; border-bottom: 1px solid #e8ecf2; }
+.app-brand { font-size: 19px; font-weight: 600; letter-spacing: 1px; }
+.app-content { width: 100%; max-width: 1440px; margin: 0 auto; padding: 32px; }
+.page-heading { margin-bottom: 24px; }
+.page-heading h2.ant-typography { margin: 0; font-size: 24px; }
+.page-state { min-height: 300px; }
+
+@media (max-width: 600px) {
+  .app-content { padding: 16px; }
+  .app-header { padding: 0 20px; }
+  .page-container > .ant-card-body { padding: 20px; }
+}
