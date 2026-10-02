@@ -9,7 +9,7 @@ import { WorkspaceHome, WorkspaceLayout } from './workspace/WorkspaceLayout'
 export function App() {
   return <ConfigProvider theme={theme} locale={zhCN} button={{ autoInsertSpace: false }}><AntApp><BrowserRouter>
     <Layout className="app-layout"><Layout.Header className="app-header">
-      <Typography.Text className="app-brand">一玄智能平台</Typography.Text>
+      <Typography.Text className="app-brand">Creativity</Typography.Text>
     </Layout.Header><SessionProvider><WorkspaceLayout><Routes>
       <Route path="/" element={<WorkspaceHome />} />
       {features.map(({ navigationKey, path, Component }) => <Route key={navigationKey} path={`${path}/*`} element={<Component />} />)}
