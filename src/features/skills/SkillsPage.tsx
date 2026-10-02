@@ -1,4 +1,4 @@
-import { App, Button, Descriptions, Form, Input, Modal, Select, Space, Table, Tabs, Typography, Upload } from 'antd'
+import { App, Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Table, Tabs, Typography, Upload } from 'antd'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -11,6 +11,7 @@ import { StatusTag } from '../../components/StatusTag'
 import { SkillEditor } from './SkillEditor'
 import { SkillFiles } from './SkillFiles'
 import { SkillTests } from './SkillTests'
+import { SkillToolBindings } from './SkillToolBindings'
 
 type Detail = Schema<'SkillDetail'>
 type Version = Schema<'SkillVersionView'>
@@ -43,16 +44,23 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
   const [form] = Form.useForm()
   const [archive, setArchive] = useState<string>()
   const [filename, setFilename] = useState<string>()
+  const [preview, setPreview] = useState<Schema<'SkillImportPreview'>>()
+  const tools = useQuery<Schema<'SkillToolOption'>[]>('/admin/v1/skills/tool-options')
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   async function upload(file: File) {
+    setBusy(true); setPreview(undefined); setArchive(undefined); setFilename(undefined)
+    form.setFieldValue('tool_bindings', {})
     try {
       if (file.size > 8 * 1024 * 1024) throw new Error('压缩包不能超过 8 MiB')
       const bytes = new Uint8Array(await file.arrayBuffer())
       const parts: string[] = []
       for (let start = 0; start < bytes.length; start += 8192) parts.push(String.fromCharCode(...bytes.subarray(start, start + 8192)))
-      setArchive(btoa(parts.join(''))); setFilename(file.name); setError(undefined)
+      const encoded = btoa(parts.join(''))
+      const result = await send<Schema<'SkillImportPreview'>>('/admin/v1/skills/imports/preview', 'POST', { archive_base64: encoded })
+      setPreview(result); setArchive(encoded); setFilename(file.name); setError(undefined)
     } catch (failure) { setError(failure) }
+    finally { setBusy(false) }
     return false
   }
   async function save(values: Record<string, unknown>) {
@@ -60,7 +68,8 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
     try {
       if (mode === 'import' && !archive) throw new Error('请选择技能归档包')
       const result = await send<Detail>(mode === 'import' ? '/admin/v1/skills/imports' : '/admin/v1/skills', 'POST',
-        mode === 'import' ? { skill_code: values.skill_code, owner: values.owner, name: values.name || null, archive_base64: archive } : values)
+        mode === 'import' ? { skill_code: values.skill_code, owner: values.owner, name: values.name || null, archive_base64: archive,
+          tool_bindings: values.tool_bindings ?? {} } : values)
       onSaved(result)
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
@@ -78,6 +87,16 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
         <Form.Item name="instructions" label="技能指令" rules={[{ required: true }]}><Input.TextArea rows={8} /></Form.Item></> :
         <Form.Item label="技能归档包"><Upload beforeUpload={upload} showUploadList={false} accept=".zip,.tar,.gz,.tgz"><Button>选择文件</Button></Upload>
           {filename && <Typography.Text>{filename}</Typography.Text>}</Form.Item>}
+      {mode === 'import' && preview && <>
+        <Table size="small" tableLayout="fixed" rowKey="relative_path" pagination={false} dataSource={preview.files} columns={[
+          { title: '文件', render: (_, file) => <span style={{ overflowWrap: 'anywhere' }}>{file.relative_path}</span> },
+          { title: '大小', width: 80, render: (_, file) => <span style={{ whiteSpace: 'nowrap' }}>{file.size_bytes} 字节</span> },
+          { title: '加载状态', width: 96, render: (_, file) => file.unavailable_reason ?? '可加载' },
+        ]} />
+        <SkillToolBindings requirements={preview.settings.tool_requirements ?? []} options={tools.data ?? []} />
+        <ErrorNotice error={tools.error} />
+        <Collapse size="small" items={[{ key: 'instructions', label: '查看技能指令', children: <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{preview.instruction_preview}</pre> }]} />
+      </>}
     </Form>
   </Modal>
 }

@@ -2609,6 +2609,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/skills/imports/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Import */
+        post: operations["preview_import_admin_v1_skills_imports_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/skills/tool-options": {
         parameters: {
             query?: never;
@@ -3666,6 +3683,11 @@ export interface components {
             /** Prompt Version */
             prompt_version?: string | null;
             /**
+             * Skill Loading
+             * @default []
+             */
+            skill_loading: components["schemas"]["AgentSkillLoading"][];
+            /**
              * Skill Versions
              * @default []
              */
@@ -3748,6 +3770,7 @@ export interface components {
         "AgentDefinition-Input": {
             /**
              * @default {
+             *       "skill_loading": [],
              *       "skill_versions": [],
              *       "tool_versions": []
              *     }
@@ -3799,6 +3822,7 @@ export interface components {
         "AgentDefinition-Output": {
             /**
              * @default {
+             *       "skill_loading": [],
              *       "skill_versions": [],
              *       "tool_versions": []
              *     }
@@ -4078,6 +4102,30 @@ export interface components {
             /** Version Label */
             version_label: string;
         };
+        /** AgentSkillLoading */
+        AgentSkillLoading: {
+            /** Loading Mode */
+            loading_mode?: ("mandatory" | "on_demand") | null;
+            /** Priority */
+            priority?: number | null;
+            /**
+             * Selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Selected Files
+             * @default []
+             */
+            selected_files: string[];
+            /**
+             * Trigger Reason
+             * @default 配置选择
+             */
+            trigger_reason: string;
+            /** Version Id */
+            version_id: string;
+        };
         /** AgentStateInput */
         AgentStateInput: {
             /**
@@ -4122,6 +4170,8 @@ export interface components {
             max_retries: number;
             /** Name */
             name: string;
+            /** Operator */
+            operator?: "object" | null;
             /** Output Schema */
             output_schema: {
                 [key: string]: unknown;
@@ -8172,6 +8222,7 @@ export interface components {
              *       "loading_mode": "on_demand",
              *       "priority": 0,
              *       "required_model_capabilities": [],
+             *       "tool_bindings": {},
              *       "tool_requirements": []
              *     }
              */
@@ -8287,11 +8338,32 @@ export interface components {
             owner: string;
             /** Skill Code */
             skill_code: string;
+            /** Tool Bindings */
+            tool_bindings?: {
+                [key: string]: string;
+            };
             /**
              * Version Label
              * @default 导入版本
              */
             version_label: string;
+        };
+        /** SkillImportPreview */
+        SkillImportPreview: {
+            /** Files */
+            files: components["schemas"]["SkillFile"][];
+            /** Instruction Preview */
+            instruction_preview: string;
+            /** Metadata */
+            metadata: {
+                [key: string]: unknown;
+            };
+            settings: components["schemas"]["SkillSettings"];
+        };
+        /** SkillImportPreviewInput */
+        SkillImportPreviewInput: {
+            /** Archive Base64 */
+            archive_base64: string;
         };
         /** SkillIssue */
         SkillIssue: {
@@ -8426,6 +8498,10 @@ export interface components {
              * @default []
              */
             required_model_capabilities: string[];
+            /** Tool Bindings */
+            tool_bindings?: {
+                [key: string]: string;
+            };
             /**
              * Tool Requirements
              * @default []
@@ -8484,17 +8560,39 @@ export interface components {
         SkillToolOption: {
             /** Available */
             available: boolean;
+            /** Input Schema */
+            input_schema?: {
+                [key: string]: unknown;
+            } | null;
             /** Name */
             name: string;
+            /** Output Schema */
+            output_schema?: {
+                [key: string]: unknown;
+            } | null;
             /** Reason */
             reason: string | null;
+            /** Source Type */
+            source_type?: ("mcp" | "http" | "builtin") | null;
             /** Tool Code */
             tool_code: string;
+            /** Version Id */
+            version_id: string;
             /** Version Label */
             version_label: string;
         };
         /** SkillToolRequirement */
         SkillToolRequirement: {
+            /** Input Schema */
+            input_schema?: {
+                [key: string]: unknown;
+            } | null;
+            /** Output Schema */
+            output_schema?: {
+                [key: string]: unknown;
+            } | null;
+            /** Source Type */
+            source_type?: ("mcp" | "http" | "builtin") | null;
             /** Tool Code */
             tool_code: string;
             /** Version Label */
@@ -36094,6 +36192,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    preview_import_admin_v1_skills_imports_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillImportPreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillImportPreview"];
                 };
             };
             /** @description Bad Request */

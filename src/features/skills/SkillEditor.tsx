@@ -5,20 +5,21 @@ import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
 import { ErrorNotice, type Schema } from '../../components/Management'
 import { fileTree } from './file-tree'
+import { SkillToolBindings } from './SkillToolBindings'
 
 type Version = Schema<'SkillVersionView'>
 type Settings = Schema<'SkillSettings'>
-type Values = Settings & { tools: string[] }
+type Values = Settings
 const capabilities = [{ value: 'text', label: '文本生成' }, { value: 'tools', label: '工具调用' },
   { value: 'structured_output', label: '结构化输出' }, { value: 'streaming', label: '流式输出' },
   { value: 'vision', label: '视觉理解' }, { value: 'embedding', label: '向量生成' }]
-const toolKey = (tool: { tool_code: string; version_label: string }) => JSON.stringify([tool.tool_code, tool.version_label])
 
 export function SkillEditor({ version, onClose, onSaved }: { version: Version; onClose: () => void; onSaved: () => void }) {
   const [form] = Form.useForm<Values>()
   const { modal } = App.useApp()
   const tools = useQuery<Schema<'SkillToolOption'>[]>('/admin/v1/skills/tool-options')
   const agents = useQuery<Schema<'SkillAgentOption'>[]>('/admin/v1/skills/agent-options')
+  const [requirements, setRequirements] = useState(version.settings.tool_requirements ?? [])
   const [texts, setTexts] = useState<Record<string, string>>({})
   const [removed, setRemoved] = useState<string[]>([])
   const [selected, setSelected] = useState<string>()
@@ -42,10 +43,9 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
     if (busy) return
     setBusy(true); setError(undefined)
     try {
-      const { tools: chosen, ...settings } = values
-      const requirements = (chosen ?? []).map(key => { const [tool_code, version_label] = JSON.parse(key) as [string, string]; return { tool_code, version_label } })
       await send(`/admin/v1/skill-versions/${version.version_id}`, 'PATCH', {
-        revision: version.revision, settings: { ...version.settings, ...settings, tool_requirements: requirements },
+        revision: version.revision, settings: { ...version.settings, ...values, tool_requirements: requirements,
+          tool_bindings: Object.fromEntries(requirements.filter(r => values.tool_bindings?.[r.tool_code]).map(r => [r.tool_code, values.tool_bindings![r.tool_code]])) },
         files: Object.entries(texts).filter(([path]) => !removed.includes(path)).map(([relative_path, text]) => ({ relative_path, text })), remove_paths: removed,
       })
       onSaved()
@@ -56,16 +56,12 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
     if (paths.includes(newPath)) { setError(new Error('此路径已经存在')); return }
     setTexts(current => ({ ...current, [newPath]: '' })); setRemoved(current => current.filter(path => path !== newPath)); setSelected(newPath); setNewPath('')
   }
-  const options = tools.data?.map(tool => ({ value: toolKey(tool), label: `${tool.name} · ${tool.version_label}${tool.reason ? ` · ${tool.reason}` : ''}`, disabled: !tool.available })) ?? []
-  for (const requirement of version.settings.tool_requirements ?? []) {
-    if (!options.some(option => option.value === toolKey(requirement))) options.push({ value: toolKey(requirement), label: `待绑定工具 · ${requirement.version_label}`, disabled: false })
-  }
   return <Modal open title="编辑技能包" width={980} onCancel={onClose} closable={!busy} maskClosable={!busy} style={{ top: 24 }}
     styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }} footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button>
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存草稿</Button></Space>}>
     <ErrorNotice error={error || tools.error || agents.error} />
     <Form form={form} layout="vertical" onFinish={save} disabled={busy} onFinishFailed={() => setActiveTab('settings')}
-      initialValues={{ ...version.settings, tools: version.settings.tool_requirements?.map(toolKey) ?? [] }}>
+      initialValues={version.settings}>
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
         { key: 'files', label: '文件编辑', children: <><Space.Compact style={{ width: '100%', marginBottom: 16 }}>
           <Input aria-label="新文件路径" placeholder="references/example.md" value={newPath} onChange={event => setNewPath(event.target.value)} />
@@ -88,7 +84,14 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
           <Form.Item name="change_note" label="变更说明"><Input.TextArea rows={3} /></Form.Item>
         </> },
         { key: 'dependencies', label: '工具与模型', forceRender: true, children: <>
-          <Form.Item name="tools" label="依赖工具版本"><Select mode="multiple" loading={!tools.data && !tools.error} options={options} /></Form.Item>
+          <SkillToolBindings requirements={requirements} options={tools.data ?? []} />
+          {requirements.map(requirement => <Button key={requirement.tool_code} onClick={() => setRequirements(current => current.filter(r => r.tool_code !== requirement.tool_code))}>移除依赖 {requirement.tool_code}</Button>)}
+          <Form.Item label="新增工具依赖"><Select value={undefined} placeholder="选择工具版本" options={(tools.data ?? []).filter(t => !requirements.some(r => r.tool_code === t.tool_code)).map(t => ({ value: t.version_id, label: `${t.name} · ${t.version_label}`, disabled: !t.available }))}
+            onChange={id => { const tool = tools.data?.find(t => t.version_id === id); if (!tool) return
+              const { tool_code, version_label, source_type, input_schema, output_schema } = tool
+              setRequirements(current => [...current, { tool_code, version_label, source_type, input_schema, output_schema }])
+              form.setFieldValue(['tool_bindings', tool_code], id)
+            }} /></Form.Item>
           <Form.Item name="required_model_capabilities" label="模型能力要求"><Select mode="multiple" options={capabilities} /></Form.Item>
         </> },
         { key: 'variables', label: '输入变量', forceRender: true, children: <Form.List name="input_variables">{(fields, { add, remove }) => <>

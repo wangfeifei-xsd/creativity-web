@@ -99,3 +99,36 @@ test('导出通过受控产物下载', async ({ page }) => {
   await page.getByRole('button', { name: '导出技能包', exact: true }).click()
   expect((await download).suggestedFilename()).toBe('rental.zip')
 })
+
+test('导入预览后显式绑定本渠道工具，契约失败保留选择', async ({ page }) => {
+  await fixture(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  const requirement = { tool_code: 'archive.find-notes', version_label: '配置初版', source_type: 'mcp', input_schema: { type: 'object' }, output_schema: { type: 'object' } }
+  await page.route('**/skills/tool-options', route => route.fulfill({ json: [{ ...requirement, tool_code: 'local_archive', version_id: 'local_tool_v1', name: '本地档案工具', available: true, reason: null }] }))
+  await page.route('**/skills/imports/preview', route => route.fulfill({ json: { metadata: { name: 'archive-answer' }, files, settings: { tool_requirements: [requirement], tool_bindings: {} }, instruction_preview: '引用已授权的档案查询结果。' } }))
+  let imports = 0
+  await page.route('**/skills/imports', async route => {
+    imports++
+    const body = route.request().postDataJSON()
+    expect(body.tool_bindings).toEqual({ 'archive.find-notes': 'local_tool_v1' })
+    expect(body).not.toHaveProperty('channel_id')
+    await route.fulfill({ status: 422, json: { error: { code: 'SKILL_DEPENDENCY_MISSING', message: '工具输入或输出 schema 与依赖契约不兼容', fields: [] } } })
+  })
+  await page.goto('/skills')
+  await page.getByRole('button', { name: '导入技能包', exact: true }).click()
+  await page.getByLabel('技能编码').fill('archive_answer')
+  await page.getByLabel('负责人').fill('配置人员')
+  await page.locator('input[type=file]').setInputFiles('../creativity-service/examples/skills/packages/archive-answer.zip')
+  const choice = page.getByLabel('工具依赖：archive.find-notes · 配置初版')
+  await expect(choice).toBeVisible()
+  await expect(page.getByText('本地档案工具 · 配置初版', { exact: true })).toHaveCount(0)
+  await choice.click()
+  await page.getByText('本地档案工具 · 配置初版', { exact: true }).click()
+  await expect(page.locator('.ant-select-dropdown:visible')).toHaveCount(0)
+  await page.getByRole('dialog').getByRole('button', { name: /保存$/ }).click()
+  await expect(page.getByText('工具输入或输出 schema 与依赖契约不兼容', { exact: true })).toBeVisible()
+  await expect(page.getByText('本地档案工具 · 配置初版', { exact: true }).first()).toBeVisible()
+  await page.getByText('工具输入或输出 schema 与依赖契约不兼容', { exact: true }).scrollIntoViewIfNeeded()
+  await page.screenshot({ path: '.logs/21/skill-import-mobile.png', fullPage: true })
+  expect(imports).toBe(1)
+})

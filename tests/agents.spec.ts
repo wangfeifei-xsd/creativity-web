@@ -150,3 +150,33 @@ test('旧入口编辑保留版本，新增可选择通用流程', async ({ page 
   await page.locator('.ant-select-dropdown:visible').getByText('通用流程 · 通用流程', { exact: true }).click()
   await expect(page.getByRole('dialog').getByTitle('通用流程 · 通用流程', { exact: true })).toBeVisible()
 })
+
+test('Agent 固定技能参考文件与按需加载选择', async ({ page }) => {
+  await fixture(page)
+  const skillDependency = { resource_type: 'skill', resource_id: 'skill_a', version_id: 'skill_version', name: '档案解读', version_label: '技能初版', revision: 1, state: { label: '已冻结' }, content_digest: 'e'.repeat(64) }
+  await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, dependencies: [...options.dependencies, skillDependency] } }))
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: { ...definition, bindings: { ...definition.bindings, skill_versions: ['skill_version'] } } }] } }))
+  await page.route('**/skill-versions/skill_version', route => route.fulfill({ json: { files: [
+    { relative_path: 'SKILL.md', loadable: true }, { relative_path: 'references/citation.md', loadable: true }, { relative_path: 'scripts/check.py', loadable: false, unavailable_reason: '脚本执行未启用' },
+  ] } }))
+  let saves = 0
+  await page.route('**/agent-versions/draft_a', async route => {
+    saves++
+    const body = route.request().postDataJSON()
+    expect(body.definition.bindings.skill_loading).toEqual([{ version_id: 'skill_version', selected: true, selected_files: ['references/citation.md'] }])
+    await route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '草稿已变更，请重新检查', fields: [] } } })
+  })
+  await page.goto('/agents/agent_a')
+  await page.getByRole('button', { name: '编辑配置', exact: true }).click()
+  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await page.getByRole('switch', { name: '触发按需技能' }).click()
+  await page.getByLabel('加载参考资料').click()
+  await page.getByText('references/citation.md', { exact: true }).last().click()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.ant-select-dropdown:visible')).toHaveCount(0)
+  await page.screenshot({ path: '.logs/21/agent-skill-loading.png', fullPage: true })
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect(page.getByText('草稿已变更，请重新检查', { exact: true })).toBeVisible()
+  expect(saves).toBe(1)
+})
