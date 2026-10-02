@@ -73,6 +73,18 @@ test('窄屏连接配置标明暂不可用连接方式', async ({ page }) => {
   await expect(page.getByText('OAuth 用户委托（暂不可用）')).toBeVisible()
   await page.getByLabel('连接方式').press('Escape')
   await expect(page.getByLabel('检查间隔（秒）')).toHaveValue('300')
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   await page.screenshot({ path: test.info().outputPath('mcp-mobile.png'), fullPage: true, animations: 'disabled' })
+})
+
+test('身份复核工具只能进入复核配置，不向模型导入', async ({ page }) => {
+  await fixture(page)
+  await page.route('**/admin/v1/mcp-connections/mcp_a', route => route.fulfill({ json: { ...detail,
+    discoveries: [{ ...snapshot, tools: [{ ...remote, purpose: 'subject_review', title: '当前主体权限' }] }],
+  } }))
+  await page.goto('/mcp-connections/mcp_a')
+  await page.getByRole('tab', { name: '远程工具' }).click()
+  await expect(page.getByText('当前主体权限', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '导入草稿', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: '配置主体复核', exact: true })).toBeVisible()
 })

@@ -59,6 +59,14 @@ test('测试只提交业务参数，服务器字段错误保留输入', async ({
   await expect(page.getByText('数值范围不正确', { exact: true })).toBeVisible()
   await expect(page.getByLabel('数值列表')).toHaveValue('["1.25"]')
   expect(calls).toBe(1)
+  await page.getByText('JSON 参数', { exact: true }).click()
+  await page.getByLabel('工具参数（JSON）').fill('{')
+  await page.getByRole('button', { name: '运行测试' }).click()
+  await expect(page.getByText('请按字段结构填写有效的 JSON')).toBeVisible()
+  expect(calls).toBe(1)
+  await page.getByLabel('工具参数（JSON）').fill('{"values":["1.25"]}')
+  await page.getByRole('button', { name: '运行测试' }).click()
+  await expect.poll(() => calls).toBe(2)
 })
 
 test('窄屏版本编辑和执行策略可用', async ({ page }) => {

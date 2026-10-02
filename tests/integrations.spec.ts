@@ -30,6 +30,7 @@ test('连接列表、能力与脱敏测试使用业务名称', async ({ page }) 
   const errors: string[] = []
   page.on('pageerror', e => errors.push(e.message))
   await page.goto('/integrations')
+  await page.getByRole('tab', { name: '旧 HTTP 连接', exact: true }).click()
   await page.getByRole('link', { name: '租号业务服务' }).click()
   await expect(page.getByText('标准业务接口 · 1.0.0')).toBeVisible()
   await expect(page.getByText('业务字典', { exact: true })).toBeVisible()
@@ -81,4 +82,43 @@ test('旧 HTTP 目录不可用时仍能配置独立委托凭据', async ({ page 
   await page.getByRole('button', { name: '创建委托密钥' }).click()
   await page.getByLabel('接入服务', { exact: true }).click()
   await expect(page.locator('.ant-select-dropdown:visible').getByText('租号业务后端', { exact: true })).toBeVisible()
+})
+
+test('主体复核从 MCP 发现绑定，保存不含用户或数据域覆盖', async ({ page }) => {
+  await fixture(page)
+  const remote = { name: 'access.review-current', title: '当前主体权限', purpose: 'subject_review' }
+  const conn = { connection_id: 'mcp_review', name: '身份授权服务', credential_mask: '••••••••', status: { value: 'ENABLED' } }
+  await page.route('**/admin/v1/mcp-connections', route => route.fulfill({ json: { items: [conn], actions: [] } }))
+  await page.route('**/admin/v1/mcp-connections/mcp_review', route => route.fulfill({ json: {
+    connection: conn, discoveries: [{ discovery_id: 'review_snapshot', tools: [remote,
+      { name: 'archive.find-notes', title: '档案查询', purpose: 'business' }] }], checks: [], imports: [],
+  } }))
+  await page.route('**/admin/v1/subject-review-bindings/options', route => route.fulfill({ json: [{ value: 'client_a', label: '资料业务后端' }] }))
+  let submitted = false
+  await page.route('**/admin/v1/subject-review-bindings', async route => {
+    if (route.request().method() === 'POST') {
+      expect(route.request().postDataJSON()).toEqual({ client_id: 'client_a', connection_id: 'mcp_review',
+        discovery_id: 'review_snapshot', remote_tool_name: 'access.review-current', timeout_seconds: 5, enabled: true })
+      submitted = true
+    }
+    await route.fulfill({ json: [] })
+  })
+  await page.goto('/integrations')
+  await page.getByRole('button', { name: '配置主体复核', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('接入服务', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('资料业务后端', { exact: true }).click()
+  await dialog.getByRole('combobox').nth(1).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('身份授权服务', { exact: true }).click()
+  await dialog.getByLabel('身份复核工具', { exact: true }).click()
+  await expect(page.locator('.ant-select-dropdown:visible').getByText('档案查询')).toHaveCount(0)
+  await page.locator('.ant-select-dropdown:visible').getByText('当前主体权限', { exact: true }).click()
+  await expect(page.locator('.ant-select-dropdown:visible')).toHaveCount(0)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await expect(dialog.getByRole('button', { name: '保存', exact: true })).toBeVisible()
+  await page.screenshot({ path: '.logs/20/subject-review-mobile.png', fullPage: true, animations: 'disabled' })
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  expect(submitted).toBe(true)
 })

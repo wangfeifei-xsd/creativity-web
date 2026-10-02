@@ -10,6 +10,7 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { DelegationKeys } from './DelegationKeys'
 import { IntegrationEditor } from './IntegrationEditor'
+import { SubjectReviews } from './SubjectReviews'
 
 export function IntegrationsPage() {
   const id = useParams()['*']?.split('/')[0]
@@ -23,7 +24,8 @@ function IntegrationList() {
   return <PageContainer title="业务接入" actions={<Space><Button onClick={query.reload}>刷新</Button>
     {session.navigation.some(item => item.navigation_key === 'mcp-connections') && <Link to="/mcp-connections">MCP 工具连接</Link>}
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ 'integration:create': () => setCreating(true) }} /></Space>}>
-    <Tabs items={[{ key: 'connections', label: '旧 HTTP 连接', children: query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="integration_id" dataSource={query.data.items} scroll={{ x: 780 }} columns={[
+    <Tabs items={[...(session.actions.some(a => a.action_key === 'integration:manage') ? [{ key: 'review', label: '当前主体复核', children: <SubjectReviews /> }] : []),
+      { key: 'connections', label: '旧 HTTP 连接', children: query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="integration_id" dataSource={query.data.items} scroll={{ x: 780 }} columns={[
         { title: '接入名称', render: (_, row) => <Link to={`/integrations/${row.integration_id}`}>{row.name}</Link> },
         { title: '环境', dataIndex: 'environment_name' }, { title: '数据域', dataIndex: 'data_scope_name' },
         { title: '适配器', dataIndex: 'adapter_name' }, { title: '版本', dataIndex: 'adapter_version' },

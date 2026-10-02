@@ -1,5 +1,5 @@
 import { RunViewer } from '../../components/run-viewer/RunViewer'
-import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
+import { Alert, Button, Descriptions, Form, Input, InputNumber, Segmented, Select, Space, Switch, Typography } from 'antd'
 import { useState } from 'react'
 import { applyFormErrors } from '../../api/form-errors'
 import { send } from '../../api/management'
@@ -17,12 +17,13 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
   const [result, setResult] = useState<Schema<'ToolTestResult'>>()
+  const [jsonMode, setJsonMode] = useState(false)
   const schema = version.definition.input_schema as { properties?: Record<string, Property>; required?: string[] }
   async function submit(values: Record<string, unknown>) {
     if (busy) return
     setBusy(true); setError(undefined); setResult(undefined)
     try {
-      const args = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined).map(([key, value]) => {
+      const args = jsonMode ? JSON.parse(String(values.argumentsJson ?? '{}')) as unknown : Object.fromEntries(Object.entries(values).filter(([key, value]) => key !== 'argumentsJson' && value !== undefined).map(([key, value]) => {
         const kind = schema.properties?.[key]?.type
         return [key, (kind === 'array' || kind === 'object') && typeof value === 'string' ? JSON.parse(value) as unknown : value]
       }))
@@ -42,8 +43,10 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
     ]} />
     {query.data.unavailable_reason && <Alert type="warning" title={query.data.unavailable_reason} />}
     <ErrorNotice error={error} />
+    <Segmented aria-label="参数填写方式" value={jsonMode ? 'json' : 'form'} onChange={value => setJsonMode(value === 'json')}
+      options={[{ value: 'form', label: '字段表单' }, { value: 'json', label: 'JSON 参数' }]} />
     <Form form={form} layout="vertical" onFinish={submit} disabled={busy}>
-      {Object.entries(schema.properties ?? {}).map(([name, field], index) => <Form.Item key={name} name={name}
+      {jsonMode ? <Form.Item name="argumentsJson" label="工具参数（JSON）" rules={[{ required: true }]}><Input.TextArea rows={8} /></Form.Item> : Object.entries(schema.properties ?? {}).map(([name, field], index) => <Form.Item key={name} name={name}
         label={field.title || `参数 ${index + 1}`} valuePropName={field.type === 'boolean' ? 'checked' : 'value'}
         rules={schema.required?.includes(name) ? [{ required: true, message: '请填写此项' }] : undefined}>
         {field.enum ? <Select options={field.enum.map(value => ({ value: value as string, label: String(value) }))} />
@@ -56,7 +59,10 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
     {result && <><RunViewer key={result.run_id} runId={result.run_id} />
       <Descriptions title="测试结果" items={[{ key: 'state', label: '状态', children: result.state.label },
         { key: 'run', label: '运行标识', children: <Typography.Text copyable>{result.run_id}</Typography.Text> },
-        { key: 'time', label: '观测时间', children: formatTimestamp(result.result?.observed_at) }]} />
+        { key: 'time', label: '观测时间', children: formatTimestamp(result.result?.observed_at) },
+        { key: 'coverage', label: '结果完整性', children: ({ complete: '完整', empty: '无记录', missing: '信息缺失', partial: '部分结果' } as Record<string, string>)[String(result.result?.coverage.result_status)] ?? '未声明' },
+        { key: 'verification', label: '验证来源', children: result.result?.coverage.verification === 'controlled_fixture' ? '受控测试服务' : '未标注' },
+      ]} />
       {result.result && <><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(result.result.data, null, 2)}</pre>
         {result.result.evidence_refs.map(ref => <Typography.Paragraph key={ref.evidence_id}>{ref.title ?? '来源名称不可用'} · {formatTimestamp(ref.observed_at)}</Typography.Paragraph>)}
       </>}

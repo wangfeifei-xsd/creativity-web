@@ -116,7 +116,10 @@ function McpDetail({ id }: { id: string }) {
         { key: 'interval', label: '检查间隔', children: `${connection.health_policy.interval_seconds} 秒` },
         { key: 'threshold', label: '连续失败阈值', children: `${connection.health_policy.failure_threshold} 次` },
       ]} /> },
-      { key: 'auth', label: '鉴权', children: <Descriptions items={[{ key: 'token', label: '服务凭据', children: connection.credential_mask ?? '未配置' }]} /> },
+      { key: 'auth', label: '鉴权', children: <Descriptions items={[
+        { key: 'token', label: '服务凭据', children: connection.credential_mask ?? '未配置' },
+        { key: 'subject', label: '主体授权', children: <Link to="/integrations">配置当前主体复核</Link> },
+      ]} /> },
       { key: 'test', label: '连接测试', children: <Table rowKey="check_id" scroll={{ x: 700 }} dataSource={detail.checks} expandable={{ expandedRowRender: row => <>{json(row.server_info)}{json(row.capabilities)}</> }} columns={[
         { title: '检查时间', render: (_, row) => formatTimestamp(row.checked_at) }, { title: '协商协议', render: (_, row) => row.negotiated_version ?? '未完成协商' },
         { title: '健康状态', render: (_, row) => <StatusTag status={row.health} /> },
@@ -128,10 +131,11 @@ function McpDetail({ id }: { id: string }) {
         <Table rowKey="name" scroll={{ x: 700 }} dataSource={snapshot?.tools ?? []} expandable={{ expandedRowRender: row => <><Descriptions items={[{ key: 'name', label: '远端工具名', children: row.name }]} />{json(row.input_schema)}{json(row.output_schema)}</> }} columns={[
           { title: '工具名称', render: (_, row) => detail.imports.find(item => item.remote_tool_name === row.name)?.name ?? row.title ?? '待补充显示名称' },
           { title: '描述', dataIndex: 'description', ellipsis: true },
+          { title: '用途', render: (_, row) => row.purpose === 'subject_review' ? '主体复核' : '业务工具' },
           { title: '变化', render: (_, row) => diff.data ? diff.data.items.find(item => item.remote_tool_name === row.name)?.labels.join('、') ?? '无变化' : diff.error ? '差异不可用' : '差异待加载' },
           { title: '导入版本', render: (_, row) => { const imported = detail.imports.find(item => item.discovery_id === snapshot?.discovery_id && item.remote_tool_name === row.name)
             return imported ? <Link to={`/tools/${imported.local_tool_id}`}>查看本地版本</Link> : '未导入' } },
-          { title: '操作', render: (_, row) => connection.actions.some(action => action.action_key === 'import') ? <Button disabled={busy} onClick={() => setImporting(row)}>导入草稿</Button> : null },
+          { title: '操作', render: (_, row) => row.purpose === 'subject_review' ? <Link to="/integrations">配置主体复核</Link> : connection.actions.some(action => action.action_key === 'import') ? <Button disabled={busy} onClick={() => setImporting(row)}>导入草稿</Button> : null },
         ]} /></> },
       { key: 'diff', label: '同步差异', children: diff.error ? <ErrorState error={diff.error} onRetry={diff.reload} /> :
         <Table rowKey="remote_tool_name" dataSource={diff.data?.items ?? []} columns={[
