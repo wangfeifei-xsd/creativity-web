@@ -32,3 +32,5 @@ pnpm dev
 修改接口后先在服务端运行 `uv run creativity-openapi`，再运行 `pnpm api:generate`。生成目录不手工编辑；CI 会检查输出是否一致。后端契约文件已经纳入交付，前端安装和构建无需启动 API。
 
 公共组件与数据模型接入见 [03 交接](../creativity-service/docs/core.md)，依赖检查执行 `pnpm audit`。
+
+管理登录、渠道工作区及账号权限页面已在方案 06 交付。模块登记与可复用交互见 [页面接入协议](docs/workspace.md)，真实服务联调与测试边界见 [06 验证记录](../creativity-service/docs/workspace.md)。

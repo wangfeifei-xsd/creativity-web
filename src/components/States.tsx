@@ -15,9 +15,10 @@ export function EmptyState({ message = '暂无数据' }: { message?: string }) {
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const status = error instanceof ApiError ? error.status : 0
-  const title = status === 401 ? '请重新登录' : status === 403 ? '暂无访问权限' : '加载失败'
+  const title = ({ 401: '请重新登录', 403: '暂无访问权限', 404: '内容不可见或不存在',
+    409: '内容已发生变化', 422: '请检查填写内容', 429: '额度或请求频率受限', 503: '服务暂不可用' } as Record<number, string>)[status] || '加载失败'
   return <Result
-    status={status === 403 ? '403' : 'error'}
+    status={status === 403 ? '403' : status === 404 ? '404' : 'error'}
     title={title}
     subTitle={status === 401 || status === 403 ? undefined :
       error instanceof ApiError ? error.message : '请稍后重试'}

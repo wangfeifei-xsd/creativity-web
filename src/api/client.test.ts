@@ -75,3 +75,43 @@ describe('受控文件下载', () => {
     expect(tokens.get()).toBeNull()
   })
 })
+
+describe('IAM-A14 / CHN-A10 工作区请求隔离', () => {
+  it.each([200, 401])('旧工作区迟到的 %s 不能返回数据或注销新会话', async status => {
+    const tokens = new TokenStore()
+    tokens.set('workspace-a')
+    let resolve!: (response: Response) => void
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(() => new Promise<Response>(done => { resolve = done }))
+    const client = createApiClient(fetcher, tokens)
+    const request = client.request('/admin/v1/accounts')
+    tokens.set('workspace-b')
+    resolve(new Response(JSON.stringify(status === 200 ? [{ name: '原渠道' }] : { error: { code: 'UNAUTHENTICATED', message: '请重新登录', fields: [] } }), { status }))
+    await expect(request).rejects.toMatchObject({ name: 'AbortError' })
+    expect(tokens.get()).toBe('workspace-b')
+    expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(true)
+  })
+
+  it('响应正文读取中切换工作区也不能交付旧数据', async () => {
+    const tokens = new TokenStore()
+    tokens.set('workspace-a')
+    let resolve!: (value: unknown) => void
+    const response = new Response('{}')
+    response.json = () => new Promise(done => { resolve = done })
+    const client = createApiClient(vi.fn<typeof fetch>().mockResolvedValue(response), tokens)
+    const request = client.request('/admin/v1/accounts')
+    await vi.waitFor(() => expect(resolve).toBeTypeOf('function'))
+    tokens.invalidate()
+    resolve({ name: '旧数据' })
+    await expect(request).rejects.toMatchObject({ name: 'AbortError' })
+  })
+
+  it('只持久化不透明 Token，不保存角色、工作区或业务缓存', () => {
+    const storage = { getItem: vi.fn().mockReturnValue('opaque'), setItem: vi.fn(), removeItem: vi.fn() }
+    const tokens = new TokenStore(storage)
+    expect(tokens.get()).toBe('opaque')
+    tokens.set('new-token')
+    expect(storage.setItem).toHaveBeenCalledWith('creativity.management.token', 'new-token')
+    tokens.handleUnauthorized()
+    expect(storage.removeItem).toHaveBeenCalledWith('creativity.management.token')
+  })
+})
