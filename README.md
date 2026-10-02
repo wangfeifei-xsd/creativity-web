@@ -34,3 +34,5 @@ pnpm dev
 公共组件与数据模型接入见 [03 交接](../creativity-service/docs/core.md)，依赖检查执行 `pnpm audit`。
 
 管理登录、渠道工作区及账号权限页面已在方案 06 交付。模块登记与可复用交互见 [页面接入协议](docs/workspace.md)，真实服务联调与测试边界见 [06 验证记录](../creativity-service/docs/workspace.md)。
+
+记忆管理页面位于 `src/features/memory/`，包含列表、主体开关、确认/修正、有效期、来源及删除进度。业务契约和验证见 [记忆交接](../creativity-service/docs/memory.md)。
