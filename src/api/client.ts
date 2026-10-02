@@ -107,6 +107,9 @@ export function createApiClient(
   return {
     request,
     download,
+    stream(path: ApiPath, init: RequestInit = {}) {
+      return send(path, { ...init, method: 'GET' }, 'text/event-stream')
+    },
     get<P extends GetPath>(path: P, init?: RequestInit): Promise<GetResponse<P>> {
       return request<GetResponse<P>>(path as ApiPath, { ...init, method: 'GET' })
     },

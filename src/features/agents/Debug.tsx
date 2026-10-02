@@ -1,3 +1,4 @@
+import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Button, Descriptions, Form, Input, InputNumber, Select, Switch, Typography } from 'antd'
 import { useState } from 'react'
 import { send } from '../../api/management'
@@ -33,6 +34,6 @@ export function Debug({ version }: { version: Version }) {
       { key: 'time', label: '耗时', children: result.duration_ms == null ? '尚未确认' : `${result.duration_ms} 毫秒` },
       { key: 'cost', label: '费用', children: formatAmount(result.cost?.amount, result.cost?.currency) },
     ]} />{result.result && result.state.value === 'SUCCEEDED' && <pre style={{ whiteSpace: 'pre-wrap' }}>{pretty(result.result)}</pre>}
-      {result.trace_url && <Typography.Link href={result.trace_url}>查看步骤轨迹</Typography.Link>}</>}
+      <RunViewer key={result.run_id} runId={result.run_id} />{result.trace_url && <Typography.Link href={result.trace_url}>查看步骤轨迹</Typography.Link>}</>}
   </>
 }

@@ -1,3 +1,4 @@
+import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Table, Tabs, Tag } from 'antd'
 import { useState } from 'react'
 import { send } from '../../api/management'
@@ -42,10 +43,10 @@ function Tests({ modelId, onVerified }: { modelId: string; onVerified: () => voi
   const cases = useQuery<Schema<'CaseDefinition'>[]>('/admin/v1/model-test-cases')
   const [open, setOpen] = useState(false)
   return <Space orientation="vertical" style={{ width: '100%' }}><Space><Button onClick={() => setOpen(true)}>能力验证</Button><Button onClick={query.reload}>刷新</Button></Space>
-    {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} expandable={{ expandedRowRender: t => <Table pagination={false} rowKey="case" dataSource={t.results} columns={[
+    {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} expandable={{ expandedRowRender: t => <>{t.run_id && <RunViewer key={t.run_id} runId={t.run_id} />}<Table pagination={false} rowKey="case" dataSource={t.results} columns={[
       { title: '用例', render: (_, r) => cases.data?.find(c => c.case === r.case)?.name ?? '名称不可用' }, { title: '结果', render: (_, r) => r.passed ? '通过' : '未通过' },
       { title: '原因', render: (_, r) => r.reason ?? '无' }, { title: '尝试次数', render: (_, r) => r.attempt_ids.length },
-    ]} /> }} columns={[
+    ]}/></> }} columns={[
       { title: '验证时间', render: (_, t) => formatTimestamp(t.created_at) }, { title: '配置修订', dataIndex: 'config_revision' },
       { title: '状态', render: (_, t) => <Tag>{t.state_label}</Tag> }, { title: '耗时', render: (_, t) => t.latency_ms === null ? '未记录' : `${t.latency_ms} 毫秒` },
       { title: '执行反馈', render: (_, t) => t.reason ?? (t.run_id ? '已关联调试运行' : '未创建运行') },

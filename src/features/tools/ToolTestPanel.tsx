@@ -1,3 +1,4 @@
+import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
 import { useState } from 'react'
 import { applyFormErrors } from '../../api/form-errors'
@@ -52,7 +53,7 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
       </Form.Item>)}
       <Button type="primary" htmlType="submit" loading={busy} disabled={!query.data.executable}>运行测试</Button>
     </Form>
-    {result && <>
+    {result && <><RunViewer key={result.run_id} runId={result.run_id} />
       <Descriptions title="测试结果" items={[{ key: 'state', label: '状态', children: result.state.label },
         { key: 'run', label: '运行标识', children: <Typography.Text copyable>{result.run_id}</Typography.Text> },
         { key: 'time', label: '观测时间', children: formatTimestamp(result.result?.observed_at) }]} />

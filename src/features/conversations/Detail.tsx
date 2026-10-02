@@ -1,3 +1,4 @@
+import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { App, Button, Collapse, Descriptions, Space, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -60,7 +61,7 @@ export function ConversationDetail({ conversationId }: { conversationId: string 
       archive: () => void mutate('archive'), restore: () => void mutate('restore'), delete: () => void mutate('delete'), export: () => void mutate('export') }} />
   </Space>}>
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-      <ErrorNotice error={error} />
+      <ErrorNotice error={error} />{activeRun && <RunViewer key={activeRun} runId={activeRun} />}
       <Descriptions items={[
         { key: 'agent', label: '智能体', children: value.conversation.agent_name },
         { key: 'subject', label: '主体', children: value.conversation.subject_name ?? '名称不可用' },

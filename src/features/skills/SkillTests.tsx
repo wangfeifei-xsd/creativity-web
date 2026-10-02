@@ -1,3 +1,4 @@
+import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Button, Form, Input, InputNumber, Select, Space, Switch, Table, Typography } from 'antd'
 import { useState } from 'react'
 import { send } from '../../api/management'
@@ -33,7 +34,7 @@ export function SkillTests({ version }: { version: Version }) {
       <Form.Item name="variables" label="输入变量（JSON）"><Input.TextArea rows={3} spellCheck={false} /></Form.Item>
       <Button type="primary" onClick={() => form.submit()} loading={busy}>验证加载</Button>
     </Form>
-    {result && <><Typography.Title level={5}>{result.complete ? '加载验证通过' : '加载验证未通过'}</Typography.Title>
+    {current?.run_id && <RunViewer key={current.run_id} runId={current.run_id} />}{result && <><Typography.Title level={5}>{result.complete ? '加载验证通过' : '加载验证未通过'}</Typography.Title>
       <Typography.Paragraph>上下文占用：{result.used_budget} 字节</Typography.Paragraph>
       {result.issues.map((issue, index) => <Typography.Paragraph type="danger" key={index}>{issue.message}{issue.path ? `（${issue.path}）` : ''}</Typography.Paragraph>)}
       <Table rowKey="path" dataSource={result.loaded} columns={[

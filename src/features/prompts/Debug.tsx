@@ -1,3 +1,4 @@
+import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Alert, Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Table, Typography } from 'antd'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
@@ -83,7 +84,7 @@ export function PromptDebug({ version }: { version: Version }) {
           finally { setBusy(false) }
         }}>执行此快照</Button>}
         {error && <Alert type="error" title={error} />}
-        <RenderResult value={selected.rendered} />
+        {selected.run_id && <RunViewer key={selected.run_id} runId={selected.run_id} />}<RenderResult value={selected.rendered} />
         <Typography.Title level={5}>模型结果</Typography.Title>
         <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{selected.output == null ? (selected.masked ? '内容已脱敏' : '暂无结果') : jsonDisplay(selected.output)}</Typography.Paragraph>
         <Collapse items={[{ key: 'snapshot', label: '模板配置快照', children: <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(selected.snapshot.content, null, 2)}</pre> }]} />
