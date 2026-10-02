@@ -19,3 +19,9 @@ export const registration: FeatureRegistration = {
 公共组件 `PageContainer`、`ErrorState`、`ActionButtons`、`EditorDialog`、`ImpactDialog`、`VersionSelect` 可复用。`EditorDialog` 禁止重复提交；409 保留输入，显式读取新 revision 后仍须人工核对并提交。`api/management.ts` 的 `send` 封装 JSON 写请求，`applyFormErrors` 映射服务端字段错误。
 
 渠道详情中的成员页与独立 `/members`、`/resource-grants` 共用 `MembersPage` 和 IAM 原始接口。接口与验证记录见服务端 `docs/workspace.md`。
+
+18 的 `/integrations` 页面已登记，连接/能力/契约测试及委托密钥操作均调用服务端管理接口；服务端新增 `integration:manage` 菜单能力，身份委托页使用服务端 `key:manage` 操作入口。签名密钥只保留在一次性页面状态中，工作区切换会清除。配置与验收见 [业务接入交接](../../creativity-service/docs/integrations.md)。
+
+## 会话页面
+
+`features/conversations/registration.ts` 注册 `/conversations`；会话权限和动作由后端返回。页面提供筛选、消息/版本时间线、部分输出与取消、归档恢复、删除预览及进度、受控附件和导出。运行期间刷新持久化快照；17 后续装配 SSE。业务与验证边界见 [12 交接](../../creativity-service/docs/conversations.md)。
