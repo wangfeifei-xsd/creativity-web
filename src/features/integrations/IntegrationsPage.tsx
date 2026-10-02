@@ -21,15 +21,15 @@ function IntegrationList() {
   const { session } = useSession()
   const [creating, setCreating] = useState(false)
   return <PageContainer title="业务接入" actions={<Space><Button onClick={query.reload}>刷新</Button>
+    {session.navigation.some(item => item.navigation_key === 'mcp-connections') && <Link to="/mcp-connections">MCP 工具连接</Link>}
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ 'integration:create': () => setCreating(true) }} /></Space>}>
-    {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
-      <Tabs items={[{ key: 'connections', label: '业务连接', children: <Table rowKey="integration_id" dataSource={query.data.items} scroll={{ x: 780 }} columns={[
+    <Tabs items={[{ key: 'connections', label: '旧 HTTP 连接', children: query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="integration_id" dataSource={query.data.items} scroll={{ x: 780 }} columns={[
         { title: '接入名称', render: (_, row) => <Link to={`/integrations/${row.integration_id}`}>{row.name}</Link> },
         { title: '环境', dataIndex: 'environment_name' }, { title: '数据域', dataIndex: 'data_scope_name' },
         { title: '适配器', dataIndex: 'adapter_name' }, { title: '版本', dataIndex: 'adapter_version' },
         { title: '连接健康', dataIndex: 'health_name' }, { title: '状态', dataIndex: 'status_name' },
       ]} /> }, ...(session.actions.some(a => a.action_key === 'key:manage')
-        ? [{ key: 'delegation', label: '身份委托', children: <DelegationKeys /> }] : [])]} />}
+        ? [{ key: 'delegation', label: '身份委托', children: <DelegationKeys /> }] : [])]} />
     {creating && <IntegrationEditor onClose={() => setCreating(false)} onSaved={() => { setCreating(false); query.reload() }} />}
   </PageContainer>
 }
@@ -51,7 +51,7 @@ function IntegrationDetail({ id }: { id: string }) {
       { key: 'adapter', label: '适配器', children: `${row.adapter_name} · ${row.adapter_version}` },
       { key: 'health', label: '连接健康', children: row.health_name }, { key: 'status', label: '状态', children: row.status_name },
       { key: 'endpoint', label: '业务服务地址', children: row.business_endpoint }]} />
-    <Tabs items={[{ key: 'capabilities', label: '能力清单', children: <><ErrorNotice error={capabilities.error} />
+    <Tabs items={[{ key: 'capabilities', label: '旧协议能力', children: <><ErrorNotice error={capabilities.error} />
       <Table rowKey="operation" loading={!capabilities.data && !capabilities.error} dataSource={capabilities.data} pagination={false} columns={[
         { title: '能力', dataIndex: 'name' }, { title: '支持状态', render: (_, c) => c.supported ? '已实现' : '不支持' },
         { title: '连接授权', render: (_, c) => c.allowed ? '已授权' : '未授权' },

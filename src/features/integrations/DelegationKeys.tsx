@@ -8,13 +8,14 @@ import { ErrorState, LoadingState } from '../../components/States'
 
 export function DelegationKeys() {
   const query = useQuery<Schema<'DelegationKeyView'>[]>('/admin/v1/delegation-keys')
-  const options = useQuery<Schema<'IntegrationOptions'>>('/admin/v1/integrations/options')
+  const options = useQuery<Schema<'DelegationKeyOptions'>>('/admin/v1/delegation-keys/options')
   const [edit, setEdit] = useState<{ kind: 'create' | 'rotate' | 'revoke'; row?: Schema<'DelegationKeyView'> }>()
   const [issued, setIssued] = useState<Schema<'DelegationKeyIssued'>>()
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!query.data) return <LoadingState />
   return <Space orientation="vertical" style={{ width: '100%' }} size="middle">
-    <Space><Button onClick={() => setEdit({ kind: 'create' })}>创建委托密钥</Button><Button onClick={query.reload}>刷新</Button></Space>
+    <Space><Button disabled={!options.data} onClick={() => setEdit({ kind: 'create' })}>创建委托密钥</Button><Button onClick={() => { query.reload(); options.reload() }}>刷新</Button></Space>
+    {options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : null}
     <Table rowKey="kid" dataSource={query.data} scroll={{ x: 780 }} columns={[
       { title: '接入服务', dataIndex: 'client_name' }, { title: '签发者', dataIndex: 'issuer' },
       { title: '受众', dataIndex: 'audience' }, { title: '状态', dataIndex: 'status_name' },

@@ -1,0 +1,71 @@
+import { expect, test, type Page } from '@playwright/test'
+
+const channel = { channel_id: 'channel_a', channel_code: 'research', name: '资料渠道', owner: '管理员', business_type: null, business_type_name: null,
+  status: 'ACTIVE', status_label: '启用', created_at: '2026-10-02T01:00:00Z', archived_at: null, revision: 1, retention_policy: { retention_days: 90 }, actions: [] }
+async function fixture(page: Page) {
+  await page.route('**/admin/v1/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    let json: unknown = []
+    if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin_a', login_name: 'admin', display_name: '管理员' }, workspace: null,
+      navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [{ action_key: 'channel:create', label: '开通渠道' }], expires_at: '2030-01-01T00:00:00Z' }
+    else if (path.endsWith('/channel-create-options')) json = { accounts: [{ value: 'admin_a', label: '管理员' }], environments: [{ value: 'test', label: '测试' }], business_types: [], independent_actions: [] }
+    else if (path === '/admin/v1/channels') json = [channel]
+    else if (path.endsWith('/page')) json = { channel, tabs: [{ navigation_key: 'data-scopes', label: '业务数据域' }], actions: [{ action_key: 'data_scope:create', label: '创建数据域' }], service_actions: [] }
+    else if (path.endsWith('/environments')) json = [{ environment: 'test', name: '测试', status: 'ACTIVE' }]
+    else if (path.endsWith('/data-scopes')) json = [{ data_scope_id: 'scope_a', name: '研发资料', environment: 'test', environment_name: '测试', external_scope_type: '源系统/workspace', external_scope_type_name: null, external_scope_id: '研发:001/甲', status: 'ACTIVE', status_label: '启用', revision: 1 }]
+    await route.fulfill({ json })
+  })
+}
+
+for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且分类可留空（${width}）`, async ({ page }) => {
+  await fixture(page)
+  await page.setViewportSize({ width, height: 1000 })
+  let body: Record<string, unknown> | undefined
+  await page.route('**/admin/v1/channels', async route => {
+    body = route.request().postDataJSON()
+    await route.fulfill({ status: 201, json: channel })
+  })
+  await page.goto('/channels')
+  await page.getByRole('button', { name: '开通渠道' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('渠道名称').fill('资料渠道')
+  await dialog.getByLabel('渠道编码').fill('research')
+  await dialog.getByLabel('负责人').fill('管理员')
+  await dialog.getByLabel('首位管理员').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('管理员', { exact: true }).click()
+  await dialog.getByLabel('数据域名称').fill('研发资料')
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog.getByText('请填写外部数据域类型')).toBeVisible()
+  expect(body).toBeUndefined()
+  await dialog.getByLabel('外部数据域类型', { exact: true }).fill('源系统/workspace')
+  await dialog.getByLabel('外部数据域编号', { exact: true }).fill('研发:001/甲')
+  await expect(dialog.getByText('请填写外部数据域类型')).toHaveCount(0)
+  await expect(dialog.getByText('请填写外部数据域编号')).toHaveCount(0)
+  await page.screenshot({ path: `/tmp/creativity-19-channel-${width}.png`, fullPage: true })
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  expect(body?.business_type).toBeNull()
+  expect(body?.data_scope).toEqual({ name: '研发资料', external_scope_type: '源系统/workspace', external_scope_id: '研发:001/甲' })
+})
+
+test('新增数据域保留外部配置原值', async ({ page }) => {
+  await fixture(page)
+  let body: unknown
+  await page.route('**/channels/channel_a/data-scopes', async route => {
+    if (route.request().method() === 'GET') return route.fallback()
+    body = route.request().postDataJSON()
+    await route.fulfill({ status: 201, json: {} })
+  })
+  await page.goto('/channels/channel_a')
+  await expect(page.getByRole('cell', { name: '源系统/workspace', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '创建数据域' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('名称', { exact: true }).fill('第二资料域')
+  await dialog.getByLabel('环境', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('测试', { exact: true }).click()
+  await dialog.getByLabel('外部数据域类型').fill('org/project')
+  await dialog.getByLabel('外部数据域编号').fill('001')
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  expect(body).toEqual({ name: '第二资料域', environment: 'test', external_scope_type: 'org/project', external_scope_id: '001' })
+})

@@ -71,3 +71,14 @@ test('窄屏配置表单可操作', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   await page.screenshot({ path: '../.logs/18-integrations-mobile.png', fullPage: true, animations: 'disabled' })
 })
+
+test('旧 HTTP 目录不可用时仍能配置独立委托凭据', async ({ page }) => {
+  await fixture(page)
+  await page.route('**/admin/v1/integrations', route => route.fulfill({ status: 403, json: { error: { code: 'FORBIDDEN', message: '无权管理旧连接', fields: [] } } }))
+  await page.route('**/integrations/options', () => { throw new Error('委托页面不应读取旧协议能力目录') })
+  await page.goto('/integrations')
+  await page.getByRole('tab', { name: '身份委托', exact: true }).click()
+  await page.getByRole('button', { name: '创建委托密钥' }).click()
+  await page.getByLabel('接入服务', { exact: true }).click()
+  await expect(page.locator('.ant-select-dropdown:visible').getByText('租号业务后端', { exact: true })).toBeVisible()
+})

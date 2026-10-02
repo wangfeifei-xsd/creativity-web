@@ -6,6 +6,7 @@ test.use({ trace: 'off', actionTimeout: 10_000 })
 test.skip(!endpoint, '设置 WORKSPACE_LIVE_API，连接 tests/support/workspace_server.py 的独立测试实例')
 async function choose(page: Page, parent: Locator, label: string, option: string) {
   await parent.getByLabel(label, { exact: true }).click()
+  await parent.getByLabel(label, { exact: true }).fill(option)
   await page.locator('.ant-select-dropdown:visible').getByText(option, { exact: true }).click()
   await parent.getByLabel(label, { exact: true }).press('Escape')
 }
@@ -49,6 +50,8 @@ test('真实 IAM/渠道：首次改密、开通、成员双入口、签发和轮
   await dialog.getByLabel('负责人').fill('测试负责人')
   await choose(page, dialog, '首位管理员', '页面管理员（ui-admin）')
   await dialog.getByLabel('数据域名称').fill('租号业务域')
+  await dialog.getByLabel('外部数据域类型').fill('workspace')
+  await dialog.getByLabel('外部数据域编号').fill('source-001')
   await dialog.getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog).toBeHidden()
   await page.getByRole('link', { name: '页面租号渠道', exact: true }).click()

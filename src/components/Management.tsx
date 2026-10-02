@@ -54,6 +54,7 @@ export function EditorDialog({ title, fields, initial, children, onSave, onClose
     finally { submitting.current = false; setBusy(false) }
   }
   return <Modal open title={title} onCancel={onClose} destroyOnHidden maskClosable={!busy} closable={!busy}
+    styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
     footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button>
       <Button type="primary" danger={danger} loading={busy} onClick={() => form.submit()}>确认</Button></Space>}>
     <Space orientation="vertical" style={{ width: '100%' }} size="middle">

@@ -48,7 +48,7 @@ export function IntegrationEditor({ row, onClose, onSaved }: {
     } catch (failure) { setError(failure); applyFormErrors(form, failure) }
     finally { saving.current = false; setBusy(false) }
   }
-  return <Modal open title={row ? '编辑业务连接' : '新建业务连接'} onCancel={onClose} closable={!busy}
+  return <Modal open title={row ? '编辑旧 HTTP 连接' : '新建旧 HTTP 连接'} onCancel={onClose} closable={!busy}
     maskClosable={!busy} width={620} footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button>
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
     <ErrorNotice error={error} />

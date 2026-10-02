@@ -46,7 +46,8 @@ export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>;
       initial.approval_required = row ? (row.release_policy as Schema<'ReleasePolicy'>).approval_required : true
     }
     if (kind === 'data-scopes' && !row) {
-      if (page.channel.business_type === 'playmate') fields.push({ name: 'external_scope_id', label: '业务俱乐部编号', required: true })
+      fields.push({ name: 'external_scope_type', label: '外部数据域类型', required: true },
+        { name: 'external_scope_id', label: '外部数据域编号', required: true })
       if (createOptions.data) fields.push({ name: 'administrator_id', label: '该工作区管理员', kind: 'select', options: createOptions.data.accounts })
     }
     if ((kind === 'clients' || kind === 'keys') && page.service_actions.length) fields.push({ name: 'scopes', label: '可调用能力', kind: 'multiple', required: true, options: actionsAsOptions(page.service_actions) })
@@ -63,10 +64,6 @@ export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>;
         if (kind === 'environments') {
           body.retention_policy = { retention_days: body.retention_days }; delete body.retention_days
           body.release_policy = { approval_required: body.approval_required ?? false }; delete body.approval_required
-        }
-        if (kind === 'data-scopes' && !row) {
-          body.external_scope_type = page.channel.business_type === 'playmate' ? 'club' : 'default'
-          body.external_scope_id = page.channel.business_type === 'playmate' ? body.external_scope_id : 'default'
         }
         if (kind === 'keys') body.expires_at = new Date(String(body.expires_at)).toISOString()
         const response = await send<Schema<'KeyCreated'> | Item>(row ? `${path}/${String(row[definition.id])}` : path, row ? 'PATCH' : 'POST', body)
@@ -106,8 +103,8 @@ export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>;
           { title: '最近使用', render: (_: unknown, row: Item) => formatTimestamp(row.last_used_at as string | null) },
         ] : []),
         ...(kind === 'data-scopes' ? [
-          { title: '外部类型', render: (_: unknown, row: Item) => textValue(row.external_scope_type_name) },
-          { title: '业务编号', render: (_: unknown, row: Item) => textValue(row.external_scope_id) },
+          { title: '外部数据域类型', render: (_: unknown, row: Item) => textValue(row.external_scope_type) },
+          { title: '外部数据域编号', render: (_: unknown, row: Item) => textValue(row.external_scope_id) },
         ] : []),
         { title: '操作', render: (_, row) => <ActionButtons disabled={kind !== 'keys' && catalogPending} actions={page.actions} handlers={kind === 'keys' ? { 'key:rotate': () => rotate(row), 'key:revoke': () => revoke(row) } :
           { [`${definition.prefix}:edit`]: () => edit(row) }} /> },

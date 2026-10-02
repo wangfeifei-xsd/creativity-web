@@ -24,8 +24,9 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const memoryEnabled = Form.useWatch('memory_enabled', form)
+  const templates = [...options.templates, ...(options.legacy_templates ?? []).filter(t => t.key === version?.definition.entrypoint)]
   function selectTemplate(key: string) {
-    const next = options.templates.find(t => t.key === key)?.definition
+    const next = templates.find(t => t.key === key)?.definition
     if (!next) return
     setDefinition(next)
     form.setFieldsValue({ input_schema: pretty(next.input_schema), output_schema: pretty(next.output_schema), steps: pretty(next.steps), edges: pretty(next.edges), start_step: next.start_step })
@@ -67,7 +68,7 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
           <Form.Item name="description" label="用途" rules={[{ required: true }]}><Input.TextArea rows={2} /></Form.Item>
           <Form.Item name="owner" label="负责人" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
           <Form.Item name="version_label" label="草稿名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item></>}
-        <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={options.templates.map(t => ({ value: t.key, label: `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
+        <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key, label: `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
       </div>
       <div hidden={step !== 1}>
         <Form.Item name="input_schema" label="输入结构"><Input.TextArea rows={7} /></Form.Item>

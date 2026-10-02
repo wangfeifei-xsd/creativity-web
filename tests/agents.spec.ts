@@ -123,3 +123,30 @@ test('新增向导使用模板并提交完整依赖及限制', async ({ page }) 
   await page.getByRole('button', { name: '保存草稿', exact: true }).click()
   await expect(page).toHaveURL(/\/agents\/agent_a$/)
 })
+
+test('旧入口编辑保留版本，新增可选择通用流程', async ({ page }) => {
+  await fixture(page)
+  const legacy = { ...definition, workflow_type: 'template', entrypoint: 'risk.v1' }
+  const generic = { ...definition, workflow_type: 'template', entrypoint: 'workflow.v1' }
+  await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options,
+    templates: [...options.templates, { key: 'workflow.v1', name: '通用流程', workflow_type: 'template', definition: generic }],
+    legacy_templates: [{ key: 'risk.v1', name: '风险评估（旧版）', workflow_type: 'template', definition: legacy }],
+  } }))
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: legacy }] } }))
+  await page.route('**/agent-versions/draft_a', async route => {
+    expect(route.request().postDataJSON().definition.entrypoint).toBe('risk.v1')
+    await route.fulfill({ json: { ...version, definition: legacy } })
+  })
+  await page.goto('/agents/agent_a')
+  await page.getByRole('button', { name: '编辑配置', exact: true }).click()
+  await expect(page.getByRole('dialog').getByText('风险评估（旧版） · 通用流程', { exact: true })).toBeVisible()
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeHidden()
+  await page.goto('/agents')
+  await page.getByRole('button', { name: '新增智能体', exact: true }).click()
+  await page.getByLabel('流程模板').click()
+  await expect(page.locator('.ant-select-dropdown:visible').getByText('风险评估（旧版） · 通用流程', { exact: true })).toHaveCount(0)
+  await page.locator('.ant-select-dropdown:visible').getByText('通用流程 · 通用流程', { exact: true }).click()
+  await expect(page.getByRole('dialog').getByTitle('通用流程 · 通用流程', { exact: true })).toBeVisible()
+})

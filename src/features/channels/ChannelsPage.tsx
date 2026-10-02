@@ -21,20 +21,18 @@ function CreateChannel({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : <LoadingState />}</Modal>
   const options = query.data
   return <EditorDialog title="开通渠道" onClose={onClose} onSaved={onSaved}
-    initial={{ environment: 'test', business_type: 'gamerental', retention_days: 90, independent_actions: [] }} fields={[
+    initial={{ environment: 'test', retention_days: 90, independent_actions: [] }} fields={[
       { name: 'name', label: '渠道名称', required: true }, { name: 'channel_code', label: '渠道编码', required: true },
-      { name: 'owner', label: '负责人', required: true }, { name: 'business_type', label: '业务类型', kind: 'select', options: options.business_types, required: true },
+      { name: 'owner', label: '负责人', required: true }, { name: 'business_type', label: '业务分类' },
       { name: 'first_admin_user_id', label: '首位管理员', kind: 'select', options: options.accounts, required: true },
       { name: 'environment', label: '初始环境', kind: 'select', options: options.environments, required: true },
       { name: ['data_scope', 'name'], label: '数据域名称', required: true },
-      { name: 'club_id', label: '业务俱乐部编号', help: '陪玩渠道填写源业务系统的俱乐部编号。' },
+      { name: ['data_scope', 'external_scope_type'], label: '外部数据域类型', required: true },
+      { name: ['data_scope', 'external_scope_id'], label: '外部数据域编号', required: true },
       { name: 'retention_days', label: '数据保存天数（天）', kind: 'number', required: true },
       { name: 'independent_actions', label: '独立授权', kind: 'multiple', options: actionsAsOptions(options.independent_actions) },
-    ]} onSave={values => { const { club_id, retention_days, ...body } = values
-      return send('/admin/v1/channels', 'POST', { ...body, retention_policy: { retention_days }, data_scope: {
-        ...(body.data_scope as object), external_scope_type: body.business_type === 'playmate' ? 'club' : 'default',
-        external_scope_id: body.business_type === 'playmate' ? String(club_id ?? '') : 'default',
-      } })
+    ]} onSave={values => { const { retention_days, ...body } = values
+      return send('/admin/v1/channels', 'POST', { ...body, business_type: body.business_type || null, retention_policy: { retention_days } })
     }} />
 }
 function ChannelList() {
@@ -47,7 +45,7 @@ function ChannelList() {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
       <Table rowKey="channel_id" dataSource={query.data.filter(row => row.name.includes(filter))} scroll={{ x: 750 }} columns={[
         { title: '渠道名称', render: (_, row) => <Link to={`/channels/${row.channel_id}`}>{row.name}</Link> },
-        { title: '业务类型', dataIndex: 'business_type_name' }, { title: '负责人', dataIndex: 'owner' },
+        { title: '业务分类', render: (_, row) => row.business_type_name ?? '未填写' }, { title: '负责人', dataIndex: 'owner' },
         { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> }, { title: '开通时间', render: (_, row) => formatTimestamp(row.created_at) },
       ]} />}
     {creating && <CreateChannel onClose={() => setCreating(false)} onSaved={() => { setCreating(false); query.reload() }} />}

@@ -1089,6 +1089,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/delegation-keys/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Key Options */
+        get: operations["key_options_admin_v1_delegation_keys_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/deletions/{deletion_id}": {
         parameters: {
             query?: never;
@@ -1115,7 +1132,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Credential */
+        /**
+         * Credential
+         * @deprecated
+         */
         post: operations["credential_admin_v1_integration_credentials_post"];
         delete?: never;
         options?: never;
@@ -1130,10 +1150,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Integrations */
+        /**
+         * Integrations
+         * @deprecated
+         */
         get: operations["integrations_admin_v1_integrations_get"];
         put?: never;
-        /** Create */
+        /**
+         * Create
+         * @deprecated
+         */
         post: operations["create_admin_v1_integrations_post"];
         delete?: never;
         options?: never;
@@ -1148,14 +1174,20 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Detail */
+        /**
+         * Detail
+         * @deprecated
+         */
         get: operations["detail_admin_v1_integrations__integration_id__get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Edit */
+        /**
+         * Edit
+         * @deprecated
+         */
         patch: operations["edit_admin_v1_integrations__integration_id__patch"];
         trace?: never;
     };
@@ -1166,7 +1198,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Capabilities */
+        /**
+         * Capabilities
+         * @deprecated
+         */
         get: operations["capabilities_admin_v1_integrations__integration_id__capabilities_get"];
         put?: never;
         post?: never;
@@ -1183,10 +1218,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tests */
+        /**
+         * Tests
+         * @deprecated
+         */
         get: operations["tests_admin_v1_integrations__integration_id__tests_get"];
         put?: never;
-        /** Test */
+        /**
+         * Test
+         * @deprecated
+         */
         post: operations["test_admin_v1_integrations__integration_id__tests_post"];
         delete?: never;
         options?: never;
@@ -1201,7 +1242,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Options */
+        /**
+         * Options
+         * @deprecated
+         */
         get: operations["options_admin_v1_integrations_options_get"];
         put?: never;
         post?: never;
@@ -3939,6 +3983,8 @@ export interface components {
             environment: "dev" | "test" | "fat" | "prod";
             /** Environment Label */
             environment_label: string;
+            /** Legacy Templates */
+            legacy_templates?: components["schemas"]["AgentTemplate"][];
             /** Templates */
             templates: components["schemas"]["AgentTemplate"][];
         };
@@ -4683,9 +4729,9 @@ export interface components {
         ChannelCreate: {
             /**
              * Business Type
-             * @enum {string}
+             * @description 可选业务分类，仅用于展示
              */
-            business_type: "gamerental" | "playmate";
+            business_type?: string | null;
             /** Channel Code */
             channel_code: string;
             data_scope: components["schemas"]["InitialDataScope"];
@@ -4708,8 +4754,12 @@ export interface components {
         ChannelCreateOptions: {
             /** Accounts */
             accounts: components["schemas"]["NamedOption"][];
-            /** Business Types */
-            business_types: components["schemas"]["NamedOption"][];
+            /**
+             * Business Types
+             * @deprecated
+             * @description 兼容字段；分类为可选自由文本
+             */
+            business_types?: components["schemas"]["NamedOption"][];
             /** Environments */
             environments: components["schemas"]["NamedOption"][];
             /** Independent Actions */
@@ -4769,9 +4819,9 @@ export interface components {
             /** Archived At */
             archived_at: string | null;
             /** Business Type */
-            business_type: string;
+            business_type: string | null;
             /** Business Type Name */
-            business_type_name: string;
+            business_type_name: string | null;
             /** Channel Code */
             channel_code: string;
             /** Channel Id */
@@ -5206,11 +5256,8 @@ export interface components {
             environment: "dev" | "test" | "fat" | "prod";
             /** External Scope Id */
             external_scope_id: string;
-            /**
-             * External Scope Type
-             * @enum {string}
-             */
-            external_scope_type: "default" | "club";
+            /** External Scope Type */
+            external_scope_type: string;
             /** Name */
             name: string;
         };
@@ -5239,7 +5286,7 @@ export interface components {
             /** External Scope Type */
             external_scope_type: string;
             /** External Scope Type Name */
-            external_scope_type_name: string;
+            external_scope_type_name: string | null;
             /** Name */
             name: string;
             /** Revision */
@@ -5281,6 +5328,11 @@ export interface components {
             key: components["schemas"]["DelegationKeyView"];
             /** Signing Secret */
             signing_secret: string;
+        };
+        /** DelegationKeyOptions */
+        DelegationKeyOptions: {
+            /** Clients */
+            clients: components["schemas"]["NamedOption"][];
         };
         /** DelegationKeyRotate */
         DelegationKeyRotate: {
@@ -5710,11 +5762,8 @@ export interface components {
         InitialDataScope: {
             /** External Scope Id */
             external_scope_id: string;
-            /**
-             * External Scope Type
-             * @enum {string}
-             */
-            external_scope_type: "default" | "club";
+            /** External Scope Type */
+            external_scope_type: string;
             /** Name */
             name: string;
         };
@@ -5748,7 +5797,10 @@ export interface components {
              */
             system: string;
         };
-        /** IntegrationCreate */
+        /**
+         * IntegrationCreate
+         * @description 旧 HTTP 业务协议的兼容配置；新业务工具使用 MCP 连接与发现。
+         */
         IntegrationCreate: {
             /** Adapter Code */
             adapter_code: string;
@@ -20087,6 +20139,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DelegationKeyIssued"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    key_options_admin_v1_delegation_keys_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DelegationKeyOptions"];
                 };
             };
             /** @description Bad Request */
