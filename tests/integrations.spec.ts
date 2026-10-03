@@ -9,6 +9,70 @@ const row = { integration_id: 'int_a', name: '租号业务服务', environment_n
   actions: [action('integration:edit', '编辑'), action('integration:test', '契约测试')] }
 const capability = { operation: 'dictionary', name: '业务字典', public: true, required_actions: ['run:create'], supported: true, allowed: true, verified: true }
 
+test('通知端点可选择业务调用服务，失败保留输入并能恢复本人范围', async ({ page }) => {
+  await fixture(page)
+  let endpoint = { id: 'hook_a', name: '业务通知', url: 'https://business.example/events', events: ['run.terminal'], client_ids: [] as string[], revision: 1, state: 'ACTIVE', state_label: '启用' }
+  let writes = 0
+  await page.route('**/admin/v1/run-subscription-options', route => route.fulfill({ json: [{ client_id: 'client_a', name: '业务 API 服务', active: true }] }))
+  await page.route('**/admin/v1/webhooks', route => route.fulfill({ json: [endpoint] }))
+  await page.route('**/admin/v1/webhooks/hook_a', async route => {
+    writes++
+    const body = route.request().postDataJSON()
+    expect(body).toEqual({ revision: endpoint.revision, active: true, client_ids: writes <= 2 ? ['client_a'] : [] })
+    if (writes === 1) return route.fulfill({ status: 503, json: { error: { code: 'DEPENDENCY_UNAVAILABLE', message: '暂时无法保存', fields: [] } } })
+    endpoint = { ...endpoint, client_ids: body.client_ids, revision: endpoint.revision + 1 }
+    return route.fulfill({ json: endpoint })
+  })
+  await page.goto('/integrations')
+  await page.getByRole('tab', { name: '运行与事件', exact: true }).click()
+  await page.getByRole('tab', { name: '事件投递', exact: true }).click()
+  await page.getByRole('button', { name: '编辑范围', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('调用服务', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('业务 API 服务', { exact: true }).click()
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog.getByText('暂时无法保存', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('业务 API 服务', { exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('cell', { name: '业务 API 服务', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '编辑范围', exact: true }).click()
+  await dialog.locator('.ant-select-selection-item-remove').click()
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('cell', { name: '本人发起', exact: true })).toBeVisible()
+  expect(writes).toBe(3)
+})
+
+test('运行失败告警保存所选调用服务并显示监测范围', async ({ page }) => {
+  await fixture(page)
+  const rules: unknown[] = []
+  await page.route('**/admin/v1/run-subscription-options', route => route.fulfill({ json: [{ client_id: 'client_a', name: '业务 API 服务', active: true }] }))
+  await page.route('**/admin/v1/webhooks', route => route.fulfill({ json: [{ id: 'hook_alert', name: '运营告警', events: ['alert.triggered', 'alert.resolved'] }] }))
+  await page.route('**/admin/v1/alert-rules', async route => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: rules })
+    const body = route.request().postDataJSON()
+    expect(body).toEqual({ name: '业务失败提醒', kind: 'run_failure', threshold: 1, window_seconds: 3600, endpoint_id: 'hook_alert', client_ids: ['client_a'], active: true })
+    const saved = { ...body, id: 'rule_a', revision: 1, enabled: true, state_label: '正常', kind_label: '运行失败', last_value: 0, generation: 0 }
+    rules.push(saved)
+    return route.fulfill({ status: 201, json: saved })
+  })
+  await page.goto('/integrations')
+  await page.getByRole('tab', { name: '运行与事件', exact: true }).click()
+  await page.getByRole('tab', { name: '外部告警', exact: true }).click()
+  await page.getByRole('button', { name: '新增告警', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('名称', { exact: true }).fill('业务失败提醒')
+  await dialog.getByLabel('调用服务', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('业务 API 服务', { exact: true }).click()
+  await dialog.getByLabel('投递端点', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('运营告警', { exact: true }).click()
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('cell', { name: '业务 API 服务', exact: true })).toBeVisible()
+  await page.screenshot({ path: '../.logs/run-subscription-alert.png', fullPage: true, animations: 'disabled' })
+})
+
 async function fixture(page: Page) {
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
@@ -16,6 +80,7 @@ async function fixture(page: Page) {
     if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin_a', login_name: 'admin', display_name: '管理员' }, workspace,
       navigation: [{ navigation_key: 'integrations', label: '业务接入' }], actions: [action('integration:manage', '管理业务接入'), action('key:manage', '管理接入凭据')], expires_at: '2030-01-01T00:00:00Z' }
     else if (path.endsWith('/auth/channels')) json = [workspace]
+    else if (path === '/admin/v1/agents') json = { items: [], actions: [] }
     else if (path === '/admin/v1/integrations') json = { items: [row], actions: [action('integration:create', '新建连接')] }
     else if (path === '/admin/v1/integrations/int_a') json = row
     else if (path.endsWith('/capabilities')) json = [capability]

@@ -2,6 +2,7 @@ import { Button, Form, Input, InputNumber, Modal, Select, Space, Table, Tabs, Ty
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Alerts } from './Alerts'
+import { RunSourceNames, RunSources, type RunClient } from './RunSources'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
@@ -9,7 +10,7 @@ import { useQuery } from '../../api/useQuery'
 import { ErrorNotice, type Schema } from '../../components/Management'
 
 type Schedule = { id: string; name: string; revision: number; state: string; state_label: string; next_at: string; spec: { timezone: string; interval_seconds?: number; daily_at?: string } }
-type Endpoint = { id: string; name: string; url: string; events: string[]; revision: number; state: string; state_label: string }
+type Endpoint = { id: string; name: string; url: string; events: string[]; client_ids: string[]; revision: number; state: string; state_label: string }
 type Delivery = { id: string; endpoint_name?: string; revision: number; state: string; state_label: string; attempts: number; next_at: string; error?: { message: string }; http_status?: number }
 type Batch = { batch_id: string; name: string; revision: number; state_label: string; items: { item_id: string; event_id: string; revision: number; state: string; state_label: string; run_id?: string; error?: { message: string } }[] }
 
@@ -48,19 +49,24 @@ function Schedules() {
 
 function Webhooks() {
   const query = useQuery<Endpoint[]>('/admin/v1/webhooks'), deliveries = useQuery<Delivery[]>('/admin/v1/webhook-deliveries')
+  const clients = useQuery<RunClient[]>('/admin/v1/run-subscription-options')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
-  const [form] = Form.useForm<{ name: string; url: string; secret: string; events: string[] }>()
+  const [editing, setEditing] = useState<Endpoint>()
+  const [form] = Form.useForm<{ name: string; url: string; secret: string; events: string[]; client_ids: string[] }>()
+  const events = Form.useWatch('events', form)
   function reload() { query.reload(); deliveries.reload() }
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error ?? deliveries.error} /><Space><Button type="primary" onClick={() => setOpen(true)}>新增端点</Button><Button onClick={reload}>刷新</Button></Space>
-    <Table rowKey="id" dataSource={query.data} columns={[{ title: '名称', dataIndex: 'name' }, { title: '地址', dataIndex: 'url' }, { title: '状态', dataIndex: 'state_label' }, { title: '操作', render: (_, r) => <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/webhooks/${r.id}`, 'PATCH', { revision: r.revision, active: r.state !== 'ACTIVE' }); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>{r.state === 'ACTIVE' ? '停用' : '启用'}</Button> }]} />
+  function edit(row?: Endpoint) { setError(undefined); setEditing(row); form.resetFields(); form.setFieldsValue(row ? { ...row, client_ids: row.client_ids ?? [] } : { events: ['run.terminal'], client_ids: [] }); setOpen(true) }
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error ?? deliveries.error ?? clients.error} /><Space><Button type="primary" onClick={() => edit()}>新增端点</Button><Button onClick={reload}>刷新</Button></Space>
+    <Table rowKey="id" dataSource={query.data} columns={[{ title: '名称', dataIndex: 'name' }, { title: '地址', dataIndex: 'url' }, { title: '运行通知范围', render: (_, r) => r.events.includes('run.terminal') ? <RunSourceNames ids={r.client_ids} clients={clients.data} /> : '由告警规则决定' }, { title: '状态', dataIndex: 'state_label' }, { title: '操作', render: (_, r) => <Space><Button disabled={busy} onClick={() => edit(r)}>编辑范围</Button><Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/webhooks/${r.id}`, 'PATCH', { revision: r.revision, active: r.state !== 'ACTIVE' }); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>{r.state === 'ACTIVE' ? '停用' : '启用'}</Button></Space> }]} />
     <Table rowKey="id" dataSource={deliveries.data} columns={[{ title: '投递端点', dataIndex: 'endpoint_name' }, { title: '结果', dataIndex: 'state_label' }, { title: '尝试次数', dataIndex: 'attempts' }, { title: '最近反馈', render: (_, r) => r.error?.message ?? (r.http_status ? `HTTP ${r.http_status}` : '未投递') }, { title: '操作', render: (_, r) => ['FAILED', 'CANCELLED'].includes(r.state) && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/webhook-deliveries/${r.id}/retry`, 'POST', { revision: r.revision }); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>重投</Button> }]} />
-    <Modal open={open} title="新增事件端点" confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }} onCancel={() => { setOpen(false); form.resetFields() }} onOk={() => form.submit()}>
+    <Modal open={open} title={editing ? '编辑通知范围' : '新增事件端点'} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }} onCancel={() => { setOpen(false); form.resetFields() }} onOk={() => form.submit()}>
       <ErrorNotice error={error} />
-      <Form name="webhook" form={form} layout="vertical" initialValues={{ events: ['run.terminal'] }} onFinish={async v => { if (busy) return; setBusy(true); try { await send('/admin/v1/webhooks', 'POST', v); setOpen(false); form.resetFields(); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
-        <Form.Item name="name" label="名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
-        <Form.Item name="url" label="接收地址" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="secret" label="签名密钥" rules={[{ required: true }, { min: 32, message: '至少 32 个字符' }]}><Input.Password autoComplete="new-password" /></Form.Item>
-        <Form.Item name="events" label="事件类型" rules={[{ required: true }]}><Select mode="multiple" options={[{ value: 'run.terminal', label: '运行终结' }, { value: 'alert.triggered', label: '告警触发' }, { value: 'alert.resolved', label: '告警解除' }]} /></Form.Item>
+      <Form name="webhook" form={form} layout="vertical" disabled={busy} initialValues={{ events: ['run.terminal'], client_ids: [] }} onFinish={async v => { if (busy) return; setBusy(true); try { await send(editing ? `/admin/v1/webhooks/${editing.id}` : '/admin/v1/webhooks', editing ? 'PATCH' : 'POST', editing ? { revision: editing.revision, active: editing.state === 'ACTIVE', client_ids: v.client_ids ?? [] } : { ...v, client_ids: v.client_ids ?? [] }); setOpen(false); form.resetFields(); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
+        {!editing && <><Form.Item name="name" label="名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
+          <Form.Item name="url" label="接收地址" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="secret" label="签名密钥" rules={[{ required: true }, { min: 32, message: '至少 32 个字符' }]}><Input.Password autoComplete="new-password" /></Form.Item>
+          <Form.Item name="events" label="事件类型" rules={[{ required: true }]}><Select mode="multiple" options={[{ value: 'run.terminal', label: '运行终结' }, { value: 'alert.triggered', label: '告警触发' }, { value: 'alert.resolved', label: '告警解除' }]} /></Form.Item></>}
+        {(editing?.events ?? events)?.includes('run.terminal') && <RunSources />}
       </Form>
     </Modal></>
 }
