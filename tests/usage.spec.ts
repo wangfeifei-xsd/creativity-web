@@ -50,3 +50,20 @@ test('USG 窄屏总览与调用明细无页面横向溢出', async ({ page }) =>
   await page.getByRole('tab', { name: '调用明细' }).click()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
 })
+
+test('账单核查保留缺失金额与币种差异，不把缺失值显示成零', async ({ page }) => {
+  await setup(page)
+  const statement = { id: 'statement', name: '十月用量', version: '第一版', currency: 'USD', start_at: '2026-10-01T00:00:00Z', end_at: '2026-10-02T00:00:00Z' }
+  await page.route('**/admin/v1/provider-statements', route => route.fulfill({ json: [statement] }))
+  await page.route('**/admin/v1/provider-statements/options', route => route.fulfill({ json: [] }))
+  await page.route('**/admin/v1/provider-statements/statement', route => route.fulfill({ json: { ...statement, checked_at: '2026-10-03T01:00:00Z', counts: [{ state: 'CURRENCY_MISMATCH', label: '币种不同', count: 1 }], results: [{ state_label: '币种不同', line_id: '1', request_id: 'provider-request', model_name: '文本模型', provider_amount: '0.30', platform_amount: null, platform_currency: null, difference: null, late_reported: true, run_id: 'run-1' }] } }))
+  await page.goto('/usage')
+  await page.getByRole('tab', { name: '供应商账单', exact: true }).click()
+  await page.getByRole('button', { name: '核查', exact: true }).click()
+  const panel = page.getByRole('dialog', { name: '供应商账单核查' })
+  await expect(panel.getByRole('cell', { name: '0.30 USD', exact: true })).toBeVisible()
+  await expect(panel.getByText('导入后上报', { exact: true })).toBeVisible()
+  await expect(panel.getByRole('link', { name: '查看运行' })).toHaveAttribute('href', '/runs/run-1')
+  await expect(panel.getByRole('cell', { name: '金额未确认', exact: true })).toHaveCount(2)
+  await page.screenshot({ path: '/tmp/creativity-enhancements-statement.png', fullPage: true, animations: 'disabled' })
+})

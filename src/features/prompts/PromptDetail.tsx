@@ -10,6 +10,7 @@ import { PromptDebug } from './Debug'
 import { TemplateFields, VariableFields } from './EditorFields'
 import { editorValues, fromEditor, type EditorValues } from './editor-values'
 import { PromptPreview } from './Preview'
+import { PromptExperiments } from './Experiments'
 import { PromptVersions, References } from './Versions'
 import { contentOf, emptyContent, errorText, send, type Prompt, type Schema, type Version } from './types'
 
@@ -96,6 +97,7 @@ function Workbench({ current, versions, prompt, onChanged }: {
         { key: 'variables', label: '变量', forceRender: true, children: <Space orientation="vertical" style={{ width: '100%' }}>{controls}<VariableFields editable={editable} /></Space> },
         { key: 'preview', label: '预览', children: <PromptPreview version={current} /> },
         { key: 'debug', label: '调试', children: <PromptDebug version={current} /> },
+        { key: 'experiments', label: '实验', children: <PromptExperiments promptId={prompt.prompt_id} /> },
         { key: 'versions', label: '版本', children: <PromptVersions current={current} versions={versions} prompt={prompt} onChanged={onChanged} /> },
         { key: 'references', label: '引用', children: <References promptId={prompt.prompt_id} /> },
       ]} />

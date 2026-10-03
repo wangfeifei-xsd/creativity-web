@@ -98,3 +98,26 @@ test('删除运行先展示影响，清理失败可以重试并显示完成进�
   expect(retried).toBe(true)
   await page.screenshot({ path: '/tmp/creativity-deletion-progress.png', fullPage: true, animations: 'disabled' })
 })
+
+test('暂停运行的批准绑定本次确认摘要并保留原运行', async ({ page }) => {
+  await fixture(page)
+  let resumed = false
+  await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: {
+    ...detail, state: resumed ? 'RUNNING' : 'WAITING_APPROVAL', state_label: resumed ? '执行中' : '等待审批', result: null, actions: [],
+  } }))
+  await page.route('**/admin/v1/runs/run_a/events', route => route.fulfill({ contentType: 'text/event-stream', body: ': heartbeat\n\n' }))
+  await page.route('**/admin/v1/runs/run_a/interruption', route => route.fulfill({ json: {
+    interruption_id: 'interrupt_a', revision: 3, confirmation_digest: 'a'.repeat(64), name: '批准保存业务数据', state: 'WAITING_APPROVAL', state_label: '等待审批', proposed_input: { value: '待确认内容' }, input_schema: { type: 'object' }, can_approve: true, can_respond: false, can_verify: false,
+  } }))
+  await page.route('**/admin/v1/runs/run_a/resume', async route => {
+    expect(route.request().postDataJSON()).toEqual({ interruption_id: 'interrupt_a', revision: 3, confirmation_digest: 'a'.repeat(64), decision: 'approve', input: {}, idempotency_key: expect.any(String) })
+    resumed = true
+    await route.fulfill({ json: { ...receipt, state: 'QUEUED' } })
+  })
+  await page.goto('/runs/run_a')
+  await expect(page.getByText(/待确认内容/)).toBeVisible()
+  await page.getByRole('button', { name: '批准执行', exact: true }).click()
+  await expect.poll(() => resumed).toBe(true)
+  await expect(page).toHaveURL(/\/runs\/run_a$/)
+  await expect(page.getByRole('button', { name: '批准执行', exact: true })).toHaveCount(0)
+})

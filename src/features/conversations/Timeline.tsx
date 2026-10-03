@@ -1,5 +1,6 @@
-import { Button, Card, Descriptions, Drawer, Empty, Space, Tag, Typography } from 'antd'
+import { Button, Card, Descriptions, Drawer, Empty, Input, Modal, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -32,7 +33,10 @@ function Result({ turn }: { turn: Schema<'TurnView'> }) {
   </Space>
 }
 
-export function Timeline({ conversationId, page, onRefresh, onError }: { conversationId: string; page: Schema<'MessagePage'>; onRefresh: () => void; onError: (error: unknown) => void }) {
+export function Timeline({ conversationId, page, onRefresh, onError, canBranch = false }: { conversationId: string; page: Schema<'MessagePage'>; onRefresh: () => void; onError: (error: unknown) => void; canBranch?: boolean }) {
+  const navigate = useNavigate()
+  const [branch, setBranch] = useState<{ messageId: string; key: string; title: string }>()
+  const [branching, setBranching] = useState(false)
   const [runId, setRunId] = useState<string>()
   const [cancelling, setCancelling] = useState<string>()
   return <>
@@ -44,6 +48,7 @@ export function Timeline({ conversationId, page, onRefresh, onError }: { convers
           <Tag color={message.status === 'COMPLETED' ? 'success' : message.status === 'FAILED' ? 'error' : 'default'}>{message.status_label}</Tag>
           <Typography.Text type="secondary">{formatTimestamp(message.created_at)}</Typography.Text></Space>}>
           <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{message.text || (message.role === 'assistant' && message.status === 'PENDING' ? '等待回复' : '')}</Typography.Paragraph>
+          {canBranch && message.role === 'assistant' && message.status === 'COMPLETED' && <Button onClick={() => setBranch({ messageId: message.message_id, key: crypto.randomUUID(), title: '新分支' })}>从此处创建分支</Button>}
           <Space wrap>{message.attachments.map(a => <Button key={a.artifact_id} onClick={() => void download(a.download_path).catch(onError)}>
             {a.name}（{(a.size_bytes / 1024).toFixed(1)} KB）</Button>)}</Space>
           {message.role === 'assistant' && turn && <Space orientation="vertical" style={{ width: '100%' }}>
@@ -62,6 +67,13 @@ export function Timeline({ conversationId, page, onRefresh, onError }: { convers
       })}
     </Space>
     {runId && <ExecutionDetail conversationId={conversationId} runId={runId} onClose={() => setRunId(undefined)} />}
+    {branch && <Modal open title="创建会话分支" okText="创建" cancelText="取消" confirmLoading={branching} onCancel={() => { if (!branching) setBranch(undefined) }} onOk={async () => {
+      setBranching(true)
+      try {
+        const result = await send<Schema<'ConversationView'>>(`/admin/v1/conversations/${conversationId}/branches`, 'POST', { message_id: branch.messageId, title: branch.title, idempotency_key: branch.key })
+        setBranch(undefined); navigate(`/conversations/${result.conversation_id}`)
+      } catch (failure) { onError(failure) } finally { setBranching(false) }
+    }}><Input aria-label="分支标题" maxLength={255} value={branch.title} disabled={branching} onChange={event => setBranch({ ...branch, title: event.target.value })} /></Modal>}
   </>
 }
 

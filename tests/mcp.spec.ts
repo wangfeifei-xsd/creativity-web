@@ -64,13 +64,13 @@ test('工具导入要求本地权限与执行策略，只提交草稿请求', as
   expect(imported).not.toHaveProperty('binding')
 })
 
-test('窄屏连接配置标明暂不可用连接方式', async ({ page }) => {
+test('窄屏连接配置提供 OAuth 与隔离 stdio', async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/mcp-connections')
   await page.getByRole('button', { name: '新增连接' }).click()
   await page.getByLabel('连接方式').click()
-  await expect(page.getByText('OAuth 用户委托（暂不可用）')).toBeVisible()
+  await expect(page.getByText('OAuth 委托')).toBeVisible()
   await page.getByLabel('连接方式').press('Escape')
   await expect(page.getByLabel('检查间隔（秒）')).toHaveValue('300')
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)

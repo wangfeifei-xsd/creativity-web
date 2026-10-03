@@ -9,6 +9,7 @@ import { ActionButtons, ErrorNotice, type Schema } from '../Management'
 import { ContentDeletion } from '../ContentDeletion'
 import { DeletionSteps } from '../DeletionSteps'
 import { ErrorState, LoadingState } from '../States'
+import { Interruption } from './Interruption'
 
 export type RunDetail = Schema<'RunDetail'>
 
@@ -126,6 +127,7 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
       { key: 'completed', label: '结束时间', children: detail.completed_at ? formatTimestamp(detail.completed_at) : '尚未结束' },
     ]} />
     {detail.error && <Alert type="error" title={detail.error.message} />}
+    {detail.content_allowed && ['WAITING_INPUT', 'WAITING_APPROVAL'].includes(detail.state) && <Interruption runId={runId} onResumed={refresh} />}
     {!detail.content_allowed && <Alert type="info" title="当前权限可查看执行轨迹，输入输出未授权" />}
     {result?.result && <><Typography.Text strong>{businessLabels[result.result.business_status] ?? '业务结果'}</Typography.Text>
       <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{pretty(result.result.data)}</pre>

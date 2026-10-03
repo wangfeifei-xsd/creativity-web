@@ -122,3 +122,45 @@ test('主体复核从 MCP 发现绑定，保存不含用户或数据域覆盖', 
   await expect(dialog).toHaveCount(0)
   expect(submitted).toBe(true)
 })
+
+test('定时运行按时区保存，批量失败保留条目并重用幂等键', async ({ page }) => {
+  await fixture(page)
+  await page.route('**/admin/v1/agents', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }], actions: [] } }))
+  let scheduleSaved = false
+  await page.route('**/admin/v1/schedules', async route => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: [] })
+    expect(route.request().postDataJSON()).toEqual({ name: '每日报告', request: { agent_code: 'report', input: {} }, timezone: 'Asia/Shanghai', daily_at: '09:00', interval_seconds: null })
+    scheduleSaved = true
+    await route.fulfill({ json: {} })
+  })
+  const keys: string[] = []
+  await page.route('**/admin/v1/batches', async route => {
+    if (route.request().method() === 'GET') return route.fulfill({ json: [] })
+    keys.push(route.request().headers()['idempotency-key'])
+    await route.fulfill({ status: 503, json: { error: { code: 'UNAVAILABLE', message: '暂不可用，请重试', fields: [] } } })
+  })
+  await page.goto('/integrations')
+  await page.getByRole('tab', { name: '运行与事件', exact: true }).click()
+  await page.getByRole('button', { name: '新增计划', exact: true }).click()
+  const plan = page.getByRole('dialog', { name: '新增定时计划' })
+  await plan.getByLabel('计划名称').fill('每日报告')
+  await plan.getByLabel('智能体', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('通用报告', { exact: true }).click()
+  await plan.getByRole('button', { name: '确定', exact: true }).click()
+  await expect.poll(() => scheduleSaved).toBe(true)
+  await page.getByRole('tab', { name: '批量运行', exact: true }).click()
+  await page.getByRole('button', { name: '新建批次', exact: true }).click()
+  const batch = page.getByRole('dialog', { name: '新建批量运行' })
+  await batch.getByLabel('批次名称').fill('同步导入')
+  const items = '[{"event_id":"event-1","request":{"agent_code":"report","input":{}}}]'
+  await batch.getByLabel('运行条目').fill(items)
+  await batch.getByRole('button', { name: '确定', exact: true }).click()
+  await expect.poll(() => keys.length).toBe(1)
+  await expect(page.getByText('暂不可用，请重试', { exact: true })).toBeVisible()
+  await expect(batch.getByRole('button', { name: '确定', exact: true })).toBeEnabled()
+  await batch.getByRole('button', { name: '确定', exact: true }).click()
+  await expect.poll(() => keys.length).toBe(2)
+  expect(keys[0]).toBeTruthy()
+  expect(keys[1]).toBe(keys[0])
+  await expect(batch.getByLabel('运行条目')).toHaveValue(items)
+})

@@ -10,6 +10,7 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { StatusTag } from '../../components/StatusTag'
 import { ImportDialog } from './ImportDialog'
+import { OAuthCallback, OAuthPanel } from './OAuthPanel'
 
 const base = '/admin/v1/mcp-connections' as const
 const json = (value: unknown) => <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(value, null, 2)}</pre>
@@ -17,7 +18,7 @@ const json = (value: unknown) => <pre style={{ whiteSpace: 'pre-wrap', overflowW
 export function McpPage() {
   const params = useParams()
   const id = params['*']?.split('/')[0]
-  return id ? <McpDetail key={id} id={id} /> : <Connections />
+  return <><OAuthCallback />{id ? <McpDetail key={id} id={id} /> : <Connections />}</>
 }
 
 function Connections() {
@@ -40,6 +41,7 @@ function Connections() {
 }
 
 function ConnectionEditor({ connection, onClose, onSaved }: { connection?: Schema<'McpConnection'>; onClose: () => void; onSaved: () => void }) {
+  const [transport, setTransport] = useState(connection?.transport ?? 'streamable_http')
   return <EditorDialog title={connection ? '编辑连接' : '新增连接'} onClose={onClose} onSaved={onSaved}
     initial={{ name: connection?.name, endpoint: connection?.endpoint, transport: 'streamable_http',
       connect_seconds: connection?.timeouts.connect_seconds ?? 10, operation_seconds: connection?.timeouts.operation_seconds ?? 30,
@@ -51,13 +53,13 @@ function ConnectionEditor({ connection, onClose, onSaved }: { connection?: Schem
       { name: 'interval_seconds', label: '检查间隔（秒）', kind: 'number', min: 30, max: 86400, required: true },
       { name: 'failure_threshold', label: '连续失败阈值（次）', kind: 'number', min: 1, max: 10, required: true },
     ]} onSave={values => send(connection ? `${base}/${connection.connection_id}` : base, connection ? 'PATCH' : 'POST', {
-      ...(connection ? { revision: connection.revision } : {}), name: values.name, endpoint: values.endpoint, transport: 'streamable_http',
+      ...(connection ? { revision: connection.revision } : {}), name: values.name, endpoint: values.endpoint, transport,
       timeouts: { connect_seconds: values.connect_seconds, operation_seconds: values.operation_seconds },
       health_policy: { interval_seconds: values.interval_seconds, failure_threshold: values.failure_threshold },
     })}>
-    <Select aria-label="连接方式" style={{ width: '100%' }} value="streamable_http" options={[
-      { value: 'streamable_http', label: 'Streamable HTTP' }, { value: 'stdio', label: '本地进程（暂不可用）', disabled: true },
-      { value: 'oauth', label: 'OAuth 用户委托（暂不可用）', disabled: true },
+    <Select aria-label="连接方式" style={{ width: '100%' }} value={transport} onChange={setTransport} options={[
+      { value: 'streamable_http', label: 'Streamable HTTP' }, { value: 'stdio', label: '隔离 stdio' },
+      { value: 'oauth', label: 'OAuth 委托' },
     ]} />
   </EditorDialog>
 }
@@ -116,7 +118,7 @@ function McpDetail({ id }: { id: string }) {
         { key: 'interval', label: '检查间隔', children: `${connection.health_policy.interval_seconds} 秒` },
         { key: 'threshold', label: '连续失败阈值', children: `${connection.health_policy.failure_threshold} 次` },
       ]} /> },
-      { key: 'auth', label: '鉴权', children: <Descriptions items={[
+      { key: 'auth', label: '鉴权', children: connection.transport === 'oauth' ? <OAuthPanel connectionId={id} /> : <Descriptions items={[
         { key: 'token', label: '服务凭据', children: connection.credential_mask ?? '未配置' },
         { key: 'subject', label: '主体授权', children: <Link to="/integrations">配置当前主体复核</Link> },
       ]} /> },

@@ -71,7 +71,8 @@ export function ConversationDetail({ conversationId }: { conversationId: string 
         { key: 'expires', label: '计划清理时间', children: formatTimestamp(value.conversation.expires_at) },
       ]} />
       {history.error ? <ErrorState error={history.error} onRetry={history.reload} /> : !history.data ? <LoadingState /> :
-        <Timeline conversationId={conversationId} page={history.data} onRefresh={refresh} onError={setError} />}
+        <Timeline conversationId={conversationId} page={history.data} onRefresh={refresh} onError={setError}
+          canBranch={value.conversation.actions.some(action => action.action_key === 'branch')} />}
       <Space><Button disabled={!cursors.length} onClick={() => setCursors(v => v.slice(0, -1))}>上一页</Button>
         <Button disabled={!history.data?.next_cursor} onClick={() => setCursors(v => [...v, history.data!.next_cursor!])}>下一页</Button></Space>
       {(value.summaries.length > 0 || value.contexts.length > 0) && <Collapse items={[{

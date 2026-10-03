@@ -41,4 +41,6 @@ pnpm dev
 
 23 的 `tests/support/business-independence.mjs` 由服务端固定构建验收脚本驱动，使用真实管理 HTTP 和三渠道独立配置；复现方法与范围见 [业务无关接入验证](../creativity-service/examples/onboarding/README.md)，结果见 [验收记录](../creativity-service/docs/business-independence-validation.md)。
 
+26 的 `tests/e2e/acceptance-management.mjs` 在同一流程补齐模型、预算、提示词调试和依赖发布页面，由服务端 `tests/e2e/test_acceptance.py` 调用。配置页面与 MCP 使用真实 API，模型能力和响应为明确标记的受控替身；本轮证据及复现入口见 [26 验收记录](../creativity-service/docs/acceptance/README.md)。
+
 效果评测页面位于 `src/features/evaluations/`，包含样本集版本、JSONL/CSV 导入、评测任务、基线对比、人工复核及发布检查；Agent 发布弹窗可选择评测报告。接口与验证范围见 [评测交接](../creativity-service/docs/evaluations.md) 和 [验证记录](../creativity-service/docs/evaluations-validation.md)。

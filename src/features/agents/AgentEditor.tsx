@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { send } from '../../api/management'
 import { ErrorNotice } from '../../components/Management'
 import { SkillLoadingFields } from './SkillLoadingFields'
+import { FlowEditor } from './FlowEditor'
 import { type Definition, type Detail, type Options, type Version, parseObject, pretty, workflowNames } from './types'
 
 type Values = {
   agent_code: string; name: string; description: string; owner: string; version_label: string; template: string
   input_schema: string; output_schema: string; steps: string; edges: string; start_step: string
-  prompt_version: string; model_route_version: string; tool_versions: string[]; skill_versions: string[]
+  prompt_version: string; model_route_version: string; embedding_route_version?: string; tool_versions: string[]; skill_versions: string[]
   skill_loading_by_version: Record<string, Omit<NonNullable<Definition['bindings']['skill_loading']>[number], 'version_id'>>
   deadline_seconds: number; token_limit: number; max_model_rounds: number; max_tool_calls: number
   max_iterations: number; loop_timeout_seconds: number; output_repair_attempts: number
@@ -43,7 +44,7 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
       if (!Array.isArray(steps) || !Array.isArray(edges)) throw new Error('步骤和流转边必须为 JSON 数组')
       const body = {
         ...definition, start_step: v.start_step, input_schema: parseObject(v.input_schema), output_schema: parseObject(v.output_schema), steps, edges,
-        bindings: { prompt_version: v.prompt_version || null, model_route_version: v.model_route_version || null, tool_versions: v.tool_versions ?? [], skill_versions: v.skill_versions ?? [],
+        bindings: { prompt_version: v.prompt_version || null, model_route_version: v.model_route_version || null, embedding_route_version: v.embedding_route_version || null, tool_versions: v.tool_versions ?? [], skill_versions: v.skill_versions ?? [],
           skill_loading: (v.skill_versions ?? []).filter(id => v.skill_loading_by_version?.[id]).map(id => ({ ...v.skill_loading_by_version[id], version_id: id })) },
         limits: { deadline_seconds: v.deadline_seconds, token_limit: v.token_limit, max_model_rounds: v.max_model_rounds, max_tool_calls: v.max_tool_calls,
           max_iterations: v.max_iterations, loop_timeout_seconds: v.loop_timeout_seconds, output_repair_attempts: v.output_repair_attempts, cost_limit: v.amount ? { amount: v.amount, currency: v.currency } : null },
@@ -76,15 +77,20 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
         <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key, label: `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
       </div>
       <div hidden={step !== 1}>
+        <FlowEditor value={definition} options={options} onChange={next => {
+          setDefinition(next)
+          form.setFieldsValue({ steps: pretty(next.steps), edges: pretty(next.edges), start_step: next.start_step })
+        }} />
         <Form.Item name="input_schema" label="输入结构"><Input.TextArea rows={7} /></Form.Item>
         <Form.Item name="output_schema" label="输出结构"><Input.TextArea rows={7} /></Form.Item>
-        <Form.Item name="start_step" label="起始步骤"><Input /></Form.Item>
-        <Form.Item name="steps" label="步骤配置"><Input.TextArea rows={12} /></Form.Item>
-        <Form.Item name="edges" label="流转条件"><Input.TextArea rows={6} /></Form.Item>
+        <Form.Item name="start_step" hidden><Input /></Form.Item>
+        <Form.Item name="steps" hidden><Input /></Form.Item>
+        <Form.Item name="edges" hidden><Input /></Form.Item>
       </div>
       <div hidden={step !== 2}>
         <Form.Item name="prompt_version" label="提示词版本"><Select allowClear showSearch optionFilterProp="label" options={depOptions('prompt')} /></Form.Item>
         <Form.Item name="model_route_version" label="模型路由版本"><Select allowClear showSearch optionFilterProp="label" options={depOptions('model_route')} /></Form.Item>
+        <Form.Item name="embedding_route_version" label="语义检索模型路由"><Select allowClear showSearch optionFilterProp="label" options={depOptions('model_route')} /></Form.Item>
         <Form.Item name="tool_versions" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
         <Form.Item name="skill_versions" label="技能版本"><Select mode="multiple" optionFilterProp="label" options={depOptions('skill')} /></Form.Item>
         {selectedSkills.map(id => <SkillLoadingFields key={id} versionId={id} label={depOptions('skill').find(d => d.value === id)?.label ?? '技能名称不可用'} />)}

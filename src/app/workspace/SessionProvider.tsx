@@ -70,7 +70,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await send('/admin/v1/auth/change-password', 'POST', { current_password: values.current_password, new_password: values.new_password })
         tokenStore.set(null); setState({ phase: 'login' }); void message.success('密码已修改，请重新登录')
       } else {
-        const response = await send<Schema<'TokenResponse'>>('/admin/v1/auth/login', 'POST', values)
+        const response = await send<Schema<'TokenResponse'>>('profile_id' in values ? '/admin/v1/auth/external-token' : '/admin/v1/auth/login', 'POST', values)
         tokenStore.set(response.access_token); await reload()
       }
     }} />

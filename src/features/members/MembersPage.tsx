@@ -1,5 +1,6 @@
 import { names, send, statuses, actionsAsOptions } from '../../api/management'
 import { Button, Select, Space, Table, Tabs, Tag } from 'antd'
+import { CustomRoles } from './CustomRoles'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { useQuery } from '../../api/useQuery'
@@ -20,12 +21,14 @@ export function GrantsPage() { return <MembersPage initialTab="grants" /> }
 function AccessPage({ channelId, initialTab }: { channelId: string; initialTab: string }) {
   const options = useQuery<Schema<'AccessOptions'>>(`/admin/v1/channels/${channelId}/access-options`)
   const [tab, setTab] = useState(initialTab)
+  const { session } = useSession()
   if (options.error) return <ErrorState error={options.error} onRetry={options.reload} />
   if (!options.data) return <LoadingState />
   const data = options.data
   const items = data.tabs.map(item => ({ key: item.navigation_key, label: item.label,
     children: item.navigation_key === 'members' ? <MemberTable channelId={channelId} options={data} onSaved={options.reload} /> :
       <GrantTable channelId={channelId} options={data} onSaved={options.reload} /> }))
+  if (session.actions.some(a => a.action_key === 'membership:manage')) items.push({ key: 'roles', label: '角色', children: <CustomRoles onSaved={options.reload} /> })
   return <Tabs activeKey={items.some(item => item.key === tab) ? tab : items[0]?.key} onChange={setTab} destroyOnHidden items={items} />
 }
 function scopeFields(options: Schema<'AccessOptions'>): Field[] {

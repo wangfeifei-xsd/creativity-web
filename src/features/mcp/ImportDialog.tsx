@@ -39,7 +39,7 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
       <Form.Item name="version_label" label="版本名称" rules={[{ required: true }]}><Input /></Form.Item>
       <Form.Item name="effect_type" label="实际影响" rules={[{ required: true }]}><Select options={[
         { value: 'READ_ONLY', label: '只读', disabled: tool.annotations?.readOnlyHint !== true },
-        { value: 'IDEMPOTENT_WRITE', label: '幂等写入（暂不可执行）' }, { value: 'EXTERNAL_WRITE', label: '外部写入（暂不可执行）' },
+        { value: 'IDEMPOTENT_WRITE', label: '幂等写入' }, { value: 'EXTERNAL_WRITE', label: '外部写入' },
       ]} /></Form.Item>
       <Form.Item name="required_scopes" label="必要业务权限" rules={[{ required: true }]}><Select mode="multiple"
         options={session.actions.map(action => ({ value: action.action_key, label: action.label }))} /></Form.Item>

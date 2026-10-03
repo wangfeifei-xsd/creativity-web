@@ -8,6 +8,7 @@ import { useSession } from '../../app/workspace/context'
 import { ErrorNotice, type Schema } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { BudgetPanel } from './BudgetPanel'
+import { Statements } from './Statements'
 import { PricePanel } from './PricePanel'
 import { localTime, purposes, zones, type UsageOptions } from './types'
 
@@ -79,6 +80,7 @@ export function UsagePage() {
       ]} /> },
       ...(can('budget:manage') ? [{ key: 'budgets', label: '预算', children: <BudgetPanel options={options.data} /> }] : []),
       { key: 'prices', label: '价格', children: <PricePanel options={options.data} /> },
+      { key: 'statements', label: '供应商账单', children: <Statements /> },
     ]} />
     {selected && <RecordDrawer id={selected} onClose={() => setSelected(undefined)} />}
     {showExports && <ExportDrawer onClose={() => setShowExports(false)} />}

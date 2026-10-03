@@ -10,7 +10,8 @@ import { ErrorState, LoadingState } from '../../components/States'
 type Version = Schema<'ToolVersionView'>
 type Values = { label: string; input: string; output: string; adapter: string; required: boolean;
   types: string[]; scopes: string[]; timeout: number; maxSize: number; attempts: number;
-  delay: number; ttl: number; freshness: number; volatile: boolean }
+  delay: number; ttl: number; freshness: number; volatile: boolean; statusVersion?: string; submissions: number; checks: number; profile?: string; skillVersion?: string; scriptPath?: string; analysis: boolean; rowsPath: string; maxRows: number }
+type ExecutionOptions = { profiles: { profile_id: string; name: string; digest: string; mode: string }[]; scripts: { version_id: string; name: string; version_label: string; paths: string[] }[]; queries: { version_id: string; name: string; version_label: string }[] }
 const stringify = (value: unknown) => JSON.stringify(value, null, 2)
 const initialInput = { type: 'object', properties: { values: { type: 'array', title: '数值列表',
   items: { type: 'string', pattern: '^-?[0-9]+(\\.[0-9]+)?$' }, maxItems: 1000 } }, required: ['values'], additionalProperties: false }
@@ -21,11 +22,16 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
 }) {
   const { session } = useSession()
   const bindings = useQuery<Schema<'BindingOption'>[]>(`/admin/v1/tool-bindings?tool_id=${tool.tool_id}`)
+  const execution = useQuery<ExecutionOptions>(`/admin/v1/tool-execution-options?tool_id=${tool.tool_id}`)
   const [form] = Form.useForm<Values>()
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('contract')
   const definition = version?.definition
+  const skillVersion = Form.useWatch('skillVersion', form)
+  const adapter = Form.useWatch('adapter', form)
+  const analysis = Form.useWatch('analysis', form)
+  const writing = (bindings.data?.find(b => b.binding.adapter_key === adapter)?.effect_type ?? definition?.effect_type ?? 'READ_ONLY') !== 'READ_ONLY'
   const workspace = session.workspace
   const available = bindings.data?.filter(b => b.source_type === tool.source_type) ?? []
   async function save(values: Values) {
@@ -38,15 +44,18 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
         throw new Error('输入结构须包含参数字段定义')
       }
       const selected = available.find(b => b.binding.adapter_key === values.adapter)
-      if (!selected) throw new Error('请选择有效的连接绑定')
+      if (!selected && tool.source_type !== 'sandbox') throw new Error('请选择有效的连接绑定')
+      const profile = execution.data?.profiles.find(p => p.profile_id === values.profile)
+      if (tool.source_type === 'sandbox' && !profile) throw new Error('请选择可用的隔离环境')
       const body = { input_schema: input, output_schema: output, model_fields_allowed: Object.keys(input.properties),
-        binding: selected.binding, effect_type: selected.effect_type, required_scopes: values.scopes,
+        binding: tool.source_type === 'sandbox' ? { adapter_key: 'sandbox_python', implementation_version: '1', connection_id: null, script: { profile_id: profile?.profile_id, profile_digest: profile?.digest, skill_version_id: values.skillVersion, path: values.scriptPath } } : selected?.binding, effect_type: selected?.effect_type ?? 'READ_ONLY', required_scopes: values.scopes,
         allowed_data_domains: [workspace.data_scope_id], environments: [workspace.environment],
         subject_requirements: { required: values.required, allowed_types: values.types ?? [] },
         timeout_seconds: values.timeout, max_result_size: values.maxSize,
         retry_policy: { max_attempts: values.attempts, delay_ms: values.delay },
         cache_policy: { ttl_seconds: values.ttl, freshness_seconds: values.freshness, volatile: values.volatile },
-        idempotency_policy: 'none' }
+        analysis_policy: values.analysis && tool.source_type === 'mcp' && !writing ? { rows_path: values.rowsPath.split('.').filter(Boolean), max_rows: values.maxRows } : null,
+        idempotency_policy: writing ? 'source_key' : 'none', write_policy: writing && values.statusVersion ? { status_tool_version_id: values.statusVersion, max_submissions: values.submissions, max_checks: values.checks } : null }
       await send(version ? `/admin/v1/tool-versions/${version.version.version_id}` : `/admin/v1/tools/${tool.tool_id}/versions`,
         version ? 'PATCH' : 'POST', version ? { revision: version.revision, definition: body } : { version_label: values.label, definition: body })
       onSaved()
@@ -67,7 +76,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
     style={{ top: 24 }} styles={{ body: { maxHeight: '65vh', overflowY: 'auto' } }}
     closable={!busy} maskClosable={!busy} footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button>
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
-    <ErrorNotice error={error} />
+    <ErrorNotice error={error ?? execution.error} />
     {bindings.error ? <ErrorState error={bindings.error} onRetry={bindings.reload} /> : !bindings.data ? <LoadingState /> :
       <Form form={form} layout="vertical" disabled={busy} onFinish={save} onFinishFailed={() => setActiveTab('contract')}
         initialValues={{ label: '', input: stringify(definition?.input_schema ?? initialInput), output: stringify(definition?.output_schema ?? initialOutput),
@@ -76,7 +85,10 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
           timeout: definition?.timeout_seconds ?? 10, maxSize: definition?.max_result_size ?? 262144,
           attempts: definition?.retry_policy.max_attempts ?? 1, delay: definition?.retry_policy.delay_ms ?? 100,
           ttl: definition?.cache_policy.ttl_seconds ?? 0, freshness: definition?.cache_policy.freshness_seconds ?? 60,
-          volatile: definition?.cache_policy.volatile ?? false }}>
+          analysis: !!definition?.analysis_policy, rowsPath: definition?.analysis_policy?.rows_path.join('.') ?? 'rows', maxRows: definition?.analysis_policy?.max_rows ?? 1000,
+          volatile: definition?.cache_policy.volatile ?? false, statusVersion: definition?.write_policy?.status_tool_version_id,
+          submissions: definition?.write_policy?.max_submissions ?? 1, checks: definition?.write_policy?.max_checks ?? 3,
+          profile: definition?.binding.script?.profile_id, skillVersion: definition?.binding.script?.skill_version_id, scriptPath: definition?.binding.script?.path }}>
         {!version && <Form.Item name="label" label="版本名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>}
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
           { key: 'contract', label: '契约', forceRender: true, children: <>
@@ -84,8 +96,14 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
             <Form.Item name="output" label="输出结构" rules={[{ required: true }]}><Input.TextArea rows={8} spellCheck={false} /></Form.Item>
           </> },
           { key: 'binding', label: '连接绑定', forceRender: true, children: <>
-            <Form.Item name="adapter" label="来源连接" rules={[{ required: true }]}><Select options={available.map(b => ({ value: b.binding.adapter_key,
+            {tool.source_type !== 'sandbox' && <Form.Item name="adapter" label="来源连接" rules={[{ required: true }]}><Select options={available.map(b => ({ value: b.binding.adapter_key,
               label: `${b.name} · ${b.effect_label}${b.unavailable_reason ? ` · ${b.unavailable_reason}` : ''}` }))} /></Form.Item>
+            }
+            {tool.source_type === 'sandbox' && <>
+              <Form.Item name="profile" label="隔离环境" rules={[{ required: true }]}><Select options={execution.data?.profiles.filter(p => p.mode === 'python').map(p => ({ value: p.profile_id, label: p.name }))} /></Form.Item>
+              <Form.Item name="skillVersion" label="技能版本" rules={[{ required: true }]}><Select options={execution.data?.scripts.map(s => ({ value: s.version_id, label: `${s.name} · ${s.version_label}` }))} /></Form.Item>
+              <Form.Item name="scriptPath" label="脚本文件" rules={[{ required: true }]}><Select options={execution.data?.scripts.find(s => s.version_id === skillVersion)?.paths.map(path => ({ value: path, label: path }))} /></Form.Item>
+            </>}
           </> },
           { key: 'permission', label: '权限', forceRender: true, children: <>
             <Typography.Paragraph>{workspace?.environment_name ?? '环境未确认'} · {workspace?.data_scope_name ?? '业务数据域未确认'}</Typography.Paragraph>
@@ -94,6 +112,9 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
             <Form.Item name="types" label="允许的主体类型"><Select mode="tags" /></Form.Item>
           </> },
           { key: 'policy', label: '执行策略', forceRender: true, children: <>
+            {tool.source_type === 'mcp' && !writing && <><Form.Item name="analysis" label="只读分析源" valuePropName="checked"><Switch /></Form.Item>{analysis && <><Form.Item name="rowsPath" label="行列表字段路径"><Input /></Form.Item><Form.Item name="maxRows" label="最大返回行数"><InputNumber min={1} max={10000} /></Form.Item></>}</>}
+            {writing && <><Form.Item name="statusVersion" label="来源状态核查工具" rules={[{ required: true }]}><Select options={execution.data?.queries.map(q => ({ value: q.version_id, label: `${q.name} · ${q.version_label}` }))} /></Form.Item>
+              <Form.Item name="submissions" label="经确认的提交上限（次）"><InputNumber min={1} max={3} /></Form.Item><Form.Item name="checks" label="来源核查上限（次）"><InputNumber min={1} max={10} /></Form.Item></>}
             <Form.Item name="timeout" label="超时（秒）" rules={[{ required: true }]}><InputNumber min={1} max={120} /></Form.Item>
             <Form.Item name="maxSize" label="结果体积上限（字节）" rules={[{ required: true }]}><InputNumber min={256} max={2097152} /></Form.Item>
             <Form.Item name="attempts" label="最多尝试次数" rules={[{ required: true }]}><InputNumber min={1} max={3} /></Form.Item>

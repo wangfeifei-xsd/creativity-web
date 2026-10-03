@@ -12,7 +12,7 @@ import { ToolCalls } from './ToolCalls'
 import { ToolTestPanel } from './ToolTestPanel'
 import { ToolVersionEditor } from './ToolVersionEditor'
 
-const sources = [{ value: 'http', label: 'HTTP 接口' }, { value: 'mcp', label: 'MCP 工具' }, { value: 'builtin', label: '预置函数' }]
+const sources = [{ value: 'http', label: 'HTTP 接口' }, { value: 'mcp', label: 'MCP 工具' }, { value: 'builtin', label: '预置函数' }, { value: 'sandbox', label: '隔离脚本' }]
 const effects = [{ value: 'READ_ONLY', label: '只读' }, { value: 'IDEMPOTENT_WRITE', label: '幂等写入' }, { value: 'EXTERNAL_WRITE', label: '外部写入' }]
 const json = (value: unknown) => <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(value, null, 2)}</pre>
 
