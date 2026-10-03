@@ -147,12 +147,13 @@ function displayDifference(field: string, value: unknown, options?: Options): un
 
 function ReleaseDialog({ detail, version, options, onClose, onSaved }: { detail: Detail; version: Version; options: Options; onClose: () => void; onSaved: () => void }) {
   const [form] = Form.useForm()
+  const reports = useQuery<Schema<'EvaluationList'>>('/admin/v1/evaluations')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
-  async function publish(values: { operation: string; note: string; reports?: string }) {
+  async function publish(values: { operation: string; note: string; reports?: string[] }) {
     setBusy(true); setError(undefined)
     try { await send(`/admin/v1/agents/${detail.agent.agent_id}/releases`, 'POST', { version_id: version.version_id, revision: version.revision,
-      expected_mapping_revision: detail.release_revision, environment: options.environment, operation: values.operation, note: values.note, evaluation_refs: values.reports?.split(/[\s,，]+/).filter(Boolean) ?? [] }); onSaved() }
+      expected_mapping_revision: detail.release_revision, environment: options.environment, operation: values.operation, note: values.note, evaluation_refs: values.reports ?? [] }); onSaved() }
     catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   return <Modal open title="环境发布" onCancel={onClose} onOk={() => form.submit()} okText="确认发布" cancelText="取消" confirmLoading={busy} closable={!busy} maskClosable={!busy}>
@@ -160,7 +161,7 @@ function ReleaseDialog({ detail, version, options, onClose, onSaved }: { detail:
     <Form form={form} layout="vertical" initialValues={{ operation: 'publish' }} onFinish={publish} disabled={busy}>
       <Form.Item name="operation" label="发布操作"><Select options={[{ value: 'publish', label: '发布' }, ...(version.status.value === 'PUBLISHED' ? [{ value: 'rollback', label: '回滚到此版本' }] : [])]} /></Form.Item>
       <Form.Item name="note" label="发布说明" rules={[{ required: true }]}><Input.TextArea rows={3} /></Form.Item>
-      <Form.Item name="reports" label="评测报告引用"><Input.TextArea rows={2} /></Form.Item>
+      <Form.Item name="reports" label="评测报告"><Select mode="multiple" options={reports.data?.items?.filter(r => r.state.value === 'COMPLETED').map(r => ({ value: r.evaluation_id, label: `${r.name} · ${r.dataset_version_label}` }))} /></Form.Item>
     </Form>
   </Modal>
 }

@@ -38,3 +38,7 @@ pnpm dev
 记忆管理页面位于 `src/features/memory/`，包含列表、主体开关、确认/修正、有效期、来源及删除进度。业务契约和验证见 [记忆交接](../creativity-service/docs/memory.md)。
 
 智能体页面位于 `src/features/agents/`，包含配置向导、只读流程图、依赖选择、运行限制、调试、版本差异及发布记录。调试和发布展示真实服务反馈；接口边界和验收见 [Agent 交接](../creativity-service/docs/agents.md) 与 [验证记录](../creativity-service/docs/agents-validation.md)。
+
+23 的 `tests/support/business-independence.mjs` 由服务端固定构建验收脚本驱动，使用真实管理 HTTP 和三渠道独立配置；复现方法与范围见 [业务无关接入验证](../creativity-service/examples/onboarding/README.md)，结果见 [验收记录](../creativity-service/docs/business-independence-validation.md)。
+
+效果评测页面位于 `src/features/evaluations/`，包含样本集版本、JSONL/CSV 导入、评测任务、基线对比、人工复核及发布检查；Agent 发布弹窗可选择评测报告。接口与验证范围见 [评测交接](../creativity-service/docs/evaluations.md) 和 [验证记录](../creativity-service/docs/evaluations-validation.md)。
