@@ -1,0 +1,95 @@
+import { expect, test } from '@playwright/test'
+
+const workspace = { channel_id: 'channel_a', channel_name: '业务渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '资料域' }
+const session = {
+  user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' }, workspace,
+  navigation: [{ navigation_key: 'members', label: '成员与权限' }],
+  actions: [{ action_key: 'membership:manage', label: '管理成员' }, { action_key: 'run:read', label: '查看运行' }],
+  expires_at: '2030-01-01T00:00:00Z',
+}
+
+test('外部身份交换失败保留凭据，成功后使用平台 Token 并可退出', async ({ page }) => {
+  let signedIn = false, exchanges = 0, loggedOut = false
+  await page.route('**/admin/v1/**', async route => {
+    const request = route.request(), path = new URL(request.url()).pathname
+    if (path.endsWith('/identity-providers')) return route.fulfill({ json: [{ profile_id: 'company', name: '企业身份' }] })
+    if (path.endsWith('/auth/external-token')) {
+      expect(request.postDataJSON()).toEqual({ profile_id: 'company', token: 'upstream-opaque' })
+      exchanges++
+      if (exchanges === 1) return route.fulfill({ status: 401, json: { error: { code: 'EXTERNAL_IDENTITY_INVALID', message: '外部身份已过期', fields: [] } } })
+      signedIn = true
+      return route.fulfill({ json: { access_token: 'platform-opaque', token_type: 'Bearer', expires_in: 120, expires_at: session.expires_at } })
+    }
+    if (path.endsWith('/auth/session')) {
+      if (!signedIn) return route.fulfill({ status: 401, json: { error: { code: 'UNAUTHENTICATED', message: '请登录', fields: [] } } })
+      expect(request.headers().authorization).toBe('Bearer platform-opaque')
+      return route.fulfill({ json: session })
+    }
+    if (path.endsWith('/auth/logout')) {
+      expect(request.headers().authorization).toBe('Bearer platform-opaque')
+      signedIn = false; loggedOut = true
+      return route.fulfill({ json: {} })
+    }
+    return route.fulfill({ json: path.endsWith('/auth/channels') ? [workspace] : [] })
+  })
+  await page.goto('/')
+  await page.getByRole('combobox', { name: '登录方式' }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('外部身份', { exact: true }).click()
+  await page.getByLabel('身份源', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('企业身份', { exact: true }).click()
+  await page.getByLabel('外部访问凭据', { exact: true }).fill('upstream-opaque')
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page.getByText('外部身份已过期', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('外部访问凭据', { exact: true })).toHaveValue('upstream-opaque')
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBe('platform-opaque')
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible()
+  expect(loggedOut).toBe(true)
+  expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBeNull()
+})
+
+test('自定义角色携带修订提交，冲突保留输入并显示停用影响', async ({ page }) => {
+  let role = { id: 'role_a', name: '运行观察', builtin: false, revision: 4, allowed_actions: ['run:read'], action_names: ['查看运行'], active: true, state_label: '启用', member_count: 2 }
+  let writes = 0
+  await page.route('**/admin/v1/**', async route => {
+    const request = route.request(), path = new URL(request.url()).pathname
+    if (path.endsWith('/auth/session')) return route.fulfill({ json: session })
+    if (path.endsWith('/auth/channels')) return route.fulfill({ json: [workspace] })
+    if (path.endsWith('/access-options')) return route.fulfill({ json: { tabs: [], actions: [], accounts: [], workspaces: [], roles: [], grantee_roles: [], member_accounts: [], resources: [], grant_actions: [] } })
+    if (path.endsWith('/custom-roles')) return route.fulfill({ json: [role, { ...role, id: 'builder', name: '构建者', builtin: true, member_count: 1 }] })
+    if (path.endsWith('/custom-roles/role_a')) {
+      const body = request.postDataJSON()
+      writes++
+      expect(body).toEqual({ name: '停用运行观察', allowed_actions: ['run:read'], active: false, revision: writes === 1 ? 4 : 5 })
+      if (writes === 1) {
+        role = { ...role, revision: 5 }
+        return route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '角色已被其他管理员修改', fields: [] } } })
+      }
+      role = { ...role, ...body, revision: 6, state_label: '停用' }
+      return route.fulfill({ json: role })
+    }
+    return route.fulfill({ json: [] })
+  })
+  await page.goto('/members')
+  await expect(page.getByRole('row').filter({ hasText: '构建者' }).getByRole('button', { name: '编辑', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: '编辑', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '编辑角色' })
+  await expect(dialog.getByText('当前关联 2 位有效成员，修改后权限立即生效。')).toBeVisible()
+  await dialog.getByLabel('角色名称', { exact: true }).fill('停用运行观察')
+  await dialog.getByRole('switch').uncheck()
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog.getByText('角色已被其他管理员修改', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('角色名称', { exact: true })).toHaveValue('停用运行观察')
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
+  await page.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(page.getByRole('button', { name: '编辑', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '编辑', exact: true }).click()
+  await dialog.getByLabel('角色名称', { exact: true }).fill('停用运行观察')
+  await dialog.getByRole('switch').uncheck()
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByRole('row').filter({ hasText: '停用运行观察' })).toContainText('停用')
+  expect(writes).toBe(2)
+})

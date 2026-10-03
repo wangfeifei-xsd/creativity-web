@@ -11,7 +11,7 @@ export function CustomRoles({ onSaved }: { onSaved: () => void }) {
   const query = useQuery<Role[]>('/admin/v1/custom-roles')
   const [editor, setEditor] = useState<{ role?: Role }>(), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; allowed_actions: string[]; active: boolean }>()
-  function edit(role?: Role) { form.resetFields(); form.setFieldsValue(role ?? { name: '', allowed_actions: [], active: true }); setEditor({ role }) }
+  function edit(role?: Role) { setError(undefined); form.resetFields(); form.setFieldsValue(role ?? { name: '', allowed_actions: [], active: true }); setEditor({ role }) }
   return <><ErrorNotice error={(editor ? undefined : error) ?? query.error} /><Space><Button type="primary" onClick={() => edit()}>新增角色</Button><Button onClick={query.reload}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} columns={[{ title: '名称', dataIndex: 'name' }, { title: '类型', render: (_, r) => <Tag>{r.builtin ? '内置' : '自定义'}</Tag> }, { title: '动作上限', render: (_, r) => r.action_names.join('、') }, { title: '成员数', dataIndex: 'member_count' }, { title: '状态', dataIndex: 'state_label' }, { title: '操作', render: (_, r) => !r.builtin && <Button onClick={() => edit(r)}>编辑</Button> }]} />
     <Modal open={!!editor} title={editor?.role ? '编辑角色' : '新增角色'} onCancel={() => setEditor(undefined)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>

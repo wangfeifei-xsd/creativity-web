@@ -15,6 +15,7 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const active = useRef(false)
+  const submitLabel = changePassword ? '修改密码并重新登录' : '登录'
   const submit = async (values: Schema<'LoginInput'> | Schema<'PasswordChange'> | { profile_id: string; token: string }) => {
     if (active.current) return
     active.current = true; setBusy(true); setError(undefined)
@@ -40,7 +41,7 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
               return !value || value === getFieldValue('new_password') ? Promise.resolve() : Promise.reject(new Error('两次密码不一致'))
             } }),
           ]}><Input.Password autoComplete="new-password" /></Form.Item></>}
-        <Button type="primary" htmlType="submit" loading={busy} block>{changePassword ? '修改密码并重新登录' : '登录'}</Button>
+        <Button type="primary" htmlType="submit" aria-label={submitLabel} disabled={busy} loading={busy} block>{submitLabel}</Button>
       </Form>
       {changePassword && <Button disabled={busy} onClick={() => void onLogout().catch(setError)}>退出登录</Button>}
     </Space>

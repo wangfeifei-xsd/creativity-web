@@ -121,3 +121,68 @@ test('暂停运行的批准绑定本次确认摘要并保留原运行', async ({
   await expect(page).toHaveURL(/\/runs\/run_a$/)
   await expect(page.getByRole('button', { name: '批准执行', exact: true })).toHaveCount(0)
 })
+
+test('同一运行连续审批时刷新确认凭据，外部审批后也可继续下一步', async ({ page }) => {
+  await fixture(page)
+  let interruption = 1
+  const submissions: { interruption_id: string; idempotency_key: string }[] = []
+  await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: {
+    ...detail, state: interruption < 4 ? 'WAITING_APPROVAL' : 'SUCCEEDED', state_label: interruption < 4 ? '等待审批' : '已完成', result: null, actions: [],
+  } }))
+  await page.route('**/admin/v1/runs/run_a/events', route => route.fulfill({ contentType: 'text/event-stream', body: ': heartbeat\n\n' }))
+  await page.route('**/admin/v1/runs/run_a/interruption', route => route.fulfill({ json: {
+    interruption_id: `interrupt_${interruption}`, revision: interruption, confirmation_digest: String(interruption).repeat(64),
+    name: `批准第 ${interruption} 步`, state: 'WAITING_APPROVAL', state_label: '等待审批', proposed_input: { value: `第 ${interruption} 步内容` },
+    input_schema: { type: 'object' }, can_approve: true, can_respond: false, can_verify: false,
+  } }))
+  await page.route('**/admin/v1/runs/run_a/resume', async route => {
+    const body = route.request().postDataJSON()
+    expect(body).toMatchObject({ interruption_id: `interrupt_${interruption}`, revision: interruption, confirmation_digest: String(interruption).repeat(64), decision: 'approve', input: {} })
+    submissions.push(body)
+    interruption++
+    await route.fulfill({ json: { ...receipt, state: 'QUEUED' } })
+  })
+  await page.goto('/runs/run_a')
+  await expect(page.getByText('批准第 1 步', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '批准执行', exact: true }).click()
+  await expect(page.getByText('批准第 2 步', { exact: true })).toBeVisible()
+  interruption = 3
+  await page.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(page.getByText('批准第 3 步', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '批准执行', exact: true }).click()
+  await expect(page.getByRole('button', { name: '批准执行', exact: true })).toHaveCount(0)
+  expect(submissions.map(item => item.interruption_id)).toEqual(['interrupt_1', 'interrupt_3'])
+  expect(submissions[0].idempotency_key).not.toBe(submissions[1].idempotency_key)
+  await expect(page).toHaveURL(/\/runs\/run_a$/)
+})
+
+test('连续补充按本次输入结构重置表单，显式否值与零值可提交', async ({ page }) => {
+  await fixture(page)
+  let interruption = 1
+  await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: {
+    ...detail, state: interruption < 3 ? 'WAITING_INPUT' : 'SUCCEEDED', state_label: interruption < 3 ? '等待补充' : '已完成', result: null, actions: [],
+  } }))
+  await page.route('**/admin/v1/runs/run_a/events', route => route.fulfill({ contentType: 'text/event-stream', body: ': heartbeat\n\n' }))
+  await page.route('**/admin/v1/runs/run_a/interruption', route => route.fulfill({ json: {
+    interruption_id: `input_${interruption}`, revision: 1, confirmation_digest: String(interruption).repeat(64), name: `补充第 ${interruption} 步`,
+    state: 'WAITING_INPUT', state_label: '等待补充', proposed_input: {}, can_respond: true, can_approve: false, can_verify: false,
+    input_schema: { type: 'object', properties: { quantity: { type: 'integer', title: '数量' }, enabled: { type: 'boolean', title: '启用处理' } }, required: ['quantity', 'enabled'] },
+  } }))
+  await page.route('**/admin/v1/runs/run_a/resume', async route => {
+    expect(route.request().postDataJSON()).toMatchObject({ interruption_id: `input_${interruption}`, input: { quantity: interruption === 1 ? 5 : 0, enabled: interruption === 1 } })
+    interruption++
+    await route.fulfill({ json: { ...receipt, state: 'QUEUED' } })
+  })
+  await page.goto('/runs/run_a')
+  await page.getByLabel('数量', { exact: true }).fill('5')
+  await page.getByRole('radio', { name: '是', exact: true }).check()
+  await page.getByRole('button', { name: '提交并继续', exact: true }).click()
+  await expect(page.getByText('补充第 2 步', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('数量', { exact: true })).toHaveValue('')
+  await expect(page.getByRole('radio', { name: '是', exact: true })).not.toBeChecked()
+  await expect(page.getByRole('radio', { name: '否', exact: true })).not.toBeChecked()
+  await page.getByLabel('数量', { exact: true }).fill('0')
+  await page.getByRole('radio', { name: '否', exact: true }).check()
+  await page.getByRole('button', { name: '提交并继续', exact: true }).click()
+  await expect.poll(() => interruption).toBe(3)
+})

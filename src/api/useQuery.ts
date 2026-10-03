@@ -6,7 +6,7 @@ export function isAbort(error: unknown) {
 }
 
 // 每个页面实例独享结果；卸载、范围切换或筛选变化均废弃迟到响应。
-export function useQuery<T>(path: ApiPath | null, keepDataOnRefresh = false) {
+export function useQuery<T>(path: ApiPath | null, keepDataOnRefresh = false, refreshKey?: unknown) {
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<{ path: typeof path; data?: T; error?: unknown }>({ path })
   useEffect(() => {
@@ -17,7 +17,7 @@ export function useQuery<T>(path: ApiPath | null, keepDataOnRefresh = false) {
       error => { if (!controller.signal.aborted && !isAbort(error)) setState({ path, error }) },
     )
     return () => controller.abort()
-  }, [path, attempt])
+  }, [path, attempt, refreshKey])
   const reload = useCallback(() => {
     setState(current => keepDataOnRefresh && current.path === path ? { ...current, error: undefined } : { path })
     setAttempt(n => n + 1)
