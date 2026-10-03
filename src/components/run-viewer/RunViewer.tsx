@@ -6,6 +6,8 @@ import { download } from '../../features/conversations/download'
 import { followRunEvents } from '../../api/event-stream'
 import { formatTimestamp } from '../../api/presentation'
 import { ActionButtons, ErrorNotice, type Schema } from '../Management'
+import { ContentDeletion } from '../ContentDeletion'
+import { DeletionSteps } from '../DeletionSteps'
 import { ErrorState, LoadingState } from '../States'
 
 export type RunDetail = Schema<'RunDetail'>
@@ -39,6 +41,8 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
   const [error, setError] = useState<unknown>()
   const [notice, setNotice] = useState<string>()
   const [busy, setBusy] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deletionId, setDeletionId] = useState<string>()
   const cursor = useRef({ runId, sequence: 0 })
   const completed = useRef(false)
   const refresh = useCallback(async (signal?: AbortSignal) => {
@@ -53,7 +57,7 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
     }).catch(failure => { if (!controller.signal.aborted) setError(failure) })
     return () => controller.abort()
   }, [runId])
-  const active = detail && !terminal.has(detail.state)
+  const active = detail && !deletionId && !terminal.has(detail.state)
   const streamAllowed = active && detail.content_allowed
   useEffect(() => {
     if (detail && terminal.has(detail.state) && !completed.current) {
@@ -100,14 +104,16 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
     } catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   const [newRun, setNewRun] = useState<string>()
+  if (deletionId) return <DeletionSteps deletionId={deletionId} />
   if (!detail) return error ? <ErrorState error={error} onRetry={() => void refresh().catch(setError)} /> : <LoadingState />
   const result = detail.result
   const usage = result?.usage_summary
   const storedPartial = result?.partial_output as { text?: string } | null | undefined
   return <Space orientation="vertical" style={{ width: '100%' }} size="large">
+    {deleting && <ContentDeletion resourceType="run" resourceId={runId} onClose={() => setDeleting(false)} onDeleted={id => { setDeleting(false); setDeletionId(id); setPartial(''); setDetail(undefined); setTrace(undefined) }} />}
     <Space wrap><Typography.Text strong>{detail.name}</Typography.Text>
       <Button onClick={() => void refresh().catch(setError)}>刷新</Button>
-      <ActionButtons actions={detail.actions} disabled={busy} handlers={{ cancel: () => void mutate('cancel'), rerun: () => void mutate('rerun') }} />
+      <ActionButtons actions={detail.actions} disabled={busy} handlers={{ cancel: () => void mutate('cancel'), rerun: () => void mutate('rerun'), delete: () => setDeleting(true) }} />
       {detail.conversation_id && <Link to={`/conversations/${detail.conversation_id}`}>查看会话</Link>}
       {newRun && <Link to={`/runs/${newRun}`}>查看新运行</Link>}
     </Space>

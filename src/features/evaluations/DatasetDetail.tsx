@@ -54,7 +54,7 @@ function SampleEditor({ dataset, onClose, onSaved }: { dataset: Dataset; onClose
     try {
       const current = dataset.versions?.at(-1)
       if (current?.cases.some(c => !c.payload)) throw new Error('当前版本含无权读取或已失效样本，请导入完整新版本')
-      const sample: Sample = { case_key: values.case_key, title: values.title, input: parse(values.input, {}), assertions: parse(values.assertions, []), label_source: values.label_source, labels: values.labels?.split(/[，,]/).filter(Boolean) ?? [], fixture: parse(values.fixture, []) }
+      const sample: Sample = { source_mode: 'all', case_key: values.case_key, title: values.title, input: parse(values.input, {}), assertions: parse(values.assertions, []), label_source: values.label_source, labels: values.labels?.split(/[，,]/).filter(Boolean) ?? [], fixture: parse(values.fixture, []) }
       await send(`/admin/v1/evaluation-datasets/${dataset.dataset_id}/versions`, 'POST', { revision: dataset.revision, version_label: values.version_label, captured_at: new Date().toISOString(), reference_versions: current?.reference_versions ?? [], cases: [...(current?.cases.map(c => c.payload) ?? []), sample] }); onSaved()
     } catch (failure) { setError(failure) } finally { setBusy(false) }
   }

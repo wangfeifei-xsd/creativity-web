@@ -13,6 +13,12 @@ import { MembersPage } from '../members/MembersPage'
 import { AuditPage } from '../audit/AuditPage'
 import { ChannelCollection } from './ChannelCollection'
 
+const retentionFields = [
+  ['retention_days', '会话保存期（天）'], ['run_content_days', '运行内容保存期（天）'],
+  ['metadata_days', '用量与审计保存期（天）'], ['sse_hours', '流式事件保存期（小时）'],
+  ['temporary_hours', '暂存文件保存期（小时）'], ['export_days', '导出文件保存期（天）'],
+].map(([name, label]) => ({ name, label, kind: 'number' as const, required: true }))
+
 export function ChannelDetail({ channelId }: { channelId: string }) {
   const query = useQuery<Schema<'ChannelPage'>>(`/admin/v1/channels/${channelId}/page`)
   const [tab, setTab] = useState('overview')
@@ -36,11 +42,11 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
               <ChannelCollection key={item.navigation_key} page={page} kind={item.navigation_key} />,
       }))} />
     {editing && <EditorDialog title="编辑渠道" initial={{ name: channel.name, owner: channel.owner, revision: channel.revision,
-      retention_days: channel.retention_policy.retention_days }} fields={[{ name: 'name', label: '渠道名称', required: true },
-      { name: 'owner', label: '负责人', required: true }, { name: 'retention_days', label: '数据保存天数（天）', kind: 'number', required: true }]}
+      ...channel.retention_policy }} fields={[{ name: 'name', label: '渠道名称', required: true },
+      { name: 'owner', label: '负责人', required: true }, ...retentionFields]}
       onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh() }}
       latestRevision={async () => (await apiClient.request<Schema<'ChannelView'>>(`/admin/v1/channels/${channelId}`)).revision}
-      onSave={values => { const { retention_days, ...body } = values; return send(`/admin/v1/channels/${channelId}`, 'PATCH', { ...body, retention_policy: { retention_days } }) }} />}
+      onSave={values => { const body = { ...values }; const retention_policy = Object.fromEntries(retentionFields.map(field => { const value = body[field.name]; delete body[field.name]; return [field.name, value] })); return send(`/admin/v1/channels/${channelId}`, 'PATCH', { ...body, retention_policy }) }} />}
     {impact && <ImpactDialog title={titles[impact]} previewPath={`/admin/v1/channels/${channelId}/impact?action=${impact}`}
       submitPath={`/admin/v1/channels/${channelId}/${impact}`} onClose={() => setImpact(undefined)} onSaved={() => { setImpact(undefined); refresh() }} />}
   </PageContainer>

@@ -1,4 +1,5 @@
 import { RunViewer } from '../../components/run-viewer/RunViewer'
+import { DeletionSteps } from '../../components/DeletionSteps'
 import { App, Button, Collapse, Descriptions, Space, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -112,5 +113,6 @@ export function DeletionProgress({ deletionId }: { deletionId: string }) {
       { key: 'requested', label: '提交时间', children: formatTimestamp(query.data.requested_at) },
       { key: 'completed', label: '完成时间', children: query.data.completed_at ? formatTimestamp(query.data.completed_at) : '尚未完成' },
     ]} />}
+    {query.data && <DeletionSteps deletionId={deletionId} />}
   </PageContainer>
 }

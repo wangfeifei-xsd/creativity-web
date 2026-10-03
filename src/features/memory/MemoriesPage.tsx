@@ -141,5 +141,7 @@ function MemoryDeletion({ deletionId }: { deletionId: string }) {
       { key: 'status', label: '状态', children: query.data.status_label }, { key: 'count', label: '记忆数量', children: `${query.data.count} 条` },
       { key: 'requested', label: '提交时间', children: formatTimestamp(query.data.requested_at) }, { key: 'completed', label: '完成时间', children: query.data.completed_at ? formatTimestamp(query.data.completed_at) : '尚未完成' },
     ]} />}
+    {query.data && query.data.count > 0 && <DeletionSteps deletionId={deletionId} />}
   </PageContainer>
 }
+import { DeletionSteps } from '../../components/DeletionSteps'

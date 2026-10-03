@@ -62,7 +62,7 @@ export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>;
       onSave: async values => {
         const body = { ...values }
         if (kind === 'environments') {
-          body.retention_policy = { retention_days: body.retention_days }; delete body.retention_days
+          body.retention_policy = { ...(row?.retention_policy as Schema<'RetentionPolicy'> | undefined), retention_days: body.retention_days }; delete body.retention_days
           body.release_policy = { approval_required: body.approval_required ?? false }; delete body.approval_required
         }
         if (kind === 'keys') body.expires_at = new Date(String(body.expires_at)).toISOString()
