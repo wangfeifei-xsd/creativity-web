@@ -9,6 +9,7 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { MemoryEditor } from './Editor'
 import { MemoryPolicy } from './Policy'
+import { Consolidations } from './Consolidations'
 
 type Memory = Schema<'MemoryView'>
 const states = [{ value: 'PROPOSED', label: '待确认' }, { value: 'ACTIVE', label: '生效中' }, { value: 'SUPERSEDED', label: '已替代' }, { value: 'EXPIRED', label: '已过期' }, { value: 'REVOKED', label: '已撤销' }]
@@ -25,7 +26,7 @@ function MemoryTable({ items }: { items: Memory[] }) {
     { title: '属性', render: (_, row) => <Link to={`/memories/${row.memory_id}`}>{row.display_name}</Link> },
     { title: '记忆值', dataIndex: 'value_label' },
     { title: '主体', render: (_, row) => <Link to={`/memories/subjects/${row.memory_id}`}>{row.subject_name ?? '主体名称不可用'}</Link> },
-    { title: '类型', dataIndex: 'type_label' }, { title: '状态', dataIndex: 'status_label' },
+    { title: '层级', dataIndex: 'layer_label' }, { title: '类型', dataIndex: 'type_label' }, { title: '状态', dataIndex: 'status_label' },
     { title: '有效截止时间', render: (_, row) => formatTimestamp(row.expires_at) },
     { title: '使用次数', render: (_, row) => `${row.usage_count} 次` },
   ]} />
@@ -55,28 +56,32 @@ function Preferences({ anchorId }: { anchorId: string }) {
         } })
       } }} disabled={busy} />
     </Space>
-    <Typography.Text type="secondary">关闭后暂停跨会话读取和自动保存，已有记忆仍保留。清空会删除已保存的记忆。</Typography.Text>
+    <Typography.Text type="secondary">关闭后暂停归档、画像生成及跨会话读取，已有记忆仍保留。清空会删除已保存的记忆。</Typography.Text>
   </Space>
 }
 
 function MemoryList({ anchorId }: { anchorId?: string }) {
+  const [layer, setLayer] = useState('profile')
+  const [jobs, setJobs] = useState(false)
   const [status, setStatus] = useState<string>()
   const [attribute, setAttribute] = useState<string>()
   const [cursors, setCursors] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
   const [policy, setPolicy] = useState(false)
   const navigate = useNavigate()
-  const params = new URLSearchParams({ limit: '20', ...(anchorId ? { anchor_id: anchorId } : {}), ...(status ? { status } : {}), ...(attribute ? { key: attribute } : {}), ...(cursors.length ? { cursor: cursors.at(-1)! } : {}) })
+  const params = new URLSearchParams({ limit: '20', layer, ...(anchorId ? { anchor_id: anchorId } : {}), ...(status ? { status } : {}), ...(attribute ? { key: attribute } : {}), ...(cursors.length ? { cursor: cursors.at(-1)! } : {}) })
   const query = useQuery<Schema<'MemoryList'>>(`/admin/v1/memories?${params}`)
   const subjects = useQuery<Schema<'MemorySubject'>[]>('/admin/v1/memory-subjects')
   return <PageContainer title={anchorId ? '主体记忆' : '记忆管理'} actions={<Space wrap>
     {anchorId && <Link to="/memories">返回记忆列表</Link>}<Button onClick={query.reload}>刷新</Button>
+    <Link to="/conversations">会话记忆</Link><Button onClick={() => setJobs(true)}>后台整理</Button>
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true), policy: () => setPolicy(true) }} />
   </Space>}>
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       {anchorId && <Preferences anchorId={anchorId} />}
       <Space wrap>
         {!anchorId && <Select aria-label="主体筛选" placeholder="查看主体记忆" style={{ width: 190 }} options={subjects.data?.map(s => ({ value: s.anchor_id, label: s.label }))} onChange={value => navigate(`/memories/subjects/${value}`)} />}
+        <Select aria-label="记忆层级" value={layer} style={{ width: 140 }} options={[{ value: "profile", label: "人物画像" }, { value: "archive", label: "归档" }]} onChange={value => { setLayer(value); setCursors([]); setAttribute(undefined) }} />
         <Select allowClear aria-label="状态筛选" placeholder="全部状态" style={{ width: 140 }} options={states} onChange={value => { setCursors([]); setStatus(value) }} />
         <Select allowClear aria-label="属性筛选" placeholder="全部属性" style={{ width: 150 }} options={query.data?.attributes.map(a => ({ value: a.key, label: a.label }))} onChange={value => { setCursors([]); setAttribute(value) }} />
       </Space>
@@ -87,6 +92,7 @@ function MemoryList({ anchorId }: { anchorId?: string }) {
     </Space>
     {creating && <MemoryEditor attributes={query.data?.attributes ?? []} subjects={subjects.data ?? []} anchorId={anchorId}
       onClose={() => setCreating(false)} onSaved={value => navigate(`/memories/${value.memory_id}`)} />}
+    {jobs && <Consolidations anchorId={anchorId} onClose={() => setJobs(false)} />}
     {policy && <MemoryPolicy onClose={() => setPolicy(false)} />}
   </PageContainer>
 }
