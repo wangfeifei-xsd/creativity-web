@@ -8791,6 +8791,50 @@ export interface components {
              */
             unit: "requests" | "concurrency";
         };
+        /** PlatformLimitView */
+        PlatformLimitView: {
+            /**
+             * Effective At
+             * Format: date-time
+             */
+            effective_at: string;
+            /** Limit Code */
+            limit_code: string;
+            /** Limit Value */
+            limit_value: number;
+            /** Name */
+            name: string;
+            /**
+             * Period
+             * @default minute
+             * @enum {string}
+             */
+            period: "minute" | "hour" | "day" | "month";
+            /** Remaining */
+            remaining: number | null;
+            /** Revision */
+            revision: number;
+            /**
+             * Status
+             * @default ACTIVE
+             * @enum {string}
+             */
+            status: "ACTIVE" | "DISABLED";
+            /**
+             * Timezone
+             * @default Asia/Shanghai
+             */
+            timezone: string;
+            /**
+             * Unit
+             * @enum {string}
+             */
+            unit: "requests" | "concurrency";
+            /** Unit Label */
+            unit_label: string;
+            /** Used */
+            used: number | null;
+        };
         /** PolicyInput */
         PolicyInput: {
             /** Allowed Types */
@@ -36420,9 +36464,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["PlatformLimitView"][];
                 };
             };
             /** @description Bad Request */
@@ -36558,9 +36600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["PlatformLimitView"][];
                 };
             };
             /** @description Bad Request */
