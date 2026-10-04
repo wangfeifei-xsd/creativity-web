@@ -10254,7 +10254,7 @@ export interface components {
             release_version_id: string | null;
             skill: components["schemas"]["SkillView"];
             /** Versions */
-            versions: components["schemas"]["SkillVersionView"][];
+            versions: components["schemas"]["SkillVersionSummary"][];
         };
         /** SkillDiscovery */
         SkillDiscovery: {
@@ -10640,6 +10640,29 @@ export interface components {
             /** Revision */
             revision: number;
             settings: components["schemas"]["SkillSettings"];
+        };
+        /** SkillVersionSummary */
+        SkillVersionSummary: {
+            /** Actions */
+            actions: components["schemas"]["VisibleAction"][];
+            /** Discovery Preview */
+            discovery_preview: string;
+            /** Files */
+            files: components["schemas"]["SkillFile"][];
+            /** Metadata */
+            metadata: {
+                [key: string]: unknown;
+            };
+            /** Package Hash */
+            package_hash: string;
+            /** Revision */
+            revision: number;
+            settings: components["schemas"]["SkillSettings"];
+            status: components["schemas"]["DisplayStatus"];
+            /** Version Id */
+            version_id: string;
+            /** Version Label */
+            version_label: string;
         };
         /** SkillVersionView */
         SkillVersionView: {

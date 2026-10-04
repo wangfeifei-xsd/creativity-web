@@ -36,6 +36,20 @@ async function fixture(page: Page) {
   })
 }
 
+test('列表仅在打开新增窗口后读取依赖选项', async ({ page }) => {
+  await fixture(page)
+  let calls = 0
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/admin/v1/agents/options') calls++
+  })
+  await page.goto('/agents')
+  await expect(page.getByRole('link', { name: '业务助手' })).toBeVisible()
+  expect(calls).toBe(0)
+  await page.getByRole('button', { name: '新增智能体', exact: true }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await expect.poll(() => calls).toBe(1)
+})
+
 test('配置、流程、资源名称和发布记录可查看', async ({ page }) => {
   await fixture(page)
   await page.goto('/agents')

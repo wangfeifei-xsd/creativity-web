@@ -15,7 +15,8 @@ const version = { version_id: 'version_a', version_label: '初始版本', revisi
   metadata: { name: 'rental-intent', description: '提取用户条件', license: 'MIT' }, files, package_hash: 'd'.repeat(64),
   discovery_preview: 'rental-intent\n提取用户条件', instruction_preview: '只提取已确认的事实。',
   actions: [action('edit', '编辑包'), action('validate', '检查依赖'), action('test', '加载测试'), action('freeze', '冻结版本'), action('export', '导出技能包')] }
-const detail = { skill, versions: [version], references: [], release_version_id: null, release_revision: null }
+const summary = (value: typeof version) => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'instruction_preview'))
+const detail = { skill, versions: [summary(version)], references: [], release_version_id: null, release_revision: null }
 
 async function fixture(page: Page) {
   await page.route('**/admin/v1/**', async route => {
@@ -26,6 +27,7 @@ async function fixture(page: Page) {
     else if (path.endsWith('/auth/channels')) json = [workspace]
     else if (path === '/admin/v1/skills') json = { items: [skill], actions: [action('create', '新增技能'), action('import', '导入技能包')] }
     else if (path === '/admin/v1/skills/skill_a') json = detail
+    else if (path === '/admin/v1/skill-versions/version_a') json = version
     else if (path.endsWith('/files')) { const file = files.find(f => f.relative_path === url.searchParams.get('path'))!; json = { path: file.relative_path, text: file.relative_path === 'SKILL.md' ? source : file.loadable ? '参考条件' : 'raise RuntimeError()', unavailable_reason: file.unavailable_reason } }
     await route.fulfill({ json })
   })
@@ -73,6 +75,7 @@ test('窄屏编辑资料并保留服务端错误前的输入', async ({ page }) 
   await page.setViewportSize({ width: 390, height: 844 })
   let writes = 0
   await page.route('**/skill-versions/version_a', async route => {
+    if (route.request().method() === 'GET') { await route.fallback(); return }
     writes++
     const body = route.request().postDataJSON()
     expect(body.files).toEqual([{ relative_path: 'references/new.md', text: '新增资料内容' }])
@@ -88,6 +91,28 @@ test('窄屏编辑资料并保留服务端错误前的输入', async ({ page }) 
   await expect(page.getByText('技能草稿已变更，请刷新', { exact: true })).toBeVisible()
   await expect(page.getByLabel('文件正文')).toHaveValue('新增资料内容')
   expect(writes).toBe(1)
+})
+
+test('只加载当前选择的技能版本，切换后重新读取正文', async ({ page }) => {
+  await fixture(page)
+  const latest = { ...version, version_id: 'version_b', version_label: '新版', instruction_preview: '新版指令' }
+  const calls: string[] = []
+  await page.route('**/admin/v1/skills/skill_a', route => route.fulfill({ json: { ...detail, versions: [summary(version), summary(latest)] } }))
+  await page.route('**/skill-versions/*', async route => {
+    const id = new URL(route.request().url()).pathname.split('/').at(-1)!
+    calls.push(id)
+    await route.fulfill({ json: id === 'version_a' ? version : latest })
+  })
+  await page.goto('/skills/skill_a')
+  await page.getByRole('tab', { name: '加载预览' }).click()
+  await page.getByRole('tab', { name: '完整指令', exact: true }).click()
+  await expect(page.getByText('新版指令', { exact: true })).toBeVisible()
+  expect(calls).toEqual(['version_b'])
+  await page.getByLabel('技能版本').click()
+  await page.getByTitle('初始版本 · 草稿', { exact: true }).click()
+  await page.getByRole('tab', { name: '完整指令', exact: true }).click()
+  await expect(page.getByText('只提取已确认的事实。', { exact: true })).toBeVisible()
+  expect(calls).toEqual(['version_b', 'version_a'])
 })
 
 test('导出通过受控产物下载', async ({ page }) => {
