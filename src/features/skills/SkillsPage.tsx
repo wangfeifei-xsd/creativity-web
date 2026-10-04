@@ -111,7 +111,9 @@ function SkillDetail({ skillId }: { skillId: string }) {
   const [activeTab, setActiveTab] = useState('files')
   const { modal } = App.useApp()
   const detail = query.data
-  const version = detail?.versions.find(v => v.version_id === selected) ?? detail?.versions.at(-1)
+  const summary = detail?.versions.find(v => v.version_id === selected) ?? detail?.versions.at(-1)
+  const versionQuery = useQuery<Schema<'SkillVersionView'>>(summary ? `/admin/v1/skill-versions/${summary.version_id}` : null, false, summary?.revision)
+  const version = versionQuery.data?.revision === summary?.revision ? versionQuery.data : undefined
   async function mutate(action: 'validate' | 'freeze' | 'release' | 'export') {
     if (!version || !detail || busy) return
     setBusy(true); setError(undefined)
@@ -135,14 +137,14 @@ function SkillDetail({ skillId }: { skillId: string }) {
   if (!detail) return <LoadingState />
   return <PageContainer title={detail.skill.name} actions={<Space wrap><Link to="/skills">返回技能列表</Link>
     <Button onClick={query.reload}>刷新</Button><ActionButtons actions={detail.skill.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new') }} /></Space>}>
-    <ErrorNotice error={error} />
+    <ErrorNotice error={error ?? versionQuery.error} />
     <Descriptions items={[
       { key: 'status', label: '状态', children: <StatusTag status={detail.skill.status} /> },
       { key: 'owner', label: '负责人', children: detail.skill.owner },
       { key: 'description', label: '用途', children: detail.skill.description },
     ]} />
     <Space wrap style={{ marginBottom: 16 }}>
-      <Select aria-label="技能版本" style={{ minWidth: 220 }} value={version?.version_id} onChange={value => { setSelected(value); setValidation(undefined) }}
+      <Select aria-label="技能版本" style={{ minWidth: 220 }} value={summary?.version_id} onChange={value => { setSelected(value); setValidation(undefined) }}
         options={detail.versions.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.status.label}${detail.release_version_id === v.version_id ? ' · 当前环境已发布' : ''}` }))} />
       {version && <ActionButtons actions={version.actions} handlers={busy ? {} : {
         edit: () => setEditor('version'), validate: () => void mutate('validate'), test: () => setActiveTab('tests'), export: () => void mutate('export'),
@@ -150,6 +152,7 @@ function SkillDetail({ skillId }: { skillId: string }) {
         release: () => modal.confirm({ title: '发布技能版本', content: `将“${version.version_label}”发布到当前环境。`, okText: '发布', cancelText: '取消', onOk: () => mutate('release') }),
       }} />}
     </Space>
+    {!version && summary && (versionQuery.error ? <ErrorState error={versionQuery.error} onRetry={versionQuery.reload} /> : <LoadingState />)}
     {version && <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
       { key: 'files', label: '包文件', children: <SkillFiles key={`${version.version_id}:${version.revision}`} version={version} /> },
       { key: 'metadata', label: '元数据', children: <><Descriptions items={[

@@ -21,11 +21,11 @@ export function AgentsPage() {
 function AgentList() {
   const [search, setSearch] = useState('')
   const query = useQuery<Schema<'AgentList'>>(`/admin/v1/agents?search=${encodeURIComponent(search)}`)
-  const options = useQuery<Options>('/admin/v1/agents/options')
   const [creating, setCreating] = useState(false)
+  const options = useQuery<Options>(creating ? '/admin/v1/agents/options' : null)
   const navigate = useNavigate()
   return <PageContainer title="智能体" actions={<Space><Button onClick={query.reload}>刷新</Button>
-    <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} disabled={!options.data} /></Space>}>
+    <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} /></Space>}>
     <ErrorNotice error={options.error} />
     <Input.Search aria-label="智能体名称或用途" placeholder="智能体名称或用途" onSearch={setSearch} allowClear style={{ maxWidth: 360, marginBottom: 16 }} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="agent_id" dataSource={query.data.items} columns={[
@@ -33,6 +33,7 @@ function AgentList() {
       { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '负责人', dataIndex: 'owner' },
       { title: '状态', render: (_, row) => <StatusTag status={row.status} /> },
     ]} />}
+    {creating && !options.data && <Modal open title="新增智能体" footer={null} onCancel={() => setCreating(false)}>{options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />}</Modal>}
     {creating && options.data && <AgentEditor options={options.data} onClose={() => setCreating(false)} onSaved={detail => { if (detail) navigate(`/agents/${detail.agent.agent_id}`) }} />}
   </PageContainer>
 }
