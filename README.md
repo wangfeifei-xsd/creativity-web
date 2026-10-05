@@ -55,15 +55,17 @@ Creativity AI 能力平台的管理前端，提供渠道与权限管理、模型
 
 ### 2. 安装依赖并启动
 
-首次使用时复制配置模板：
+执行本地启动脚本：
 
 ```bash
-cp .env.example .env
-pnpm install --frozen-lockfile
-pnpm dev
+./scripts/start-local.sh
 ```
 
+脚本自动定位前端目录，优先使用项目上级 `.tools/js/node_modules/.bin` 中的 Node.js 和 pnpm，否则使用 PATH 中的工具，并检查版本。缺少 `.env` 时从模板创建，已有配置保留；随后按锁文件安装依赖并启动 Vite。本地配置已被 Git 忽略。
+
 访问 [http://127.0.0.1:5173](http://127.0.0.1:5173)，使用初始化的管理员账号登录。首次登录按页面提示修改密码，之后进入有权限访问的工作区。
+
+Vite 参数可直接传给脚本，例如 `./scripts/start-local.sh --port 5174`。按 `Ctrl+C` 停止前端。
 
 ### 3. 联调自定义 API 地址
 
@@ -86,6 +88,7 @@ API_PROXY_TARGET=http://127.0.0.1:8000
 
 | 命令 | 说明 |
 | --- | --- |
+| `./scripts/start-local.sh` | 检查工具版本、准备配置与依赖并启动前端 |
 | `pnpm dev` | 启动本地开发服务器，默认端口为 `5173` |
 | `pnpm typecheck` | 执行 TypeScript 类型检查 |
 | `pnpm lint` | 执行 ESLint 检查 |
@@ -154,7 +157,7 @@ creativity-web/
 │   ├── features/        # 平台功能页面与路由登记
 │   └── main.tsx         # React 挂载入口
 ├── docs/                # 页面接入文档
-├── scripts/             # 接口类型生成工具
+├── scripts/             # 本地启动与接口类型生成工具
 ├── tests/               # Playwright 及组合验证脚本
 ├── .env.example         # 本地代理配置模板
 ├── package.json         # 依赖与开发命令
