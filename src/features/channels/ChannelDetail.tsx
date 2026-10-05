@@ -64,7 +64,7 @@ function Overview({ channelId }: { channelId: string }) {
   if (!query.data) return <LoadingState />
   const data = query.data
   return <Descriptions bordered column={{ xs: 1, sm: 2 }} items={[
-    { key: 'owner', label: '负责人', children: data.channel.owner }, { key: 'business', label: '业务分类', children: data.channel.business_type_name ?? '未填写' },
+    { key: 'owner', label: '负责人', children: data.channel.owner },
     { key: 'created', label: '开通时间', children: formatTimestamp(data.channel.created_at) }, { key: 'retention', label: '数据保存', children: `${data.channel.retention_policy.retention_days} 天` },
     ...([['environments', '环境'], ['data_scopes', '数据域'], ['clients', '接入服务'], ['active_keys', '有效 Key']] as const).map(([key, label]) => ({ key, label, children: `${data[key]} 个` })),
   ]} />

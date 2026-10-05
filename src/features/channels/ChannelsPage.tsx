@@ -26,12 +26,12 @@ function CreateChannel({ onClose, onSaved }: { onClose: () => void; onSaved: (ch
   return <EditorDialog title="开通渠道" onClose={onClose} onSaved={() => { if (createdId.current) onSaved(createdId.current) }}
     initial={{ retention_days: 90, independent_actions: [] }} fields={[
       { name: 'name', label: '渠道名称', required: true },
-      { name: 'owner', label: '负责人', required: true }, { name: 'business_type', label: '业务分类' },
+      { name: 'owner', label: '负责人', required: true },
       { name: 'first_admin_user_id', label: '首位管理员', kind: 'select', options: options.accounts, required: true },
       { name: 'retention_days', label: '数据保存天数（天）', kind: 'number', required: true },
       { name: 'independent_actions', label: '独立授权', kind: 'multiple', options: actionsAsOptions(options.independent_actions) },
     ]} onSave={async values => { const { retention_days, ...body } = values
-      const created = await send<Schema<'ChannelView'>>('/admin/v1/channels', 'POST', { ...body, business_type: body.business_type || null, retention_policy: { retention_days } })
+      const created = await send<Schema<'ChannelView'>>('/admin/v1/channels', 'POST', { ...body, retention_policy: { retention_days } })
       createdId.current = created.channel_id
     }} />
 }
@@ -46,7 +46,7 @@ function ChannelList() {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
       <Table rowKey="channel_id" dataSource={query.data.items} pagination={directory.pagination(query.data.total)} scroll={{ x: 750 }} columns={[
         { title: '渠道名称', render: (_, row) => <Link to={`/channels/${row.channel_id}`}>{row.name}</Link> },
-        { title: '业务分类', render: (_, row) => row.business_type_name ?? '未填写' }, { title: '负责人', dataIndex: 'owner' },
+        { title: '负责人', dataIndex: 'owner' },
         { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> }, { title: '开通时间', render: (_, row) => formatTimestamp(row.created_at) },
       ]} />}
     {creating && <CreateChannel onClose={() => setCreating(false)} onSaved={id => { setCreating(false); navigate(`/channels/${id}?tab=environments`) }} />}

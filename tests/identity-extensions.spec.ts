@@ -52,14 +52,14 @@ test('外部身份交换失败保留凭据，成功后使用平台 Token 并可�
 })
 
 test('自定义角色携带修订提交，冲突保留输入并显示停用影响', async ({ page }) => {
-  let role = { id: 'role_a', name: '运行观察', builtin: false, revision: 4, allowed_actions: ['run:read'], action_names: ['查看运行'], active: true, state_label: '启用', member_count: 2, editable: true, menu_ids: ['run-page', 'run-action'] }
+  let role = { grant_scope: 'channel', grant_scope_name: '渠道', id: 'role_a', name: '运行观察', builtin: false, revision: 4, allowed_actions: ['run:read'], action_names: ['查看运行'], active: true, state_label: '启用', member_count: 2, editable: true, menu_ids: ['run-page', 'run-action'] }
   let writes = 0
   await page.route('**/admin/v1/**', async route => {
     const request = route.request(), path = new URL(request.url()).pathname
     if (path.endsWith('/auth/session')) return route.fulfill({ json: session })
     if (path.endsWith('/auth/channels')) return route.fulfill({ json: [workspace] })
     if (path.endsWith('/access-options')) return route.fulfill({ json: { tabs: [], actions: [], accounts: [], workspaces: [], roles: [], grantee_roles: [], member_accounts: [], resources: [], grant_actions: [] } })
-    if (path.endsWith('/custom-roles/options')) return route.fulfill({ json: { scope: 'channel', scope_name: '渠道', menus: [
+    if (path.endsWith('/custom-roles/options')) return route.fulfill({ json: { scope: 'channel', scope_name: '渠道', scopes: [{ value: 'channel', label: '渠道' }], menus: [
       { id: 'run-page', name: '运行记录', kind: 'MENU', parent_id: null, page_key: 'runs', sort_order: 1 },
       { id: 'run-action', name: '查看运行', kind: 'BUTTON', parent_id: 'run-page', action_key: 'run:read', sort_order: 1 },
     ], actions: [{ value: 'run:read', label: '查看运行' }] } })
@@ -67,7 +67,7 @@ test('自定义角色携带修订提交，冲突保留输入并显示停用影�
     if (path.endsWith('/custom-roles/role_a')) {
       const body = request.postDataJSON()
       writes++
-      expect(body).toEqual({ name: '停用运行观察', allowed_actions: ['run:read'], active: false, revision: writes === 1 ? 4 : 5, menu_ids: ['run-page', 'run-action'] })
+      expect(body).toEqual({ grant_scope: 'channel', name: '停用运行观察', allowed_actions: ['run:read'], active: false, revision: writes === 1 ? 4 : 5, menu_ids: ['run-page', 'run-action'] })
       if (writes === 1) {
         role = { ...role, revision: 5 }
         return route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '角色已被其他管理员修改', fields: [] } } })
@@ -93,4 +93,59 @@ test('自定义角色携带修订提交，冲突保留输入并显示停用影�
   await expect(dialog).toHaveCount(0)
   await expect(page.getByRole('row').filter({ hasText: '停用运行观察' })).toContainText('停用')
   expect(writes).toBe(2)
+})
+
+test('角色管理展示两个内置作用域，新增渠道角色切换权限树不丢失名称', async ({ page }) => {
+  let saved: Record<string, unknown> | undefined
+  const defaults = ['platform', 'channel'].map(scope => ({
+    id: `${scope}_admin`, name: scope === 'platform' ? '平台管理员' : '渠道管理员',
+    builtin: true, grant_scope: scope, grant_scope_name: scope === 'platform' ? '平台' : '渠道',
+    revision: 1, allowed_actions: [], action_names: [], active: true, state_label: '启用',
+    member_count: 1, editable: false, menu_ids: null,
+  }))
+  await page.route('**/admin/v1/**', async route => {
+    const request = route.request(), url = new URL(request.url()), path = url.pathname
+    if (path.endsWith('/auth/session')) return route.fulfill({ json: {
+      ...session, workspace: null, can_access_platform: true,
+      navigation: [{ navigation_key: 'roles', label: '角色管理' }],
+      actions: [{ action_key: 'role:grant', label: '管理角色' }],
+    } })
+    if (path.endsWith('/custom-roles/options')) {
+      const scope = url.searchParams.get('grant_scope') ?? 'platform'
+      return route.fulfill({ json: {
+        scope, scope_name: scope === 'platform' ? '平台' : '渠道',
+        scopes: [{ value: 'platform', label: '平台' }, { value: 'channel', label: '渠道' }],
+        menus: scope === 'platform' ? [] : [
+          { id: 'usage-page', name: '用量', kind: 'MENU', parent_id: null, page_key: 'usage', sort_order: 1 },
+          { id: 'usage-action', name: '查看用量', kind: 'BUTTON', parent_id: 'usage-page', action_key: 'usage:read', sort_order: 1 },
+        ], actions: [],
+      } })
+    }
+    if (path.endsWith('/custom-roles')) {
+      if (request.method() === 'POST') {
+        saved = request.postDataJSON()
+        return route.fulfill({ status: 201, json: {} })
+      }
+      return route.fulfill({ json: defaults })
+    }
+    return route.fulfill({ json: [] })
+  })
+  await page.goto('/#/roles')
+  const platform = page.getByRole('row').filter({ hasText: '平台管理员' })
+  const channel = page.getByRole('row').filter({ hasText: '渠道管理员' })
+  await expect(platform.getByRole('cell', { name: '平台', exact: true })).toBeVisible()
+  await expect(channel.getByRole('cell', { name: '渠道', exact: true })).toBeVisible()
+  await expect(channel.getByRole('button', { name: '编辑', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: '新增角色', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '新增角色' })
+  await dialog.getByLabel('角色名称', { exact: true }).fill('用量观察员')
+  await dialog.getByLabel('作用域', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('渠道', { exact: true }).click()
+  await expect(dialog.getByText('查看用量', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('角色名称', { exact: true })).toHaveValue('用量观察员')
+  await dialog.locator('.ant-tree-treenode').filter({ has: page.getByText('用量', { exact: true }) }).locator('.ant-tree-checkbox').click()
+  await dialog.locator('.ant-tree-treenode').filter({ has: page.getByText('查看用量', { exact: true }) }).locator('.ant-tree-checkbox').click()
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  expect(saved).toMatchObject({ name: '用量观察员', grant_scope: 'channel', allowed_actions: ['usage:read'] })
 })

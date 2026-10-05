@@ -1,5 +1,5 @@
 import { Avatar, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Select, Space, Tooltip } from 'antd'
-import { DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, SwapOutlined, UserOutlined } from '@ant-design/icons'
+import { DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/Management'
@@ -36,8 +36,12 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const ranges = options.filter(option => option.channel_id === session.workspace?.channel_id)
   const environments = [...new Map(ranges.map(option => [option.environment, { value: option.environment, label: option.environment_name }])).values()]
   const domains = ranges.filter(option => option.environment === session.workspace?.environment)
+  function selectMode(mode: string) {
+    if (mode === 'platform') { void switchWorkspace(null).catch(setError); return }
+    const target = options[0]
+    if (target) void switchWorkspace(target).catch(setError)
+  }
   function selectChannel(channelId: string) {
-    if (channelId === 'system') { void switchWorkspace(null).catch(setError); return }
     const available = options.filter(option => option.channel_id === channelId)
     const target = available.find(option => option.environment === session.workspace?.environment) ?? available[0]
     if (target) void switchWorkspace(target).catch(setError)
@@ -71,12 +75,16 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
           <Breadcrumb aria-label="页面路径" items={breadcrumbs} />
         </div>
         <div className="workspace-context">
-          {(channels.length > 0 || session.can_access_platform) && <Select aria-label="切换渠道"
-            className="workspace-channel-select" variant="borderless" showSearch optionFilterProp="label"
-            value={session.workspace?.channel_id ?? (session.can_access_platform ? 'system' : undefined)}
-            options={[...(session.can_access_platform ? [{ value: 'system', label: '平台管理' }] : []), ...channels]}
-            disabled={channels.length === 1 && !session.can_access_platform} onChange={selectChannel} />}
+          <Select aria-label="管理模式" className="workspace-mode-select" variant="borderless"
+            value={session.workspace || !session.can_access_platform ? 'channel' : 'platform'}
+            options={[
+              ...(session.can_access_platform ? [{ value: 'platform', label: '平台管理' }] : []),
+              { value: 'channel', label: '渠道管理', disabled: channels.length === 0 },
+            ]} disabled={!session.can_access_platform} onChange={selectMode} />
           {session.workspace && <>
+            <Select aria-label="切换渠道" className="workspace-channel-select" variant="borderless"
+              showSearch optionFilterProp="label" value={session.workspace.channel_id} options={channels}
+              disabled={channels.length < 2} onChange={selectChannel} />
             <Select aria-label="切换环境" variant="borderless" className="workspace-environment-select"
               value={session.workspace.environment} options={environments} disabled={environments.length < 2}
               onChange={environment => {
@@ -96,10 +104,8 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
           <Tooltip title="刷新当前页面"><Button type="text" aria-label="刷新当前页面" icon={<ReloadOutlined aria-hidden />}
             onClick={() => window.location.reload()} /></Tooltip>
           <Dropdown placement="bottomRight" trigger={['click']} autoFocus menu={{ items: [
-            ...(session.workspace && session.can_access_platform ? [{ key: 'platform', label: '返回平台', icon: <SwapOutlined aria-hidden /> }] : []),
             { key: 'logout', label: '退出登录', icon: <LogoutOutlined aria-hidden />, danger: true },
           ], onClick: ({ key }) => {
-            if (key === 'platform') void switchWorkspace(null).catch(setError)
             if (key === 'logout') void logout().catch(setError)
           } }}>
             <Button className="workspace-user" aria-label="用户菜单">

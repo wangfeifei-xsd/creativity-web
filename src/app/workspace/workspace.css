@@ -51,8 +51,9 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  height: 56px;
-  padding: 0 20px;
+  height: auto;
+  min-height: 56px;
+  padding: 8px 20px;
   border-bottom: 1px solid #e8ecf2;
   background: #fff;
   line-height: 1.5;
@@ -64,8 +65,9 @@
 .workspace-location .ant-breadcrumb li { min-width: 0; }
 .workspace-location .ant-breadcrumb-link { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .workspace-location .ant-breadcrumb li:last-child { color: #1d2939; font-weight: 600; }
-.workspace-context { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 45%; color: #7a8699; font-size: 12px; }
+.workspace-context { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; max-width: 45%; color: #7a8699; font-size: 12px; }
 .workspace-scope { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-mode-select { min-width: 108px; }
 .workspace-channel-select { min-width: 130px; max-width: 190px; }
 .workspace-environment-select { min-width: 76px; }
 .workspace-domain-select { min-width: 120px; max-width: 180px; }

@@ -4956,7 +4956,7 @@ export interface components {
             /** Platform Roles */
             platform_roles?: string[];
             /** Role */
-            role?: ("platform_admin" | "channel_admin") | null;
+            role?: string | null;
         };
         /** AccountUpdate */
         AccountUpdate: {
@@ -4969,7 +4969,7 @@ export interface components {
             /** Revision */
             revision: number;
             /** Role */
-            role?: ("platform_admin" | "channel_admin") | null;
+            role?: string | null;
             /** Status */
             status?: ("ACTIVE" | "DISABLED") | null;
         };
@@ -4986,6 +4986,8 @@ export interface components {
             credential_updated_at: string;
             /** Display Name */
             display_name: string;
+            /** Grant Scope */
+            grant_scope?: ("platform" | "channel") | null;
             /** Login Name */
             login_name: string;
             /** Must Change Password */
@@ -4996,11 +4998,8 @@ export interface components {
             platform_roles: string[];
             /** Revision */
             revision: number;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "platform_admin" | "channel_admin";
+            /** Role */
+            role: string | null;
             /** Role Name */
             role_name: string;
             /**
@@ -6428,11 +6427,6 @@ export interface components {
         /** ChannelCreate */
         ChannelCreate: {
             /**
-             * Business Type
-             * @description 可选业务分类，仅用于展示
-             */
-            business_type?: string | null;
-            /**
              * @deprecated
              * @description 兼容一次性开通；新流程在详情中配置数据域
              */
@@ -6457,12 +6451,6 @@ export interface components {
         ChannelCreateOptions: {
             /** Accounts */
             accounts: components["schemas"]["NamedOption"][];
-            /**
-             * Business Types
-             * @deprecated
-             * @description 兼容字段；分类为可选自由文本
-             */
-            business_types?: components["schemas"]["NamedOption"][];
             /** Environments */
             environments: components["schemas"]["NamedOption"][];
             /** Independent Actions */
@@ -6522,10 +6510,6 @@ export interface components {
             actions: components["schemas"]["VisibleAction"][];
             /** Archived At */
             archived_at: string | null;
-            /** Business Type */
-            business_type: string | null;
-            /** Business Type Name */
-            business_type_name: string | null;
             /** Channel Code */
             channel_code: string;
             /** Channel Id */
@@ -10296,6 +10280,8 @@ export interface components {
             active: boolean;
             /** Allowed Actions */
             allowed_actions: string[];
+            /** Grant Scope */
+            grant_scope?: ("platform" | "channel") | null;
             /** Menu Ids */
             menu_ids?: string[] | null;
             /** Name */
@@ -26094,7 +26080,9 @@ export interface operations {
     };
     role_options_admin_v1_custom_roles_options_get: {
         parameters: {
-            query?: never;
+            query?: {
+                grant_scope?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;

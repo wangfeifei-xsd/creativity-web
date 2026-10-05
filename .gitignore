@@ -9,6 +9,7 @@ coverage/
 playwright-report/
 test-results/
 playwright/.cache/
+.local/
 
 # 本地配置与日志
 .env

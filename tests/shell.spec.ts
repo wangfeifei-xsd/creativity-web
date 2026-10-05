@@ -7,13 +7,102 @@ const session = { user: account, workspace: null, navigation: [{ navigation_key:
   workspace_options: [], default_workspace: null, can_access_platform: true,
   actions: [{ action_key: 'account:manage', label: '管理账号' }], expires_at: '2000-01-01T00:00:00Z' }
 const errorBody = (status: number) => ({ error: { code: 'ERROR', message: `服务返回 ${status}`, fields: [] } })
-const roles = [{ role_code: 'platform_admin', name: '平台管理员' }, { role_code: 'channel_admin', name: '渠道管理员' }]
+const roles = [{ role_code: 'platform_admin', name: '平台管理员', grant_scope: 'platform' }, { role_code: 'channel_admin', name: '渠道管理员', grant_scope: 'channel' }]
 async function authenticated(page: Page) {
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
     await route.fulfill({ json: path.endsWith('/session') ? session : path.endsWith('/roles') ? roles : path.endsWith('/accounts/page') ? { items: [account], total: 1, offset: 0, limit: 20 } : [], status: 200 })
   })
 }
+
+for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默认首个授权范围并保留环境（${width}）`, async ({ page }) => {
+  const a = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'prod', environment_name: '生产', data_scope_id: 'a-one', data_scope_name: '业务域甲' }
+  const secondDomain = { ...a, data_scope_id: 'a-two', data_scope_name: '第二业务域' }
+  const bTest = { channel_id: 'channel-b', channel_name: '客户服务渠道', environment: 'test', environment_name: '测试', data_scope_id: 'b-test', data_scope_name: '测试业务域' }
+  const b = { ...bTest, environment: 'prod', environment_name: '生产', data_scope_id: 'b-prod', data_scope_name: '生产业务域' }
+  const workspaces = [a, secondDomain, bTest, b]
+  let current: typeof a | null = null
+  const switches: Record<string, unknown>[] = []
+  let platformSwitches = 0
+  await page.route('**/admin/v1/**', async route => {
+    const request = route.request(), path = new URL(request.url()).pathname
+    if (path.endsWith('/auth/session')) return route.fulfill({ json: { ...session, workspace: current, workspace_options: workspaces } })
+    if (path.endsWith('/auth/channel-context')) {
+      const input = request.postDataJSON() as Record<string, unknown>
+      switches.push(input)
+      current = workspaces.find(option => option.channel_id === input.channel_id && option.environment === input.environment && option.data_scope_id === input.data_scope_id) ?? null
+      return route.fulfill({ json: { access_token: `workspace-${switches.length}`, token_type: 'Bearer', expires_in: 3600 } })
+    }
+    if (path.endsWith('/auth/platform-context')) {
+      platformSwitches++
+      current = null
+      return route.fulfill({ json: { access_token: 'platform-token', token_type: 'Bearer', expires_in: 3600 } })
+    }
+    await route.fulfill({ json: [] })
+  })
+  await page.setViewportSize({ width, height: 900 })
+  await page.goto('/#/')
+  const header = page.locator('header')
+  await expect(header.getByText('平台管理', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('切换渠道')).toHaveCount(0)
+  await page.getByLabel('管理模式', { exact: true }).click()
+  const popup = page.locator('.ant-select-dropdown:visible')
+  await expect(popup.locator('.ant-select-item-option')).toHaveCount(2)
+  await expect(popup.getByText(a.channel_name, { exact: true })).toHaveCount(0)
+  await popup.getByText('渠道管理', { exact: true }).click()
+  await expect(header.getByText('渠道管理', { exact: true })).toBeVisible()
+  await expect(header.getByText(a.channel_name, { exact: true })).toBeVisible()
+  expect(switches).toEqual([{ channel_id: a.channel_id, environment: a.environment, data_scope_id: a.data_scope_id }])
+  await page.getByLabel('切换渠道', { exact: true }).click()
+  await expect(popup.locator('.ant-select-item-option')).toHaveCount(2)
+  await expect(popup.getByText('平台管理', { exact: true })).toHaveCount(0)
+  await popup.getByText(b.channel_name, { exact: true }).click()
+  await expect(header.getByText(b.channel_name, { exact: true })).toBeVisible()
+  await expect(header.getByText('生产', { exact: true })).toBeVisible()
+  await expect(header.getByText(b.data_scope_name, { exact: true })).toBeVisible()
+  expect(switches[1]).toEqual({ channel_id: b.channel_id, environment: b.environment, data_scope_id: b.data_scope_id })
+  await page.reload()
+  await expect(header.getByText(b.channel_name, { exact: true })).toBeVisible()
+  expect(switches).toHaveLength(2)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+  await page.getByLabel('管理模式', { exact: true }).click()
+  await popup.getByText('平台管理', { exact: true }).click()
+  await expect(header.getByText('平台管理', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('切换渠道')).toHaveCount(0)
+  await expect(page.getByLabel('切换环境')).toHaveCount(0)
+  expect(platformSwitches).toBe(1)
+})
+
+test('没有授权渠道时不能切入渠道模式，单渠道直接显示并禁用渠道切换', async ({ page }) => {
+  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域甲' }
+  let available = false
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
+    ...session, workspace: available ? workspace : null, workspace_options: available ? [workspace] : [],
+  } }))
+  await page.goto('/#/')
+  await page.getByLabel('管理模式', { exact: true }).click()
+  await expect(page.locator('.ant-select-dropdown:visible .ant-select-item-option').filter({ hasText: '渠道管理' })).toHaveClass(/ant-select-item-option-disabled/)
+  await expect(page.getByLabel('切换渠道')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  available = true
+  await page.reload()
+  await expect(page.locator('header').getByText(workspace.channel_name, { exact: true })).toBeVisible()
+  await expect(page.getByLabel('切换渠道')).toBeDisabled()
+})
+
+test('管理模式切换失败后仍显示服务端确认的原模式', async ({ page }) => {
+  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域甲' }
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session, workspace_options: [workspace] } }))
+  await page.route('**/admin/v1/auth/channel-context', route => route.fulfill({ status: 403, json: {
+    error: { code: 'FORBIDDEN', message: '该渠道授权已失效', fields: [] },
+  } }))
+  await page.goto('/#/')
+  await page.getByLabel('管理模式').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('渠道管理', { exact: true }).click()
+  await expect(page.getByText('该渠道授权已失效', { exact: true })).toBeVisible()
+  await expect(page.locator('header').getByText('平台管理', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('切换渠道')).toHaveCount(0)
+})
 
 test('无 Token 时仍查询服务端会话，401 显示登录', async ({ page }) => {
   let checks = 0
@@ -79,7 +168,7 @@ for (const width of [375, 820]) test(`窄屏抽屉可跳转和关闭，工作区
   await expect(drawer).toBeHidden()
   await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
   await page.getByRole('button', { name: '用户菜单' }).click()
-  await expect(page.getByRole('menuitem', { name: '返回平台', exact: true })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: '返回平台', exact: true })).toHaveCount(0)
   await expect(page.getByRole('menuitem', { name: '退出登录', exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
@@ -156,7 +245,7 @@ test('IAM-A14 切换渠道清除筛选和旧请求，迟到 401 不影响新工�
         pending = true
         await new Promise<void>(resolve => { release = resolve })
         await route.fulfill({ status: 401, json: errorBody(401) }).catch(() => undefined)
-      } else await route.fulfill({ json: { items: [{ channel_id: current.channel_id, name: current.channel_name, owner: '负责人', business_type_name: current === a ? '租号' : '陪玩', status_label: '启用', created_at: '2026-10-01T00:00:00Z' }], total: 1, offset: 0, limit: 20 } })
+      } else await route.fulfill({ json: { items: [{ channel_id: current.channel_id, name: current.channel_name, owner: '负责人', status_label: '启用', created_at: '2026-10-01T00:00:00Z' }], total: 1, offset: 0, limit: 20 } })
       return
     }
     await route.fulfill({ json: [] })

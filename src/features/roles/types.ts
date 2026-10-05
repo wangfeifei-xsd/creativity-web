@@ -3,8 +3,10 @@ export type MenuNode = { id: string; name: string; kind: 'DIR' | 'MENU' | 'BUTTO
   workspace: 'platform' | 'channel' | 'both'; workspace_label: string; sort_order: number; visible: boolean; active: boolean;
   status_label: string; revision: number; protected: boolean }
 export type Role = { id: string; name: string; builtin: boolean; revision?: number; allowed_actions: string[]; action_names: string[];
-  menu_ids: string[] | null; active: boolean; state_label: string; member_count: number; editable: boolean; updated_at?: string }
-export type RoleOptions = { scope: string; scope_name: string; menus: MenuNode[]; actions: { value: string; label: string }[] }
+  menu_ids: string[] | null; active: boolean; state_label: string; member_count: number; editable: boolean; updated_at?: string;
+  grant_scope: string; grant_scope_name: string }
+export type RoleOptions = { scope: string; scope_name: string; scopes: { value: string; label: string }[];
+  menus: MenuNode[]; actions: { value: string; label: string }[] }
 export type MenuTreeNode = MenuNode & { key: string; title: string; children?: MenuTreeNode[] }
 
 export function menuTree(nodes: MenuNode[], search = ''): MenuTreeNode[] {
