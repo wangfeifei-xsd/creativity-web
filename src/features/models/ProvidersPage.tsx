@@ -15,11 +15,11 @@ export function ProvidersPage() {
   const [editor, setEditor] = useState<{ provider?: Schema<'ProviderView'> }>()
   const row = editor?.provider
   const choices = protocols.data?.map(p => ({ value: p.code, label: p.name }))
-  return <PageContainer title="模型供应商" actions={<Space><Button onClick={query.reload}>刷新</Button><ActionButtons actions={session.actions} handlers={{ 'channel:govern': () => setEditor({}) }} /></Space>}>
+  return <PageContainer title="模型供应商" actions={<Space><Button onClick={query.reload}>刷新</Button><ActionButtons actions={session.actions.map(a => a.action_key === 'channel:govern' ? { ...a, label: '新增供应商' } : a)} handlers={{ 'channel:govern': () => setEditor({}) }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} columns={[
       { title: '供应商', dataIndex: 'name' }, { title: '协议', render: (_, r) => <Space wrap>{r.protocols.map(p => <Tag key={p}>{protocols.data?.find(i => i.code === p)?.name ?? '名称不可用'}</Tag>)}</Space> },
       { title: '模板地址', render: (_, r) => typeof r.template_content?.endpoint === 'string' ? r.template_content?.endpoint : '未设置' },
-      { title: '操作', render: (_, r) => <ActionButtons actions={session.actions} handlers={{ 'channel:govern': () => setEditor({ provider: r }) }} /> },
+      { title: '操作', render: (_, r) => <ActionButtons actions={session.actions.map(a => a.action_key === 'channel:govern' ? { ...a, label: '编辑' } : a)} handlers={{ 'channel:govern': () => setEditor({ provider: r }) }} /> },
     ]} />}
     <Table rowKey="code" pagination={false} dataSource={protocols.data} columns={[
       { title: '协议', dataIndex: 'name' }, { title: '适配状态', render: (_, p) => <Tag>{p.enabled ? '已实现，按模型验证' : '未启用'}</Tag> }, { title: '原因', render: (_, p) => p.reason ?? '无' },

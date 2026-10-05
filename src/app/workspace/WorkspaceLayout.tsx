@@ -10,7 +10,7 @@ import { features } from '../../features/registry'
 import { resolveNavigation } from '../../features/navigation'
 import { BrandMark } from '../../features/auth/BrandMark'
 import { useSession } from './context'
-import { groupNavigation, navigationIcon } from './navigation'
+import { navigationItems } from './navigation'
 import type { ReactNode } from 'react'
 import './workspace.css'
 
@@ -42,13 +42,11 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const entries = resolveNavigation(session.navigation, features)
-  const groups = groupNavigation(entries)
   const current = entries.filter(entry => location.pathname === entry.path || location.pathname.startsWith(`${entry.path}/`))
     .sort((a, b) => b.path.length - a.path.length)[0]
-  const currentGroup = groups.find(group => group.entries.some(entry => entry.path === current?.path))
   const isDetail = current && location.pathname !== current.path && location.pathname !== `${current.path}/`
   const breadcrumbs = current ? [
-    { title: currentGroup?.label },
+    ...current.ancestors.map(parent => ({ title: parent.label })),
     { title: isDetail ? <Link to={current.path}>{current.label}</Link> : current.label },
     ...(isDetail ? [{ title: '详情' }] : []),
   ] : [{ title: location.pathname === '/' ? '工作台' : <Link to="/">工作台</Link> }]
@@ -60,9 +58,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
     className="workspace-menu" selectedKeys={current ? [current.path] : location.pathname === '/' ? ['/'] : []}
     onClick={({ key }) => selectPage(key)} items={[
       { key: '/', label: '工作台', icon: <HomeOutlined aria-hidden /> },
-      ...groups.map(group => ({ key: group.key, type: 'group' as const, label: group.label,
-        children: group.entries.map(entry => ({ key: entry.path, label: entry.label, icon: navigationIcon(entry.navigationKey) })),
-      })),
+      ...navigationItems(entries),
     ]} /></nav>
   return <Layout className="workspace-layout">
     {screens.lg && <Layout.Sider width={232} className="workspace-sidebar" theme="dark">{brand}{menu}</Layout.Sider>}

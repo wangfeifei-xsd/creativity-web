@@ -1,5 +1,6 @@
 import { Button, Descriptions, Drawer, Form, Input, InputNumber, Select, Space, Table, Tabs, Tag } from 'antd'
 import { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { send, statuses } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -13,6 +14,10 @@ import { ModelDetails } from './ModelDetails'
 type Model = Schema<'ModelView'>
 type Connection = Schema<'ConnectionView'>
 export function ModelsPage() {
+  const modelId = useParams()['*']?.split('/')[0]
+  if (modelId) return <PageContainer title="模型详情" actions={<Link to="/models">返回模型列表</Link>}>
+    <ModelDetails key={modelId} modelId={modelId} />
+  </PageContainer>
   return <Tabs destroyOnHidden items={[{ key: 'models', label: '模型', children: <Models /> },
     { key: 'connections', label: '供应商连接', children: <Connections /> }]} />
 }

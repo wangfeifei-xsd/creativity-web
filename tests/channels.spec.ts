@@ -9,7 +9,7 @@ async function fixture(page: Page) {
     if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin_a', login_name: 'admin', display_name: '管理员' }, workspace: null,
       navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [{ action_key: 'channel:create', label: '开通渠道' }], expires_at: '2030-01-01T00:00:00Z' }
     else if (path.endsWith('/channel-create-options')) json = { accounts: [{ value: 'admin_a', label: '管理员' }], environments: [{ value: 'test', label: '测试' }], business_types: [], independent_actions: [] }
-    else if (path === '/admin/v1/channels') json = [channel]
+    else if (path === '/admin/v1/channels/page') json = { items: [channel], total: 1, offset: 0, limit: 20 }
     else if (path.endsWith('/page')) json = { channel, tabs: [{ navigation_key: 'data-scopes', label: '业务数据域' }], actions: [{ action_key: 'data_scope:create', label: '创建数据域' }], service_actions: [] }
     else if (path.endsWith('/environments')) json = [{ environment: 'test', name: '测试', status: 'ACTIVE' }]
     else if (path.endsWith('/data-scopes')) json = [{ data_scope_id: 'scope_a', name: '研发资料', environment: 'test', environment_name: '测试', external_scope_type: '源系统/workspace', external_scope_type_name: null, external_scope_id: '研发:001/甲', status: 'ACTIVE', status_label: '启用', revision: 1 }]

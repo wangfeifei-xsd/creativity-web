@@ -2,13 +2,13 @@ import { expect, test, type Page } from '@playwright/test'
 
 const account = { user_id: 'u1', login_name: 'admin', display_name: '管理员', platform_roles: ['platform_admin'], platform_role_names: ['平台管理员'],
   status: 'ACTIVE', status_label: '启用', revision: 1, must_change_password: false, credential_updated_at: '2026-10-01T00:00:00Z' }
-const session = { user: account, workspace: null, navigation: [{ navigation_key: 'accounts', label: '账号管理' }],
+const session = { user: account, workspace: null, navigation: [{ navigation_key: 'accounts', label: '账号管理', ancestors: [{ key: 'organization', label: '组织与权限' }] }],
   actions: [{ action_key: 'account:manage', label: '管理账号' }], expires_at: '2000-01-01T00:00:00Z' }
 const errorBody = (status: number) => ({ error: { code: 'ERROR', message: `服务返回 ${status}`, fields: [] } })
 async function authenticated(page: Page) {
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
-    await route.fulfill({ json: path.endsWith('/session') ? session : path.endsWith('/roles') ? [] : path.endsWith('/accounts') ? [account] : [], status: 200 })
+    await route.fulfill({ json: path.endsWith('/session') ? session : path.endsWith('/roles') ? [] : path.endsWith('/accounts/page') ? { items: [account], total: 1, offset: 0, limit: 20 } : [], status: 200 })
   })
 }
 
@@ -89,7 +89,7 @@ test('409 保留输入，重复提交只发出一次请求，读取新版本后�
       const body = route.request().postDataJSON() as { display_name: string; revision: number }
       if (posts === 1) { revision = 2; await route.fulfill({ status: 409, json: errorBody(409) }) }
       else { expect(body).toMatchObject({ display_name: '待保留名称', revision: 2 }); await route.fulfill({ json: { ...account, ...body } }) }
-    } else await route.fulfill({ json: [{ ...account, revision }] })
+    } else await route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/page') ? { items: [{ ...account, revision }], total: 1, offset: 0, limit: 20 } : { ...account, revision } })
   })
   await page.goto('/#/accounts')
   await page.getByRole('button', { name: '编辑', exact: true }).click()
@@ -139,12 +139,12 @@ test('IAM-A14 切换渠道清除筛选和旧请求，迟到 401 不影响新工�
     if (path.endsWith('/auth/channels')) return route.fulfill({ json: [a, b] })
     if (path.endsWith('/auth/channel-context')) return route.fulfill({ json: { access_token: 'channel-b-token', token_type: 'Bearer', expires_in: 3600 } })
     if (path.endsWith('/auth/session')) return route.fulfill({ json: { ...session, workspace: current, navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [] } })
-    if (path.endsWith('/channels')) {
+    if (path.endsWith('/channels/page')) {
       if (current === a && deferA) {
         pending = true
         await new Promise<void>(resolve => { release = resolve })
         await route.fulfill({ status: 401, json: errorBody(401) }).catch(() => undefined)
-      } else await route.fulfill({ json: [{ channel_id: current.channel_id, name: current.channel_name, owner: '负责人', business_type_name: current === a ? '租号' : '陪玩', status_label: '启用', created_at: '2026-10-01T00:00:00Z' }] })
+      } else await route.fulfill({ json: { items: [{ channel_id: current.channel_id, name: current.channel_name, owner: '负责人', business_type_name: current === a ? '租号' : '陪玩', status_label: '启用', created_at: '2026-10-01T00:00:00Z' }], total: 1, offset: 0, limit: 20 } })
       return
     }
     await route.fulfill({ json: [] })

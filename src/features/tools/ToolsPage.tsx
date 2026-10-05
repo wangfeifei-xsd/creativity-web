@@ -80,11 +80,11 @@ function ToolDetail({ toolId }: { toolId: string }) {
   const version = detail?.versions.find(v => v.version.version_id === selected) ?? detail?.versions.at(-1)
   const definition = version?.definition
   const binding = bindings.data?.find(b => b.binding.adapter_key === definition?.binding.adapter_key)
-  async function mutate(action: 'disable' | 'freeze' | 'release') {
+  async function mutate(action: 'disable' | 'enable' | 'freeze' | 'release') {
     if (!detail || busy) return
     setBusy(true); setError(undefined)
     try {
-      if (action === 'disable') await send(`/admin/v1/tools/${toolId}/disable`, 'POST', { revision: detail.tool.revision })
+      if (action === 'disable' || action === 'enable') await send(`/admin/v1/tools/${toolId}/${action}`, 'POST', { revision: detail.tool.revision })
       else if (action === 'freeze' && version) await send(`/admin/v1/tool-versions/${version.version.version_id}/freeze`, 'POST', { revision: version.revision })
       else if (action === 'release' && version) await send(`/admin/v1/tools/${toolId}/releases`, 'POST', { version_id: version.version.version_id, expected_revision: detail.release_revision, note: '发布工具版本' })
       query.reload()
@@ -100,7 +100,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
   if (!detail) return <LoadingState />
   return <PageContainer title={detail.tool.name} actions={<Space wrap><Link to="/tools">返回工具列表</Link>
     <Button onClick={query.reload} loading={busy}>刷新</Button><ActionButtons actions={detail.tool.actions}
-      handlers={busy ? {} : { edit: () => setEditor('resource'), create_version: () => setEditor('new'), disable }} /></Space>}>
+      handlers={busy ? {} : { edit: () => setEditor('resource'), create_version: () => setEditor('new'), disable, enable: () => { modal.confirm({ title: '启用工具', content: '启用后可按原发布版本、绑定与授权调用，已有配置和白名单保持有效。', okText: '启用', cancelText: '取消', onOk: () => mutate('enable') }) } }} /></Space>}>
     <ErrorNotice error={error} />
     <Descriptions items={[
       { key: 'source', label: '来源', children: detail.tool.source_label }, { key: 'owner', label: '负责人', children: detail.tool.owner },

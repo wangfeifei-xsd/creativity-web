@@ -11,6 +11,6 @@ export function resolveNavigation(
     const feature = registrations.get(item.navigation_key)
     if (!feature || seen.has(item.navigation_key)) return []
     seen.add(item.navigation_key)
-    return [{ ...feature, label: item.label }]
+    return [{ ...feature, label: item.label, ancestors: item.ancestors ?? [] }]
   })
 }

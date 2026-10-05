@@ -10,7 +10,7 @@ export type Schema<K extends keyof components['schemas']> = components['schemas'
 export type Values = Record<string, unknown>
 export type Choice = { value: string; label: string }
 export type Field = { name: NamePath; label: string; kind?: 'password' | 'number' | 'select' | 'multiple' | 'datetime' | 'switch';
-  required?: boolean; options?: Choice[]; disabled?: boolean; min?: number; max?: number; help?: string }
+  required?: boolean; options?: Choice[]; disabled?: boolean; min?: number; max?: number; help?: string; control?: ReactNode }
 export function ErrorNotice({ error }: { error: unknown }) {
   if (!error) return null
   const titles: Record<number, string> = { 401: '登录已失效', 403: '暂无操作权限', 404: '内容不可见',
@@ -28,12 +28,12 @@ export function Fields({ fields }: { fields: Field[] }) {
   return fields.map(field => <Form.Item key={JSON.stringify(field.name)} name={field.name} label={field.label}
     extra={field.help} valuePropName={field.kind === 'switch' ? 'checked' : 'value'}
     rules={field.required ? [{ required: true, message: `请填写${field.label}` }] : undefined}>
-    {field.kind === 'select' || field.kind === 'multiple' ? <Select showSearch optionFilterProp="label"
+    {field.control ?? (field.kind === 'select' || field.kind === 'multiple' ? <Select showSearch optionFilterProp="label"
       mode={field.kind === 'multiple' ? 'multiple' : undefined} options={field.options} disabled={field.disabled} />
       : field.kind === 'number' ? <InputNumber min={field.min} max={field.max} style={{ width: '100%' }} />
         : field.kind === 'switch' ? <Switch disabled={field.disabled} />
           : field.kind === 'password' ? <Input.Password autoComplete="new-password" />
-            : <Input disabled={field.disabled} type={field.kind === 'datetime' ? 'datetime-local' : 'text'} />}
+            : <Input disabled={field.disabled} type={field.kind === 'datetime' ? 'datetime-local' : 'text'} />)}
   </Form.Item>)
 }
 export type EditorProps = { title: string; fields: Field[]; initial?: Values; children?: ReactNode;
@@ -56,7 +56,7 @@ export function EditorDialog({ title, fields, initial, children, onSave, onClose
   return <Modal open title={title} onCancel={onClose} destroyOnHidden maskClosable={!busy} closable={!busy}
     styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
     footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button>
-      <Button type="primary" danger={danger} loading={busy} onClick={() => form.submit()}>确认</Button></Space>}>
+      <Button type="primary" aria-label="确认" danger={danger} loading={busy} disabled={busy} onClick={() => form.submit()}>确认</Button></Space>}>
     <Space orientation="vertical" style={{ width: '100%' }} size="middle">
       <ErrorNotice error={error} />
       {error instanceof ApiError && error.status === 409 && latestRevision && <Button disabled={busy} onClick={async () => {

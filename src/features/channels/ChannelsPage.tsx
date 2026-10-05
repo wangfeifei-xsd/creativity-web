@@ -1,5 +1,6 @@
+import { useDirectory } from '../../api/useDirectory'
 import { actionsAsOptions, send } from '../../api/management'
-import { Button, Input, Modal, Space, Table, Tag } from 'antd'
+import { Button, Modal, Space, Table, Tag } from 'antd'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatTimestamp } from '../../api/presentation'
@@ -8,6 +9,7 @@ import { useSession } from '../../app/workspace/context'
 import { ActionButtons, EditorDialog, type Schema } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
+import { DirectoryFilters, type DirectoryPage } from '../../components/Directory'
 import { ChannelDetail } from './ChannelDetail'
 
 export function ChannelsPage() {
@@ -36,14 +38,14 @@ function CreateChannel({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     }} />
 }
 function ChannelList() {
-  const query = useQuery<Schema<'ChannelView'>[]>('/admin/v1/channels?limit=200')
+  const directory = useDirectory()
+  const query = useQuery<DirectoryPage<Schema<'ChannelView'>>>(`/admin/v1/channels/page?${directory.parameters}`)
   const { session } = useSession()
   const [creating, setCreating] = useState(false)
-  const [filter, setFilter] = useState('')
-  return <PageContainer title="渠道管理" actions={<Space wrap><Input aria-label="筛选渠道" placeholder="渠道名称" value={filter} onChange={e => setFilter(e.target.value)} allowClear />
+  return <PageContainer title="渠道管理" actions={<Space wrap><DirectoryFilters directory={directory} label="筛选渠道" statuses={[{ value: 'ACTIVE', label: '启用' }, { value: 'SUSPENDED', label: '暂停' }, { value: 'ARCHIVED', label: '归档' }]} />
     <Button onClick={query.reload}>刷新</Button><ActionButtons actions={session.actions} handlers={{ 'channel:create': () => setCreating(true) }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
-      <Table rowKey="channel_id" dataSource={query.data.filter(row => row.name.includes(filter))} scroll={{ x: 750 }} columns={[
+      <Table rowKey="channel_id" dataSource={query.data.items} pagination={directory.pagination(query.data.total)} scroll={{ x: 750 }} columns={[
         { title: '渠道名称', render: (_, row) => <Link to={`/channels/${row.channel_id}`}>{row.name}</Link> },
         { title: '业务分类', render: (_, row) => row.business_type_name ?? '未填写' }, { title: '负责人', dataIndex: 'owner' },
         { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> }, { title: '开通时间', render: (_, row) => formatTimestamp(row.created_at) },

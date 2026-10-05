@@ -1,5 +1,5 @@
 import { send } from '../../api/management'
-import { Button, Descriptions, Space, Table, Tabs, Tag } from 'antd'
+import { Button, Descriptions, Space, Tabs, Tag } from 'antd'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -8,9 +8,10 @@ import { useQuery } from '../../api/useQuery'
 import { ActionButtons, EditorDialog, type Schema } from '../../components/Management'
 import { ImpactDialog } from '../../components/ImpactDialog'
 import { PageContainer } from '../../components/PageContainer'
-import { EmptyState, ErrorState, LoadingState } from '../../components/States'
+import { ErrorState, LoadingState } from '../../components/States'
 import { MembersPage } from '../members/MembersPage'
 import { AuditPage } from '../audit/AuditPage'
+import { ChannelResources } from './ChannelResources'
 import { ChannelCollection } from './ChannelCollection'
 
 const retentionFields = [
@@ -37,7 +38,7 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
     <Tabs key={generation} activeKey={page.tabs.some(t => t.navigation_key === tab) ? tab : page.tabs[0]?.navigation_key} onChange={setTab} destroyOnHidden
       items={page.tabs.map(item => ({ key: item.navigation_key, label: item.label,
         children: item.navigation_key === 'overview' ? <Overview channelId={channelId} /> : item.navigation_key === 'members' ? <MembersPage channelId={channelId} /> :
-          item.navigation_key === 'audit' ? <AuditPage channelId={channelId} /> : item.navigation_key === 'resources' ? <Overview channelId={channelId} resources /> :
+          item.navigation_key === 'audit' ? <AuditPage channelId={channelId} /> : item.navigation_key === 'resources' ? <ChannelResources channelId={channelId} /> :
             item.navigation_key === 'usage' ? <ChannelUsage channelId={channelId} /> :
               <ChannelCollection key={item.navigation_key} page={page} kind={item.navigation_key} />,
       }))} />
@@ -51,15 +52,11 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
       submitPath={`/admin/v1/channels/${channelId}/${impact}`} onClose={() => setImpact(undefined)} onSaved={() => { setImpact(undefined); refresh() }} />}
   </PageContainer>
 }
-function Overview({ channelId, resources }: { channelId: string; resources?: boolean }) {
+function Overview({ channelId }: { channelId: string }) {
   const query = useQuery<Schema<'OverviewView'>>(`/admin/v1/channels/${channelId}/overview`)
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!query.data) return <LoadingState />
   const data = query.data
-  if (resources) return data.resource_references === null ? <EmptyState message="资源信息暂不可用" /> : <Table
-    rowKey={row => `${row.resource_type}|${row.resource_id}`} dataSource={data.resource_references} columns={[
-      { title: '资源', render: (_, row) => row.name ?? '名称不可用' }, { title: '数量', render: (_, row) => row.count === null ? '未提供' : `${row.count} 个` },
-    ]} />
   return <Descriptions bordered column={{ xs: 1, sm: 2 }} items={[
     { key: 'owner', label: '负责人', children: data.channel.owner }, { key: 'business', label: '业务分类', children: data.channel.business_type_name ?? '未填写' },
     { key: 'created', label: '开通时间', children: formatTimestamp(data.channel.created_at) }, { key: 'retention', label: '数据保存', children: `${data.channel.retention_policy.retention_days} 天` },

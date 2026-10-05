@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { apiClient, ApiError } from '../../api/client'
 import { applyFormErrors } from '../../api/form-errors'
 import { useQuery } from '../../api/useQuery'
+import { EditorDialog } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { StatusTag } from '../../components/StatusTag'
@@ -19,12 +20,14 @@ export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: (
   const versions = useQuery<Version[]>(`/admin/v1/prompts/${promptId}/versions`)
   const [selected, setSelected] = useState<string>()
   const [creating, setCreating] = useState(false)
+  const [editingInfo, setEditingInfo] = useState(false)
   const [label, setLabel] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
   const current = versions.data?.find(item => item.version.version_id === selected) ?? versions.data?.[0]
   const refresh = () => { resource.reload(); versions.reload() }
   return <PageContainer title={resource.data?.name ?? '提示词详情'} actions={<Space><Button onClick={onBack}>返回列表</Button><Button onClick={refresh}>刷新</Button>
+    {resource.data?.actions.some(action => action.action_key === 'prompt:manage') && <Button onClick={() => setEditingInfo(true)}>编辑信息</Button>}
     {resource.data?.actions.some(action => action.action_key === 'version:edit') && <Button onClick={() => { setLabel(''); setError(undefined); setCreating(true) }}>新建草稿</Button>}</Space>}>
     {resource.error || versions.error ? <ErrorState error={resource.error || versions.error} onRetry={refresh} /> : !resource.data || !versions.data ? <LoadingState /> : <Space orientation="vertical" style={{ width: '100%' }} size="middle">
       <Descriptions items={[{ key: 'purpose', label: '用途', children: resource.data.purpose }]} />
@@ -34,6 +37,11 @@ export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: (
         <Workbench key={`${current.version.version_id}:${current.revision}`} current={current} versions={versions.data} prompt={resource.data} onChanged={refresh} />
       </> : <Alert type="info" title="暂无版本" />}
     </Space>}
+    {editingInfo && resource.data && <EditorDialog title="编辑提示词信息" initial={{ name: resource.data.name, purpose: resource.data.purpose, revision: resource.data.revision }}
+      fields={[{ name: 'name', label: '名称', required: true }, { name: 'purpose', label: '用途', required: true }]}
+      latestRevision={async () => (await apiClient.request<Prompt>(`/admin/v1/prompts/${promptId}`)).revision}
+      onClose={() => setEditingInfo(false)} onSaved={() => { setEditingInfo(false); refresh() }}
+      onSave={values => send(`/admin/v1/prompts/${promptId}`, values, 'PATCH')} />}
     <Modal title="新建草稿" open={creating} confirmLoading={busy} onCancel={() => setCreating(false)} onOk={async () => {
       setBusy(true); setError(undefined)
       try {

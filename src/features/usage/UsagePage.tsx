@@ -116,13 +116,14 @@ function RecordDrawer({ id, onClose }: { id: string; onClose: () => void }) {
   </Drawer>
 }
 
-function ExportDrawer({ onClose }: { onClose: () => void }) {
-  const query = useQuery<Schema<'ExportView'>[]>('/admin/v1/usage/exports')
+export function ExportDrawer({ onClose, platform = false }: { onClose: () => void; platform?: boolean }) {
+  const base = platform ? '/admin/v1/platform/usage/exports' : '/admin/v1/usage/exports'
+  const query = useQuery<Schema<'ExportView'>[]>(base)
   const [error, setError] = useState<unknown>()
   const pending = query.data?.some(j => j.state === 'QUEUED' || j.state === 'RUNNING')
   useEffect(() => { if (!pending) return; const timer = setInterval(query.reload, 5000); return () => clearInterval(timer) }, [pending, query.reload])
   async function download(id: string) {
-    try { const result = await apiClient.download(`/admin/v1/usage/exports/${id}/content`); const url = URL.createObjectURL(result.blob); const link = document.createElement('a'); link.href = url; link.download = result.name ?? '用量明细.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }
+    try { const result = await apiClient.download(`${base}/${id}/content`); const url = URL.createObjectURL(result.blob); const link = document.createElement('a'); link.href = url; link.download = result.name ?? '用量报表.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }
     catch (failure) { setError(failure) }
   }
   return <Drawer open title="导出任务" width={760} onClose={onClose}><Space orientation="vertical" style={{ width: '100%' }}>
