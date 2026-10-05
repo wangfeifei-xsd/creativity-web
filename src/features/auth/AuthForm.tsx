@@ -1,7 +1,8 @@
-import { Button, Card, ConfigProvider, Form, Input, Select, Typography } from 'antd'
+import { Alert, Button, Card, ConfigProvider, Form, Input, Select, Typography } from 'antd'
 import { useRef, useState } from 'react'
+import { ApiError } from '../../api/client'
 import { applyFormErrors } from '../../api/form-errors'
-import { ErrorNotice, type Schema } from '../../components/Management'
+import type { Schema } from '../../components/Management'
 import { isAbort, useQuery } from '../../api/useQuery'
 import { authTheme } from '../../app/theme'
 import { BrandMark } from './BrandMark'
@@ -43,7 +44,7 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
       <section className="auth-panel" aria-labelledby="auth-title"><Card className="auth-card">
       <div className="auth-title"><Typography.Title id="auth-title" level={2}>{changePassword ? '修改初始密码' : '登录'}</Typography.Title>
         <span className="auth-title-decoration" aria-hidden="true"><i /><i /><i /></span></div>
-      {!!error && <div className="auth-error"><ErrorNotice error={error} /></div>}
+      {!!error && <div className="auth-error"><Alert type="error" showIcon title={error instanceof ApiError ? error.message : '操作失败，请稍后重试'} /></div>}
       {!changePassword && !!providers.data?.length && <Select className="auth-method" aria-label="登录方式" value={external ? 'external' : 'password'} disabled={busy} onChange={v => { setExternal(v === 'external'); setError(undefined); form.resetFields() }} options={[{ value: 'password', label: '平台账号' }, { value: 'external', label: '外部身份' }]} />}
       <Form form={form} layout="vertical" onFinish={submit} disabled={busy} requiredMark={false} onValuesChange={changed => {
         setError(undefined)
@@ -54,7 +55,7 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
         {!external && <Form.Item name={changePassword ? 'current_password' : 'password'} label={changePassword ? '当前密码' : '密码'}
           rules={[{ required: true, message: '请输入密码' }]}><Input.Password autoComplete="current-password" placeholder={changePassword ? '请输入当前密码' : '请输入密码'} maxLength={256} prefix={<AuthIcon name="lock" />} /></Form.Item>}
         {external && <><Form.Item name="profile_id" label="身份源" rules={[{ required: true }]}><Select options={providers.data?.map(p => ({ value: p.profile_id, label: p.name }))} /></Form.Item><Form.Item name="token" label="外部访问凭据" rules={[{ required: true }]}><Input.Password autoComplete="off" /></Form.Item></>}
-        {changePassword && <><Form.Item name="new_password" label="新密码" rules={[{ required: true, message: '请输入新密码' }]}>
+        {changePassword && <><Form.Item name="new_password" label="新密码" extra="密码不少于 12 个字符" rules={[{ required: true, message: '请输入新密码' }]}>
           <Input.Password autoComplete="new-password" placeholder="请输入新密码" /></Form.Item>
           <Form.Item name="confirmation" label="确认新密码" dependencies={['new_password']} rules={[
             { required: true, message: '请再次输入新密码' },

@@ -28,6 +28,8 @@ test('Hash 详情地址可直达、刷新，并支持列表跳转和前进后退
   const menu = page.getByRole('menuitem', { name: '渠道管理', exact: true })
   await expect(heading).toBeVisible()
   await expect(menu).toHaveClass(/ant-menu-item-selected/)
+  await expect(page.getByLabel('页面路径')).toContainText('详情')
+  await expect(page.getByLabel('页面路径').getByRole('link', { name: '渠道管理', exact: true })).toHaveAttribute('href', '#/channels')
   await page.reload()
   await expect(heading).toBeVisible()
   await expect(page).toHaveURL(/\/#\/channels\/channel_a\?from=bookmark$/)
@@ -46,7 +48,7 @@ test('Hash 详情地址可直达、刷新，并支持列表跳转和前进后退
   expect(documents).toEqual(['/', '/'])
 })
 
-for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且分类可留空（${width}）`, async ({ page }) => {
+for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且分类可留空（${width}）`, async ({ page }, testInfo) => {
   await fixture(page)
   await page.setViewportSize({ width, height: 1000 })
   let body: Record<string, unknown> | undefined
@@ -70,7 +72,7 @@ for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且�
   await dialog.getByLabel('外部数据域编号', { exact: true }).fill('研发:001/甲')
   await expect(dialog.getByText('请填写外部数据域类型')).toHaveCount(0)
   await expect(dialog.getByText('请填写外部数据域编号')).toHaveCount(0)
-  await page.screenshot({ path: `/tmp/creativity-19-channel-${width}.png`, fullPage: true })
+  await page.screenshot({ path: testInfo.outputPath(`channel-${width}.png`), fullPage: true })
   await dialog.getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog).toBeHidden()
   expect(body?.business_type).toBeNull()

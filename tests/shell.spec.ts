@@ -35,6 +35,49 @@ test('初始化服务故障可重试，不信任本地 Token 或到期时间', a
   expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBe('opaque')
 })
 
+test('侧栏沿用服务端导航，跳转、历史记录与顶部刷新保留当前路径', async ({ page }) => {
+  await authenticated(page)
+  let sessionRequests = 0
+  page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/auth/session')) sessionRequests++ })
+  await page.goto('/#/accounts')
+  const navigation = page.getByRole('navigation', { name: '主导航' })
+  await expect(navigation.getByRole('menuitem', { name: '账号管理', exact: true })).toHaveClass(/ant-menu-item-selected/)
+  await expect(navigation.getByRole('menuitem', { name: '渠道管理', exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('页面路径')).toContainText('组织与权限')
+  await expect(page.getByLabel('页面路径')).toContainText('账号管理')
+  await navigation.getByRole('menuitem', { name: '工作台', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+  const previousRequests = sessionRequests
+  await page.getByRole('button', { name: '刷新当前页面', exact: true }).click()
+  await expect.poll(() => sessionRequests).toBeGreaterThan(previousRequests)
+  await expect(page).toHaveURL(/\/#\/accounts$/)
+  await expect(navigation.getByRole('menuitem', { name: '账号管理', exact: true })).toHaveClass(/ant-menu-item-selected/)
+})
+
+for (const width of [375, 820]) test(`窄屏抽屉可跳转和关闭，工作区信息保持可见（${width}）`, async ({ page }) => {
+  await authenticated(page)
+  const workspace = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '产品研发资料域' }
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session, workspace } }))
+  await page.setViewportSize({ width, height: 812 })
+  await page.goto('/#/')
+  await expect(page.getByText(workspace.channel_name, { exact: true })).toBeVisible()
+  await expect(page.getByText(workspace.environment_name, { exact: true })).toBeVisible()
+  await expect(page.getByText(workspace.data_scope_name, { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '打开导航菜单' }).click()
+  const drawer = page.getByRole('dialog')
+  await expect(drawer.getByRole('navigation', { name: '主导航' })).toBeVisible()
+  await drawer.getByRole('menuitem', { name: '账号管理', exact: true }).click()
+  await expect(drawer).toBeHidden()
+  await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '用户菜单' }).click()
+  await expect(page.getByRole('menuitem', { name: '返回平台', exact: true })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: '退出登录', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+})
+
 test('409 保留输入，重复提交只发出一次请求，读取新版本后可恢复', async ({ page }) => {
   await authenticated(page)
   let posts = 0
