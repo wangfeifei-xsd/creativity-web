@@ -15,7 +15,8 @@ async function fixture(page: Page) {
   await page.route('**/admin/v1/**', async route => {
     const request = route.request(), url = new URL(request.url()), path = url.pathname, method = request.method()
     let json: unknown = {}
-    if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin', login_name: 'admin', display_name: '管理员' }, workspace: workspaces[state.channel], navigation: [{ navigation_key: 'memories', label: '记忆管理' }], actions: [], expires_at: '2030-01-01T00:00:00Z' }
+    if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin', login_name: 'admin', display_name: '管理员' }, workspace: workspaces[state.channel],
+      workspace_options: workspaces, can_access_platform: false, navigation: [{ navigation_key: 'memories', label: '记忆管理' }], actions: [], expires_at: '2030-01-01T00:00:00Z' }
     else if (path.endsWith('/auth/channels')) json = workspaces
     else if (path.endsWith('/auth/channel-context')) { state.channel = 1; json = { access_token: 'second-token' } }
     else if (path === '/admin/v1/memory-subjects') json = [{ anchor_id: 'memory_one', label: '王先生' }]
@@ -111,10 +112,8 @@ test('切换渠道后同号主体不会复用前一渠道记忆', async ({ page 
   await fixture(page)
   await page.goto('/#/memories/subjects/memory_one')
   await expect(page.getByText('100–200 元')).toBeVisible()
-  await page.getByRole('button', { name: '切换工作区' }).click()
-  await page.getByRole('dialog').getByRole('combobox').click()
-  await page.locator('.ant-select-dropdown:visible').getByText('陪玩渠道 · 测试 · 业务数据域', { exact: true }).click()
-  await page.getByRole('button', { name: '进入工作区', exact: true }).click()
+  await page.getByLabel('切换渠道', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('陪玩渠道', { exact: true }).click()
   await expect(page.getByRole('heading', { name: '工作台' })).toBeVisible()
   await page.goto('/#/memories/subjects/memory_one')
   await expect(page.getByText('800–900 元')).toBeVisible()

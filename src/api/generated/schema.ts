@@ -70,6 +70,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/accounts/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Administrator Roles */
+        get: operations["administrator_roles_admin_v1_accounts_roles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/agent-versions/{identifier}/release-check": {
         parameters: {
             query?: never;
@@ -4925,6 +4942,8 @@ export interface components {
         };
         /** AccountCreate */
         AccountCreate: {
+            /** Channel Ids */
+            channel_ids?: string[] | null;
             /** Display Name */
             display_name: string;
             /**
@@ -4936,20 +4955,30 @@ export interface components {
             login_name: string;
             /** Platform Roles */
             platform_roles?: string[];
+            /** Role */
+            role?: ("platform_admin" | "channel_admin") | null;
         };
         /** AccountUpdate */
         AccountUpdate: {
+            /** Channel Ids */
+            channel_ids?: string[] | null;
             /** Display Name */
             display_name?: string | null;
             /** Platform Roles */
             platform_roles?: string[] | null;
             /** Revision */
             revision: number;
+            /** Role */
+            role?: ("platform_admin" | "channel_admin") | null;
             /** Status */
             status?: ("ACTIVE" | "DISABLED") | null;
         };
         /** AccountView */
         AccountView: {
+            /** Channel Ids */
+            channel_ids?: string[];
+            /** Channel Names */
+            channel_names?: (string | null)[];
             /**
              * Credential Updated At
              * Format: date-time
@@ -4967,6 +4996,13 @@ export interface components {
             platform_roles: string[];
             /** Revision */
             revision: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "platform_admin" | "channel_admin";
+            /** Role Name */
+            role_name: string;
             /**
              * Status
              * @enum {string}
@@ -6396,12 +6432,17 @@ export interface components {
              * @description 可选业务分类，仅用于展示
              */
             business_type?: string | null;
-            data_scope: components["schemas"]["InitialDataScope"];
+            /**
+             * @deprecated
+             * @description 兼容一次性开通；新流程在详情中配置数据域
+             */
+            data_scope?: components["schemas"]["InitialDataScope"] | null;
             /**
              * Environment
-             * @enum {string}
+             * @deprecated
+             * @description 兼容一次性开通；须与初始数据域同时提供
              */
-            environment: "dev" | "test" | "fat" | "prod";
+            environment?: ("dev" | "test" | "fat" | "prod") | null;
             /** First Admin User Id */
             first_admin_user_id: string;
             /** Independent Actions */
@@ -6432,6 +6473,7 @@ export interface components {
             /** Actions */
             actions: components["schemas"]["VisibleAction"][];
             channel: components["schemas"]["ChannelView"];
+            pending_administrator?: components["schemas"]["NamedOption"] | null;
             /** Service Actions */
             service_actions: components["schemas"]["VisibleAction"][];
             /** Tabs */
@@ -10638,6 +10680,12 @@ export interface components {
             /** Actions */
             actions: components["schemas"]["VisibleAction"][];
             /**
+             * Can Access Platform
+             * @default false
+             */
+            can_access_platform: boolean;
+            default_workspace?: components["schemas"]["WorkspaceOption"] | null;
+            /**
              * Expires At
              * Format: date-time
              */
@@ -10646,6 +10694,8 @@ export interface components {
             navigation: components["schemas"]["NavigationItem"][];
             user: components["schemas"]["UserView"];
             workspace: components["schemas"]["WorkspaceOption"] | null;
+            /** Workspace Options */
+            workspace_options?: components["schemas"]["WorkspaceOption"][];
         };
         /** SkillAgentOption */
         SkillAgentOption: {
@@ -12722,6 +12772,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DirectoryPage_AccountView_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    administrator_roles_admin_v1_accounts_roles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleView"][];
                 };
             };
             /** @description Bad Request */

@@ -1,10 +1,11 @@
 import { send } from '../../api/management'
 import { Button, Descriptions, Space, Tabs, Tag } from 'antd'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { formatAmount, formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
+import { useSession } from '../../app/workspace/context'
 import { ActionButtons, EditorDialog, type Schema } from '../../components/Management'
 import { ImpactDialog } from '../../components/ImpactDialog'
 import { PageContainer } from '../../components/PageContainer'
@@ -21,8 +22,10 @@ const retentionFields = [
 ].map(([name, label]) => ({ name, label, kind: 'number' as const, required: true }))
 
 export function ChannelDetail({ channelId }: { channelId: string }) {
+  const { reload: reloadSession } = useSession()
   const query = useQuery<Schema<'ChannelPage'>>(`/admin/v1/channels/${channelId}/page`)
-  const [tab, setTab] = useState('overview')
+  const [parameters] = useSearchParams()
+  const [tab, setTab] = useState(parameters.get('tab') ?? 'overview')
   const [editing, setEditing] = useState(false)
   const [impact, setImpact] = useState<'suspend' | 'resume' | 'archive'>()
   const [generation, setGeneration] = useState(0)
@@ -40,7 +43,10 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
         children: item.navigation_key === 'overview' ? <Overview channelId={channelId} /> : item.navigation_key === 'members' ? <MembersPage channelId={channelId} /> :
           item.navigation_key === 'audit' ? <AuditPage channelId={channelId} /> : item.navigation_key === 'resources' ? <ChannelResources channelId={channelId} /> :
             item.navigation_key === 'usage' ? <ChannelUsage channelId={channelId} /> :
-              <ChannelCollection key={item.navigation_key} page={page} kind={item.navigation_key} />,
+              <ChannelCollection key={item.navigation_key} page={page} kind={item.navigation_key} onConfigured={() => {
+                query.reload()
+                if (item.navigation_key === 'data-scopes') void reloadSession()
+              }} />,
       }))} />
     {editing && <EditorDialog title="编辑渠道" initial={{ name: channel.name, owner: channel.owner, revision: channel.revision,
       ...channel.retention_policy }} fields={[{ name: 'name', label: '渠道名称', required: true },

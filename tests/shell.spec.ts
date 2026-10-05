@@ -1,14 +1,17 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const account = { user_id: 'u1', login_name: 'admin', display_name: '管理员', platform_roles: ['platform_admin'], platform_role_names: ['平台管理员'],
+  role: 'platform_admin', role_name: '平台管理员', channel_ids: [], channel_names: [],
   status: 'ACTIVE', status_label: '启用', revision: 1, must_change_password: false, credential_updated_at: '2026-10-01T00:00:00Z' }
 const session = { user: account, workspace: null, navigation: [{ navigation_key: 'accounts', label: '账号管理', ancestors: [{ key: 'organization', label: '组织与权限' }] }],
+  workspace_options: [], default_workspace: null, can_access_platform: true,
   actions: [{ action_key: 'account:manage', label: '管理账号' }], expires_at: '2000-01-01T00:00:00Z' }
 const errorBody = (status: number) => ({ error: { code: 'ERROR', message: `服务返回 ${status}`, fields: [] } })
+const roles = [{ role_code: 'platform_admin', name: '平台管理员' }, { role_code: 'channel_admin', name: '渠道管理员' }]
 async function authenticated(page: Page) {
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
-    await route.fulfill({ json: path.endsWith('/session') ? session : path.endsWith('/roles') ? [] : path.endsWith('/accounts/page') ? { items: [account], total: 1, offset: 0, limit: 20 } : [], status: 200 })
+    await route.fulfill({ json: path.endsWith('/session') ? session : path.endsWith('/roles') ? roles : path.endsWith('/accounts/page') ? { items: [account], total: 1, offset: 0, limit: 20 } : [], status: 200 })
   })
 }
 
@@ -94,7 +97,8 @@ test('409 保留输入，重复提交只发出一次请求，读取新版本后�
       if (posts === 1) { revision = 2; await route.fulfill({ status: 409,
         headers: { 'X-Request-ID': 'conflict-request-id' }, json: errorBody(409) }) }
       else { expect(body).toMatchObject({ display_name: '待保留名称', revision: 2 }); await route.fulfill({ json: { ...account, ...body } }) }
-    } else await route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/page') ? { items: [{ ...account, revision }], total: 1, offset: 0, limit: 20 } : { ...account, revision } })
+    } else await route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/roles') ? roles
+      : new URL(route.request().url()).pathname.endsWith('/page') ? { items: [{ ...account, revision }], total: 1, offset: 0, limit: 20 } : { ...account, revision } })
   })
   await page.goto('/#/accounts')
   await page.getByRole('button', { name: '编辑', exact: true }).click()
@@ -145,7 +149,8 @@ test('IAM-A14 切换渠道清除筛选和旧请求，迟到 401 不影响新工�
     const current = request.headers().authorization === 'Bearer channel-b-token' ? b : a
     if (path.endsWith('/auth/channels')) return route.fulfill({ json: [a, b] })
     if (path.endsWith('/auth/channel-context')) return route.fulfill({ json: { access_token: 'channel-b-token', token_type: 'Bearer', expires_in: 3600 } })
-    if (path.endsWith('/auth/session')) return route.fulfill({ json: { ...session, workspace: current, navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [] } })
+    if (path.endsWith('/auth/session')) return route.fulfill({ json: { ...session, workspace: current,
+      workspace_options: [a, b], can_access_platform: false, navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [] } })
     if (path.endsWith('/channels/page')) {
       if (current === a && deferA) {
         pending = true
@@ -161,11 +166,8 @@ test('IAM-A14 切换渠道清除筛选和旧请求，迟到 401 不影响新工�
   deferA = true
   await page.getByRole('button', { name: '刷新', exact: true }).click()
   await expect.poll(() => pending).toBe(true)
-  await page.getByRole('button', { name: '切换工作区' }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.getByRole('combobox').click()
-  await page.locator('.ant-select-dropdown:visible').getByText('陪玩渠道 · 生产 · 俱乐部', { exact: true }).click()
-  await dialog.getByRole('button', { name: '进入工作区' }).click()
+  await page.getByLabel('切换渠道', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('陪玩渠道', { exact: true }).click()
   await expect(page.getByRole('heading', { name: '工作台' })).toBeVisible()
   release()
   await page.getByRole('menuitem', { name: '渠道管理' }).click()

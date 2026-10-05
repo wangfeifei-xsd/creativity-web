@@ -50,11 +50,9 @@ async function confirm(name = '确认') {
   await expect(dialog()).toBeHidden()
 }
 async function enter(name) {
-  await button(page, '切换工作区').click()
-  await dialog().getByRole('combobox').click()
-  await page.locator('.ant-select-dropdown:visible').getByText(`${name} · 测试 · ${name}数据域`, { exact: true }).click()
-  const auth = await capture('/admin/v1/auth/channel-context', () => button(dialog(), '进入工作区').click())
-  await expect(dialog()).toBeHidden()
+  await page.getByLabel('切换渠道', { exact: true }).click()
+  const auth = await capture('/admin/v1/auth/channel-context', () =>
+    page.locator('.ant-select-dropdown:visible').getByText(name, { exact: true }).click())
   return auth
 }
 let result = {}

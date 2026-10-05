@@ -20,7 +20,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
   const reload = useCallback(async () => {
-    try { const session = await apiClient.get('/admin/v1/auth/session'); setState({ phase: 'ready', session }) }
+    try {
+      let session = await apiClient.get('/admin/v1/auth/session')
+      // 默认渠道由服务端给出，前端只请求进入该已授权范围，不推导角色或权限。
+      if (!session.workspace && session.default_workspace) {
+        tokenStore.invalidate(); setGeneration(n => n + 1)
+        const workspace = session.default_workspace
+        const response = await send<Schema<'TokenResponse'>>('/admin/v1/auth/channel-context', 'POST', {
+          channel_id: workspace.channel_id, environment: workspace.environment, data_scope_id: workspace.data_scope_id,
+        })
+        tokenStore.set(response.access_token)
+        session = await apiClient.get('/admin/v1/auth/session')
+      }
+      setState({ phase: 'ready', session })
+    }
     catch (error) {
       if (isAbort(error)) return
       if (error instanceof ApiError && error.status === 401) setState({ phase: 'login' })
@@ -31,14 +44,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = tokenStore.onUnauthorized(() => { setState({ phase: 'login' }); setGeneration(n => n + 1) })
     // 即使本地没有 Token，也由会话接口决定登录状态。
-    void apiClient.get('/admin/v1/auth/session').then(session => setState({ phase: 'ready', session }), error => {
-      if (isAbort(error)) return
-      if (error instanceof ApiError && error.status === 401) setState({ phase: 'login' })
-      else if (error instanceof ApiError && error.code === 'PASSWORD_CHANGE_REQUIRED') setState({ phase: 'password' })
-      else setState({ phase: 'error', error })
-    })
-    return () => { unsubscribe(); tokenStore.invalidate() }
-  }, [])
+    let active = true
+    void Promise.resolve().then(() => { if (active) return reload() })
+    return () => { active = false; unsubscribe(); tokenStore.invalidate() }
+  }, [reload])
   const logout = async () => {
     if (ending.current) return
     ending.current = true

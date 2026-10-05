@@ -65,10 +65,10 @@
 .workspace-location .ant-breadcrumb-link { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .workspace-location .ant-breadcrumb li:last-child { color: #1d2939; font-weight: 600; }
 .workspace-context { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 45%; color: #7a8699; font-size: 12px; }
-.workspace-context .ant-tag { margin: 0; border: none; background: #eff4fc; color: #61718b; font-size: 11px; }
-.workspace-switch.ant-btn { gap: 8px; padding: 4px 6px; min-width: 0; height: 34px; color: #61718b; font-size: 13px; }
-.workspace-channel, .workspace-scope { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspace-channel { max-width: 160px; }
+.workspace-scope { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-channel-select { min-width: 130px; max-width: 190px; }
+.workspace-environment-select { min-width: 76px; }
+.workspace-domain-select { min-width: 120px; max-width: 180px; }
 .workspace-scope { max-width: 130px; }
 .workspace-tools { display: flex; align-items: center; flex-shrink: 0; gap: 12px; }
 .workspace-tools > .ant-btn { color: #596579; }
@@ -91,7 +91,6 @@
   .workspace-tools { gap: 4px; }
   .workspace-user-name, .workspace-user .anticon-down { display: none; }
   .workspace-user.ant-btn { width: 36px; height: 36px; padding: 3px; }
-  .workspace-channel, .workspace-scope { max-width: none; }
-  .workspace-switch.ant-btn { flex-shrink: 1; }
+  .workspace-scope { max-width: none; }
   .workspace-scope { flex: 1; }
 }

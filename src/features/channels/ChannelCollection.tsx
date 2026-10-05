@@ -1,5 +1,6 @@
 import { names, send, statuses, environments, actionsAsOptions } from '../../api/management'
-import { Button, Space, Table, Tag } from 'antd'
+import { DownOutlined } from '@ant-design/icons'
+import { AutoComplete, Button, Space, Table, Tag } from 'antd'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { formatTimestamp } from '../../api/presentation'
@@ -15,7 +16,7 @@ const definitions: Record<string, { prefix: string; label: string; id: string }>
   clients: { prefix: 'client', label: '接入服务', id: 'client_id' },
   keys: { prefix: 'key', label: 'Key', id: 'key_id' },
 }
-export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>; kind: string }) {
+export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'ChannelPage'>; kind: string; onConfigured?: () => void }) {
   const { session } = useSession()
   const channelId = page.channel.channel_id
   const path = `/admin/v1/channels/${channelId}/${kind}` as const
@@ -46,9 +47,21 @@ export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>;
       initial.approval_required = row ? (row.release_policy as Schema<'ReleasePolicy'>).approval_required : true
     }
     if (kind === 'data-scopes' && !row) {
-      fields.push({ name: 'external_scope_type', label: '外部数据域类型', required: true },
-        { name: 'external_scope_id', label: '外部数据域编号', required: true })
-      if (createOptions.data) fields.push({ name: 'administrator_id', label: '该工作区管理员', kind: 'select', options: createOptions.data.accounts })
+      const types = [...new Set((query.data ?? []).map(scope => scope.external_scope_type)
+        .filter((value): value is string => typeof value === 'string' && value.length > 0))]
+      fields.push({ name: 'external_scope_type', label: '外部数据域类型', required: true,
+        help: '选择已有类型或输入源系统使用的新类型。',
+        control: <AutoComplete options={types.map(value => ({ value }))} placeholder="选择或输入类型"
+          suffixIcon={<DownOutlined />} maxLength={64}
+          filterOption={(value, option) => String(option?.value).toLowerCase().includes(value.toLowerCase())} /> },
+        { name: 'external_scope_id', label: '外部数据域编号', required: true,
+          help: '填写源系统中的真实编号，须与主体委托中的编号一致。' })
+      if (createOptions.data) {
+        const pending = page.pending_administrator
+        initial.administrator_id = pending?.value
+        fields.push({ name: 'administrator_id', label: '该工作区管理员', kind: 'select',
+          required: !!pending, disabled: !!pending, options: pending ? [pending] : createOptions.data.accounts })
+      }
     }
     if ((kind === 'clients' || kind === 'keys') && page.service_actions.length) fields.push({ name: 'scopes', label: '可调用能力', kind: 'multiple', required: true, options: actionsAsOptions(page.service_actions) })
     if (kind === 'clients') fields.push({ name: 'data_scopes', label: '业务数据域', kind: 'multiple', required: true,
@@ -109,7 +122,7 @@ export function ChannelCollection({ page, kind }: { page: Schema<'ChannelPage'>;
         { title: '操作', render: (_, row) => <ActionButtons disabled={kind !== 'keys' && catalogPending} actions={page.actions} handlers={kind === 'keys' ? { 'key:rotate': () => rotate(row), 'key:revoke': () => revoke(row) } :
           { [`${definition.prefix}:edit`]: () => edit(row) }} /> },
       ]} />}
-    {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
+    {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload(); onConfigured?.() }} />}
     {secret && <SecretDialog secret={secret} onClose={() => setSecret(undefined)} />}
   </Space>
 }
