@@ -26,9 +26,13 @@ test('无 Token 时仍查询服务端会话，401 显示登录', async ({ page }
 test('初始化服务故障可重试，不信任本地 Token 或到期时间', async ({ page }) => {
   let failed = true
   await page.addInitScript(() => sessionStorage.setItem('creativity.management.token', 'opaque'))
-  await page.route('**/admin/v1/auth/session', route => route.fulfill({ status: failed ? 503 : 200, json: failed ? errorBody(503) : session }))
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ status: failed ? 503 : 200,
+    headers: failed ? { 'X-Request-ID': 'session-request-id' } : undefined,
+    json: failed ? errorBody(503) : session }))
   await page.goto('/')
-  await expect(page.getByText('服务暂不可用', { exact: true })).toBeVisible()
+  await expect(page.getByText('服务返回 503', { exact: true })).toBeVisible()
+  await expect(page.getByText('请求标识', { exact: false })).toHaveCount(0)
+  await expect(page.getByText('session-request-id', { exact: true })).toHaveCount(0)
   failed = false
   await page.getByRole('button', { name: '重试', exact: true }).click()
   await expect(page.getByRole('heading', { name: '工作台' })).toBeVisible()
@@ -87,7 +91,8 @@ test('409 保留输入，重复提交只发出一次请求，读取新版本后�
       posts++
       await new Promise(resolve => setTimeout(resolve, 250))
       const body = route.request().postDataJSON() as { display_name: string; revision: number }
-      if (posts === 1) { revision = 2; await route.fulfill({ status: 409, json: errorBody(409) }) }
+      if (posts === 1) { revision = 2; await route.fulfill({ status: 409,
+        headers: { 'X-Request-ID': 'conflict-request-id' }, json: errorBody(409) }) }
       else { expect(body).toMatchObject({ display_name: '待保留名称', revision: 2 }); await route.fulfill({ json: { ...account, ...body } }) }
     } else await route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/page') ? { items: [{ ...account, revision }], total: 1, offset: 0, limit: 20 } : { ...account, revision } })
   })
@@ -96,7 +101,9 @@ test('409 保留输入，重复提交只发出一次请求，读取新版本后�
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('显示名称').fill('待保留名称')
   await dialog.getByRole('button', { name: '确认', exact: true }).dblclick()
-  await expect(dialog.getByText('提交冲突', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('服务返回 409', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('提交冲突', { exact: true })).toHaveCount(0)
+  await expect(dialog.getByText('conflict-request-id', { exact: true })).toHaveCount(0)
   expect(posts).toBe(1)
   await expect(dialog.getByLabel('显示名称')).toHaveValue('待保留名称')
   await dialog.getByRole('button', { name: '读取最新版本，保留填写内容' }).click()
@@ -109,7 +116,7 @@ test('直接访问接口被拒绝时显示无权限，导航不成为授权依�
   await authenticated(page)
   await page.route('**/admin/v1/accounts**', route => route.fulfill({ status: 403, json: errorBody(403) }))
   await page.goto('/#/accounts')
-  await expect(page.getByText('暂无访问权限', { exact: true })).toBeVisible()
+  await expect(page.getByText('服务返回 403', { exact: true })).toBeVisible()
   await expect(page.getByRole('table')).toHaveCount(0)
 })
 

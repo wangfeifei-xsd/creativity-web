@@ -13,11 +13,8 @@ export type Field = { name: NamePath; label: string; kind?: 'password' | 'number
   required?: boolean; options?: Choice[]; disabled?: boolean; min?: number; max?: number; help?: string; control?: ReactNode }
 export function ErrorNotice({ error }: { error: unknown }) {
   if (!error) return null
-  const titles: Record<number, string> = { 401: '登录已失效', 403: '暂无操作权限', 404: '内容不可见',
-    409: '提交冲突', 422: '字段填写有误', 429: '额度或频率受限', 503: '服务暂不可用' }
-  return <Alert type="error" showIcon title={error instanceof ApiError ? titles[error.status] || '请求失败' : '请求失败'}
-    description={<>{error instanceof Error ? error.message : '请稍后重试'}
-      {error instanceof ApiError && error.requestId && <div>请求标识：{error.requestId}</div>}</>} />
+  return <Alert type="error" showIcon
+    title={error instanceof Error ? error.message : '操作失败，请稍后重试'} />
 }
 export function ActionButtons({ actions, handlers, disabled }: { actions: readonly Schema<'VisibleAction'>[];
   handlers: Record<string, (() => void) | undefined>; disabled?: boolean }) {
