@@ -8,7 +8,8 @@ async function fixture(page: Page) {
     let json: unknown = []
     if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin_a', login_name: 'admin', display_name: '管理员' }, workspace: null,
       navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [{ action_key: 'channel:create', label: '开通渠道' }], expires_at: '2030-01-01T00:00:00Z' }
-    else if (path.endsWith('/channel-create-options')) json = { accounts: [{ value: 'admin_a', label: '管理员' }], environments: [{ value: 'test', label: '测试' }], business_types: [], independent_actions: [] }
+    else if (path.endsWith('/channel-create-options')) json = { accounts: [{ value: 'admin_a', label: '管理员' }], environments: [{ value: 'test', label: '测试' }], business_types: [],
+      independent_actions: [{ action_key: 'run:approve', label: '审批运行操作' }] }
     else if (path === '/admin/v1/channels/page') json = { items: [channel], total: 1, offset: 0, limit: 20 }
     else if (path.endsWith('/page')) json = { channel, tabs: [{ navigation_key: 'data-scopes', label: '业务数据域' }], actions: [{ action_key: 'data_scope:create', label: '创建数据域' }], service_actions: [] }
     else if (path.endsWith('/environments')) json = [{ environment: 'test', name: '测试', status: 'ACTIVE' }]
@@ -60,10 +61,12 @@ for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且�
   await page.getByRole('button', { name: '开通渠道' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('渠道名称').fill('资料渠道')
-  await dialog.getByLabel('渠道编码').fill('research')
+  await expect(dialog.getByLabel('渠道编码')).toHaveCount(0)
   await dialog.getByLabel('负责人').fill('管理员')
   await dialog.getByLabel('首位管理员').click()
   await page.locator('.ant-select-dropdown:visible').getByText('管理员', { exact: true }).click()
+  await dialog.getByLabel('独立授权').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('审批运行操作', { exact: true }).click()
   await dialog.getByLabel('数据域名称').fill('研发资料')
   await dialog.getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog.getByText('请填写外部数据域类型')).toBeVisible()
@@ -76,6 +79,8 @@ for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且�
   await dialog.getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog).toBeHidden()
   expect(body?.business_type).toBeNull()
+  expect(body).not.toHaveProperty('channel_code')
+  expect(body?.independent_actions).toEqual(['run:approve'])
   expect(body?.data_scope).toEqual({ name: '研发资料', external_scope_type: '源系统/workspace', external_scope_id: '研发:001/甲' })
 })
 

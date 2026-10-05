@@ -74,7 +74,6 @@ try {
     await page.goto(`${config.web}/#/channels`)
     await button(page, '开通渠道').click()
     await dialog().getByLabel('渠道名称').fill(s.name)
-    await dialog().getByLabel('渠道编码').fill(s.code)
     await dialog().getByLabel('负责人', { exact: true }).fill('接入验证人员')
     await choose(dialog(), '首位管理员', '平台管理员（root-admin）')
     await dialog().getByLabel('数据域名称').fill(`${s.name}数据域`)

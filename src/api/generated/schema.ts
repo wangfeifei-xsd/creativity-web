@@ -6396,8 +6396,6 @@ export interface components {
              * @description 可选业务分类，仅用于展示
              */
             business_type?: string | null;
-            /** Channel Code */
-            channel_code: string;
             data_scope: components["schemas"]["InitialDataScope"];
             /**
              * Environment
@@ -6407,7 +6405,7 @@ export interface components {
             /** First Admin User Id */
             first_admin_user_id: string;
             /** Independent Actions */
-            independent_actions?: ("release:publish" | "data:export" | "data:read_sensitive")[];
+            independent_actions?: ("release:publish" | "data:export" | "data:read_sensitive" | "run:approve")[];
             /** Name */
             name: string;
             /** Owner */

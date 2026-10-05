@@ -24,7 +24,7 @@ function CreateChannel({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const options = query.data
   return <EditorDialog title="开通渠道" onClose={onClose} onSaved={onSaved}
     initial={{ environment: 'test', retention_days: 90, independent_actions: [] }} fields={[
-      { name: 'name', label: '渠道名称', required: true }, { name: 'channel_code', label: '渠道编码', required: true },
+      { name: 'name', label: '渠道名称', required: true },
       { name: 'owner', label: '负责人', required: true }, { name: 'business_type', label: '业务分类' },
       { name: 'first_admin_user_id', label: '首位管理员', kind: 'select', options: options.accounts, required: true },
       { name: 'environment', label: '初始环境', kind: 'select', options: options.environments, required: true },

@@ -46,7 +46,6 @@ test('真实 IAM/渠道：首次改密、开通、成员双入口、签发和轮
   await page.getByRole('button', { name: '开通渠道', exact: true }).click()
   dialog = page.getByRole('dialog')
   await dialog.getByLabel('渠道名称').fill('页面租号渠道')
-  await dialog.getByLabel('渠道编码').fill('ui-rental')
   await dialog.getByLabel('负责人').fill('测试负责人')
   await choose(page, dialog, '首位管理员', '页面管理员（ui-admin）')
   await dialog.getByLabel('数据域名称').fill('租号业务域')
