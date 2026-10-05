@@ -28,9 +28,30 @@ async function fixture(page: Page) {
   })
 }
 
+for (const hash of ['', '#/mcp-connections/mcp_a?from=authorization']) test(`OAuth 回调清理凭据并保留 Hash 页面（${hash ? '连接详情' : '站点入口'}）`, async ({ page }) => {
+  await fixture(page)
+  let callbacks = 0
+  const state = 'controlled-oauth-state-for-hash-routing'
+  await page.route('**/admin/v1/mcp-connections/oauth/callback', async route => {
+    callbacks++
+    expect(route.request().postDataJSON()).toEqual({ state, code: 'one-time-code' })
+    await route.fulfill({ json: {} })
+  })
+  await page.goto(`/?lang=zh&state=${state}&code=one-time-code${hash}`)
+  await expect(page.getByText('授权完成，可以测试连接。', { exact: true })).toBeVisible()
+  const target = `/?lang=zh${hash || '#/mcp-connections'}`
+  await expect(page).toHaveURL(target)
+  const heading = page.getByRole('heading', { name: hash ? '目录服务' : 'MCP 连接', exact: true })
+  await expect(heading).toBeVisible()
+  await page.reload()
+  await expect(heading).toBeVisible()
+  await expect(page).toHaveURL(target)
+  expect(callbacks).toBe(1)
+})
+
 test('连接详情区分人工启用和健康，契约变化明确提示', async ({ page }) => {
   await fixture(page)
-  await page.goto('/mcp-connections')
+  await page.goto('/#/mcp-connections')
   await expect(page.getByText('未启用', { exact: true })).toBeVisible()
   await expect(page.getByText('正常', { exact: true })).toBeVisible()
   await page.getByRole('link', { name: '目录服务' }).click()
@@ -44,7 +65,7 @@ test('工具导入要求本地权限与执行策略，只提交草稿请求', as
   await fixture(page)
   let imported: Record<string, unknown> | undefined
   await page.route('**/mcp_a/imports', async route => { imported = route.request().postDataJSON(); await route.fulfill({ json: {} }) })
-  await page.goto('/mcp-connections/mcp_a')
+  await page.goto('/#/mcp-connections/mcp_a')
   await page.getByRole('tab', { name: '远程工具' }).click()
   await expect(page.getByText('未导入', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '导入草稿' }).click()
@@ -67,7 +88,7 @@ test('工具导入要求本地权限与执行策略，只提交草稿请求', as
 test('窄屏连接配置提供 OAuth 与隔离 stdio', async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/mcp-connections')
+  await page.goto('/#/mcp-connections')
   await page.getByRole('button', { name: '新增连接' }).click()
   await page.getByLabel('连接方式').click()
   await expect(page.getByText('OAuth 委托')).toBeVisible()
@@ -82,7 +103,7 @@ test('身份复核工具只能进入复核配置，不向模型导入', async ({
   await page.route('**/admin/v1/mcp-connections/mcp_a', route => route.fulfill({ json: { ...detail,
     discoveries: [{ ...snapshot, tools: [{ ...remote, purpose: 'subject_review', title: '当前主体权限' }] }],
   } }))
-  await page.goto('/mcp-connections/mcp_a')
+  await page.goto('/#/mcp-connections/mcp_a')
   await page.getByRole('tab', { name: '远程工具' }).click()
   await expect(page.getByText('当前主体权限', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '导入草稿', exact: true })).toHaveCount(0)

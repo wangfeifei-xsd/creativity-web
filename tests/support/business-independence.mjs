@@ -71,7 +71,7 @@ try {
   await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   if (config.stage === 'channel') {
     const s = config.scenario
-    await page.goto(`${config.web}/channels`)
+    await page.goto(`${config.web}/#/channels`)
     await button(page, '开通渠道').click()
     await dialog().getByLabel('渠道名称').fill(s.name)
     await dialog().getByLabel('渠道编码').fill(s.code)
@@ -83,7 +83,7 @@ try {
     for (const action of ['正式发布', '读取敏感原文']) await choose(dialog(), '独立授权', action)
     result.channel = await capture('/admin/v1/channels', () => confirm(), 201)
     result.auth = await enter(s.name)
-    const detail = `${config.web}/channels/${result.channel.channel_id}`
+    const detail = `${config.web}/#/channels/${result.channel.channel_id}`
     await page.goto(detail)
     await page.getByRole('tab', { name: '接入服务', exact: true }).click()
     await button(page, '登记接入服务').click()
@@ -102,7 +102,7 @@ try {
     result.key = await capture(`/admin/v1/channels/${result.channel.channel_id}/keys`, () => button(dialog(), '确认').click(), 201)
     await expect(page.getByLabel('完整 Key')).toBeVisible()
     await button(page, '完成').click()
-    await page.goto(`${config.web}/integrations`)
+    await page.goto(`${config.web}/#/integrations`)
     await page.getByRole('tab', { name: '身份委托', exact: true }).click()
     await button(page, '创建委托密钥').click()
     await selected(dialog(), '接入服务', '验证后端')
@@ -115,7 +115,7 @@ try {
   } else {
     if (!config.sessionToken) await enter(config.scenario.name)
     if (config.stage === 'resources') {
-      await page.goto(`${config.web}/mcp-connections`)
+      await page.goto(`${config.web}/#/mcp-connections`)
       await button(page, '新增连接').click()
       await dialog().getByLabel('连接名称', { exact: true }).fill('验证源服务')
       await dialog().getByLabel('服务地址').fill(config.endpoint)
@@ -134,11 +134,11 @@ try {
       await choose(dialog(), '实际影响', '只读')
       await choose(dialog(), '必要业务权限', '执行能力', 'run:create')
       result.imported = await capture(`/admin/v1/mcp-connections/${connectionId}/imports`, () => confirm('导入草稿'), 201)
-      await page.goto(`${config.web}/tools/${result.imported.local_tool_id}`)
+      await page.goto(`${config.web}/#/tools/${result.imported.local_tool_id}`)
       await capture(`/admin/v1/tool-versions/${result.imported.imported_version}/freeze`, () => button(page, '冻结版本').click())
       await button(page, '发布到当前环境').click()
       await capture(`/admin/v1/tools/${result.imported.local_tool_id}/releases`, () => confirm('发布'))
-      await page.goto(`${config.web}/integrations`)
+      await page.goto(`${config.web}/#/integrations`)
       await button(page, '配置主体复核').click()
       await selected(dialog(), '接入服务', '验证后端')
       // 此控件没有 HTML id，按表单标签定位它所属的选择器。
@@ -146,7 +146,7 @@ try {
       await page.locator('.ant-select-dropdown:visible').getByText('验证源服务', { exact: true }).click()
       await choose(dialog(), '身份复核工具', '当前主体权限')
       result.review = await capture('/admin/v1/subject-review-bindings', () => confirm('保存'))
-      await page.goto(`${config.web}/skills`)
+      await page.goto(`${config.web}/#/skills`)
       await button(page, '导入技能包').click()
       await dialog().getByLabel('技能编码').fill('shared_skill')
       await dialog().getByLabel('本地显示名称').fill('配置接入技能')
@@ -158,7 +158,7 @@ try {
       await button(page, '冻结版本').click()
       result.frozenSkill = await capture(`/admin/v1/skill-versions/${result.skill.versions[0].version_id}/freeze`, () => confirm('冻结'))
     } else if (config.stage === 'agent') {
-      await page.goto(`${config.web}/agents`)
+      await page.goto(`${config.web}/#/agents`)
       await button(page, '新增智能体').click()
       await dialog().getByLabel('调用编码').fill('shared_agent')
       await dialog().getByLabel('智能体名称').fill('配置接入助手')

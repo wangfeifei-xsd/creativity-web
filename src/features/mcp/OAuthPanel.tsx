@@ -1,5 +1,6 @@
 import { Button, Select, Space, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
+import { useMatch, useNavigate } from 'react-router-dom'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
 import { ErrorNotice } from '../../components/Management'
@@ -8,14 +9,21 @@ export function OAuthCallback() {
   const [error, setError] = useState<unknown>()
   const [done, setDone] = useState(false)
   const started = useRef(false)
+  const inMcp = !!useMatch('/mcp-connections/*')
+  const navigate = useNavigate()
   useEffect(() => {
     const values = new URLSearchParams(window.location.search)
     if (started.current || !values.has('state') || !values.has('code')) return
     started.current = true
     const body = { state: values.get('state'), code: values.get('code') }
-    window.history.replaceState(null, '', window.location.pathname)
+    // OAuth 回调参数位于普通查询串，清理时保留 Hash 路由和浏览器历史状态。
+    values.delete('state'); values.delete('code')
+    const search = values.toString()
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
+    if (!inMcp) navigate('/mcp-connections', { replace: true })
     void send('/admin/v1/mcp-connections/oauth/callback', 'POST', body).then(() => setDone(true)).catch(setError)
-  }, [])
+  }, [inMcp, navigate])
+  if (!inMcp) return null
   return <><ErrorNotice error={error} />{done && <Typography.Paragraph>授权完成，可以测试连接。</Typography.Paragraph>}</>
 }
 

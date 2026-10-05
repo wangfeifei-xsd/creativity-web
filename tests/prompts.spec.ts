@@ -28,7 +28,7 @@ async function setup(page: Page) {
         path === '/admin/v1/prompt-versions/v1' ? version : path.endsWith('/render') ? rendered : []
     await route.fulfill({ json: payload })
   })
-  await page.goto('/prompts')
+  await page.goto('/#/prompts')
   await page.getByRole('button', { name: '风险分析', exact: true }).click()
 }
 

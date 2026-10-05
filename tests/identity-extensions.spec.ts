@@ -72,7 +72,7 @@ test('自定义角色携带修订提交，冲突保留输入并显示停用影�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/members')
+  await page.goto('/#/members')
   await expect(page.getByRole('row').filter({ hasText: '构建者' }).getByRole('button', { name: '编辑', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '编辑角色' })

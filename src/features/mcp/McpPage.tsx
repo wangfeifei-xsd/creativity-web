@@ -10,7 +10,7 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { StatusTag } from '../../components/StatusTag'
 import { ImportDialog } from './ImportDialog'
-import { OAuthCallback, OAuthPanel } from './OAuthPanel'
+import { OAuthPanel } from './OAuthPanel'
 
 const base = '/admin/v1/mcp-connections' as const
 const json = (value: unknown) => <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(value, null, 2)}</pre>
@@ -18,7 +18,7 @@ const json = (value: unknown) => <pre style={{ whiteSpace: 'pre-wrap', overflowW
 export function McpPage() {
   const params = useParams()
   const id = params['*']?.split('/')[0]
-  return <><OAuthCallback />{id ? <McpDetail key={id} id={id} /> : <Connections />}</>
+  return id ? <McpDetail key={id} id={id} /> : <Connections />
 }
 
 function Connections() {

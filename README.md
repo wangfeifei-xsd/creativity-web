@@ -31,7 +31,7 @@ Creativity AI 能力平台的管理前端，提供渠道与权限管理、模型
 | --- | --- |
 | 界面 | React 19、Ant Design 6 |
 | 语言与构建 | TypeScript 5.9、Vite 7 |
-| 路由 | React Router 7 |
+| 路由 | React Router 7（Hash 路由） |
 | 接口类型 | OpenAPI、openapi-typescript |
 | 测试与检查 | Vitest、Playwright、ESLint |
 
@@ -63,7 +63,7 @@ Creativity AI 能力平台的管理前端，提供渠道与权限管理、模型
 
 脚本自动定位前端目录，优先使用项目上级 `.tools/js/node_modules/.bin` 中的 Node.js 和 pnpm，否则使用 PATH 中的工具，并检查版本。缺少 `.env` 时从模板创建，已有配置保留；随后按锁文件安装依赖并启动 Vite。本地配置已被 Git 忽略。
 
-访问 [http://127.0.0.1:5173](http://127.0.0.1:5173)，使用初始化的管理员账号登录。首次登录按页面提示修改密码，之后进入有权限访问的工作区。
+访问 [http://127.0.0.1:5173/#/](http://127.0.0.1:5173/#/)，使用初始化的管理员账号登录。首次登录按页面提示修改密码，之后进入有权限访问的工作区。页面地址使用 Hash 路由，例如 `/#/channels`、`/#/agents` 和 `/#/runs/<run_id>`，可直接收藏、刷新或分享。
 
 Vite 参数可直接传给脚本，例如 `./scripts/start-local.sh --port 5174`。按 `Ctrl+C` 停止前端。
 
@@ -141,8 +141,12 @@ pnpm build
 | 请求 | 处理方式 |
 | --- | --- |
 | `/admin/v1`、`/api/v1`、`/health` | 转发到 Creativity Service，保留原始路径 |
+| `/` | 从 `dist/` 提供 `index.html` |
 | 已存在的静态文件 | 从 `dist/` 提供 |
-| 其他页面路径 | 回落到 `index.html`，交由前端路由处理 |
+
+页面路径位于 `#` 后，由浏览器中的 HashRouter 解析，不发送给静态服务器；普通页面无需配置 history 路由回落。站内跳转使用 React Router 的 `Link` / `navigate`，路由登记仍填写 `/channels` 这类路径。
+
+MCP OAuth 的 `redirect_uri` 配置为前端入口地址（例如 `https://console.example.com/`，不含 `#`）。提供方返回的 `code`、`state` 由管理壳在恢复服务端会话后提交，并从地址中清除；页面随后进入 `/#/mcp-connections`。
 
 生产 API 地址由托管服务的反向代理配置；`API_PROXY_TARGET` 用于本地 Vite 环境。流式接口的代理需要支持 SSE，相关协议见 [运行事件文档](../creativity-service/docs/runtime.md#runtime-sse)。
 

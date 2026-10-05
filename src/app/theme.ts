@@ -13,3 +13,17 @@ export const theme: ThemeConfig = {
     Card: { bodyPadding: 28 },
   },
 }
+
+export const authTheme: ThemeConfig = {
+  token: {
+    colorPrimary: '#424c58',
+    colorText: '#292f37',
+    colorBorder: '#c3c9d0',
+    colorBgContainer: '#fafbfc',
+    borderRadius: 4,
+    controlHeight: 44,
+  },
+  components: {
+    Input: { activeShadow: '0 0 0 2px rgba(79, 94, 111, 0.1)' },
+  },
+}

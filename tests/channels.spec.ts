@@ -17,6 +17,35 @@ async function fixture(page: Page) {
   })
 }
 
+test('Hash 详情地址可直达、刷新，并支持列表跳转和前进后退', async ({ page }) => {
+  await fixture(page)
+  const documents: string[] = []
+  page.on('request', request => {
+    if (request.resourceType() === 'document') documents.push(new URL(request.url()).pathname)
+  })
+  await page.goto('/#/channels/channel_a?from=bookmark')
+  const heading = page.getByRole('heading', { name: '资料渠道', exact: true })
+  const menu = page.getByRole('menuitem', { name: '渠道管理', exact: true })
+  await expect(heading).toBeVisible()
+  await expect(menu).toHaveClass(/ant-menu-item-selected/)
+  await page.reload()
+  await expect(heading).toBeVisible()
+  await expect(page).toHaveURL(/\/#\/channels\/channel_a\?from=bookmark$/)
+  await page.getByRole('link', { name: '渠道列表', exact: true }).click()
+  await expect(page).toHaveURL(/\/#\/channels$/)
+  await expect(page.getByRole('link', { name: '资料渠道', exact: true })).toHaveAttribute('href', '#/channels/channel_a')
+  await page.getByRole('link', { name: '资料渠道', exact: true }).click()
+  await expect(heading).toBeVisible()
+  await page.goBack()
+  await expect(page).toHaveURL(/\/#\/channels$/)
+  await expect(page.getByRole('heading', { name: '渠道管理', exact: true })).toBeVisible()
+  await page.goForward()
+  await expect(page).toHaveURL(/\/#\/channels\/channel_a$/)
+  await expect(heading).toBeVisible()
+  await expect(menu).toHaveClass(/ant-menu-item-selected/)
+  expect(documents).toEqual(['/', '/'])
+})
+
 for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且分类可留空（${width}）`, async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width, height: 1000 })
@@ -25,7 +54,7 @@ for (const width of [1280, 390]) test(`渠道开通显式填写任意映射且�
     body = route.request().postDataJSON()
     await route.fulfill({ status: 201, json: channel })
   })
-  await page.goto('/channels')
+  await page.goto('/#/channels')
   await page.getByRole('button', { name: '开通渠道' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('渠道名称').fill('资料渠道')
@@ -56,7 +85,7 @@ test('新增数据域保留外部配置原值', async ({ page }) => {
     body = route.request().postDataJSON()
     await route.fulfill({ status: 201, json: {} })
   })
-  await page.goto('/channels/channel_a')
+  await page.goto('/#/channels/channel_a')
   await expect(page.getByRole('cell', { name: '源系统/workspace', exact: true })).toBeVisible()
   await page.getByRole('button', { name: '创建数据域' }).click()
   const dialog = page.getByRole('dialog')
