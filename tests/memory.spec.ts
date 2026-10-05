@@ -46,7 +46,7 @@ async function fixture(page: Page) {
 
 test('确认候选、查看来源并在修正冲突后保留输入', async ({ page }) => {
   const state = await fixture(page)
-  await page.goto('/#/memories')
+  await page.goto('#/memories')
   await page.getByRole('link', { name: '通常预算', exact: true }).click()
   await expect(page.getByText('偏好咨询')).toBeVisible()
   await page.getByRole('button', { name: '确认', exact: true }).click()
@@ -65,7 +65,7 @@ test('确认候选、查看来源并在修正冲突后保留输入', async ({ pa
 
 test('关闭长期记忆保留列表，清空进入可刷新删除进度', async ({ page }) => {
   const state = await fixture(page)
-  await page.goto('/#/memories/subjects/memory_one')
+  await page.goto('#/memories/subjects/memory_one')
   await page.getByRole('switch', { name: '长期记忆' }).click()
   await expect(page.getByRole('switch', { name: '长期记忆' })).not.toBeChecked()
   expect(state.enabled).toBe(false)
@@ -80,7 +80,7 @@ test('关闭长期记忆保留列表，清空进入可刷新删除进度', async
 
 test('新增与策略表单使用结构化值和明确单位', async ({ page }) => {
   const state = await fixture(page)
-  await page.goto('/#/memories/subjects/memory_one')
+  await page.goto('#/memories/subjects/memory_one')
   await page.getByRole('button', { name: '新增记忆', exact: true }).click()
   await page.getByLabel('结构化记忆值（JSON）', { exact: true }).fill('{"min":100,"max":200,"currency":"CNY"}')
   await page.getByRole('dialog').getByRole('button', { name: '保存', exact: true }).click()
@@ -98,7 +98,7 @@ test('新增与策略表单使用结构化值和明确单位', async ({ page }) 
 test('窄屏详情与删除操作不显示内部标识', async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/#/memories/memory_one')
+  await page.goto('#/memories/memory_one')
   await expect(page.getByText('偏好咨询')).toBeVisible()
   expect(await page.locator('main').innerText()).not.toMatch(/memory_one|version_private|PROPOSED|PREFERENCE/)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
@@ -110,12 +110,12 @@ test('窄屏详情与删除操作不显示内部标识', async ({ page }) => {
 
 test('切换渠道后同号主体不会复用前一渠道记忆', async ({ page }) => {
   await fixture(page)
-  await page.goto('/#/memories/subjects/memory_one')
+  await page.goto('#/memories/subjects/memory_one')
   await expect(page.getByText('100–200 元')).toBeVisible()
   await page.getByLabel('切换渠道', { exact: true }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('陪玩渠道', { exact: true }).click()
   await expect(page.getByRole('heading', { name: '工作台' })).toBeVisible()
-  await page.goto('/#/memories/subjects/memory_one')
+  await page.goto('#/memories/subjects/memory_one')
   await expect(page.getByText('800–900 元')).toBeVisible()
   await expect(page.getByText('100–200 元')).toHaveCount(0)
 })
@@ -123,7 +123,7 @@ test('切换渠道后同号主体不会复用前一渠道记忆', async ({ page 
 
 test('画像数组由属性定义编辑，后台失败可查看运行并重试', async ({ page }) => {
   const state = await fixture(page)
-  await page.goto('/#/memories/subjects/memory_one')
+  await page.goto('#/memories/subjects/memory_one')
   await expect(page.getByRole('link', { name: '会话记忆' })).toHaveAttribute('href', '#/conversations')
   await page.getByLabel('记忆层级').click()
   await page.locator('.ant-select-dropdown:visible').getByText('归档', { exact: true }).click()

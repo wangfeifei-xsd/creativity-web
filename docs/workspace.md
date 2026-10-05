@@ -2,7 +2,7 @@
 
 开发规范引用 [rule.md](../../rule.md)。管理壳从 `GET /admin/v1/auth/session` 读取导航；页面路径注册不承担鉴权。
 
-应用统一使用 React Router 的 HashRouter，浏览器地址为 `/#/models`、`/#/agents/<agent_id>` 等。登记路径、`Link` 和 `navigate` 继续使用 `/models` 这类路由路径，由路由器生成 Hash 地址；浏览器测试的直达地址使用 `/#/` 前缀。
+应用基础路径为 `/creativity/`，统一使用 React Router 的 HashRouter，浏览器地址为 `/creativity/#/models`、`/creativity/#/agents/<agent_id>` 等。登记路径、`Link` 和 `navigate` 继续使用 `/models` 这类路由路径，由路由器生成 Hash 地址；Playwright 的 `baseURL` 包含 `/creativity/`，测试直达页面使用 `#/models` 等相对地址，入口使用 `./`，避免以 `/` 开头绕过基础路径。
 
 07–10 以及后续页面在自己的 `src/features/<module>/registration.ts` 导出 `registration: FeatureRegistration` 或 `registrations: FeatureRegistration[]`。公共 `registry.ts` 自动收集登记，无需修改公共文件。示例：
 

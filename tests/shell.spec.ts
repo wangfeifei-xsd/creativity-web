@@ -15,6 +15,36 @@ async function authenticated(page: Page) {
   })
 }
 
+test('基础路径覆盖入口、静态资源、页面刷新和前进后退', async ({ page }) => {
+  await authenticated(page)
+  const response = await page.goto('./')
+  expect(response?.ok()).toBe(true)
+  expect(response?.request().redirectedFrom()).toBeNull()
+  expect(new URL(page.url()).pathname).toBe('/creativity/')
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  const modulePaths = await page.locator('script[type="module"][src]').evaluateAll(scripts =>
+    scripts.map(script => new URL((script as HTMLScriptElement).src).pathname))
+  expect(modulePaths.length).toBeGreaterThan(0)
+  expect(modulePaths.every(path => path.startsWith('/creativity/'))).toBe(true)
+  await page.getByRole('menuitem', { name: '账号管理' }).click()
+  await expect(page).toHaveURL('/creativity/#/accounts')
+  await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await page.goForward()
+  await expect(page).toHaveURL('/creativity/#/accounts')
+  await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+})
+
+test('开发环境旧入口重定向后保留 Hash 页面', async ({ page }) => {
+  await authenticated(page)
+  await page.goto('/#/accounts')
+  await expect(page).toHaveURL('/creativity/#/accounts')
+  await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+})
+
 for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默认首个授权范围并保留环境（${width}）`, async ({ page }) => {
   const a = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'prod', environment_name: '生产', data_scope_id: 'a-one', data_scope_name: '业务域甲' }
   const secondDomain = { ...a, data_scope_id: 'a-two', data_scope_name: '第二业务域' }
@@ -41,7 +71,7 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
     await route.fulfill({ json: [] })
   })
   await page.setViewportSize({ width, height: 900 })
-  await page.goto('/#/')
+  await page.goto('#/')
   const header = page.locator('header')
   await expect(header.getByText('平台管理', { exact: true })).toBeVisible()
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
@@ -79,7 +109,7 @@ test('没有授权渠道时不能切入渠道模式，单渠道直接显示并�
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
     ...session, workspace: available ? workspace : null, workspace_options: available ? [workspace] : [],
   } }))
-  await page.goto('/#/')
+  await page.goto('#/')
   await page.getByLabel('管理模式', { exact: true }).click()
   await expect(page.locator('.ant-select-dropdown:visible .ant-select-item-option').filter({ hasText: '渠道管理' })).toHaveClass(/ant-select-item-option-disabled/)
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
@@ -96,7 +126,7 @@ test('管理模式切换失败后仍显示服务端确认的原模式', async ({
   await page.route('**/admin/v1/auth/channel-context', route => route.fulfill({ status: 403, json: {
     error: { code: 'FORBIDDEN', message: '该渠道授权已失效', fields: [] },
   } }))
-  await page.goto('/#/')
+  await page.goto('#/')
   await page.getByLabel('管理模式').click()
   await page.locator('.ant-select-dropdown:visible').getByText('渠道管理', { exact: true }).click()
   await expect(page.getByText('该渠道授权已失效', { exact: true })).toBeVisible()
@@ -109,7 +139,7 @@ test('无 Token 时仍查询服务端会话，401 显示登录', async ({ page }
   await page.route('**/admin/v1/auth/session', route => { checks++; return route.fulfill({ status: 401, json: errorBody(401) }) })
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible()
   expect(checks).toBeGreaterThan(0)
   expect(errors).toEqual([])
@@ -121,7 +151,7 @@ test('初始化服务故障可重试，不信任本地 Token 或到期时间', a
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ status: failed ? 503 : 200,
     headers: failed ? { 'X-Request-ID': 'session-request-id' } : undefined,
     json: failed ? errorBody(503) : session }))
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByText('服务返回 503', { exact: true })).toBeVisible()
   await expect(page.getByText('请求标识', { exact: false })).toHaveCount(0)
   await expect(page.getByText('session-request-id', { exact: true })).toHaveCount(0)
@@ -135,7 +165,7 @@ test('侧栏沿用服务端导航，跳转、历史记录与顶部刷新保留�
   await authenticated(page)
   let sessionRequests = 0
   page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/auth/session')) sessionRequests++ })
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   const navigation = page.getByRole('navigation', { name: '主导航' })
   await expect(navigation.getByRole('menuitem', { name: '账号管理', exact: true })).toHaveClass(/ant-menu-item-selected/)
   await expect(navigation.getByRole('menuitem', { name: '渠道管理', exact: true })).toHaveCount(0)
@@ -157,7 +187,7 @@ for (const width of [375, 820]) test(`窄屏抽屉可跳转和关闭，工作区
   const workspace = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '产品研发资料域' }
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session, workspace } }))
   await page.setViewportSize({ width, height: 812 })
-  await page.goto('/#/')
+  await page.goto('#/')
   await expect(page.getByText(workspace.channel_name, { exact: true })).toBeVisible()
   await expect(page.getByText(workspace.environment_name, { exact: true })).toBeVisible()
   await expect(page.getByText(workspace.data_scope_name, { exact: true })).toBeVisible()
@@ -189,7 +219,7 @@ test('409 保留输入，重复提交只发出一次请求，读取新版本后�
     } else await route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/roles') ? roles
       : new URL(route.request().url()).pathname.endsWith('/page') ? { items: [{ ...account, revision }], total: 1, offset: 0, limit: 20 } : { ...account, revision } })
   })
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('显示名称').fill('待保留名称')
@@ -208,7 +238,7 @@ test('409 保留输入，重复提交只发出一次请求，读取新版本后�
 test('直接访问接口被拒绝时显示无权限，导航不成为授权依据', async ({ page }) => {
   await authenticated(page)
   await page.route('**/admin/v1/accounts**', route => route.fulfill({ status: 403, json: errorBody(403) }))
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await expect(page.getByText('服务返回 403', { exact: true })).toBeVisible()
   await expect(page.getByRole('table')).toHaveCount(0)
 })
@@ -218,10 +248,10 @@ test('窄屏与未知页面没有横向溢出或浏览器错误', async ({ page 
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.setViewportSize({ width: 375, height: 812 })
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
-  await page.goto('/#/missing-page')
+  await page.goto('#/missing-page')
   await expect(page.getByText('页面不存在')).toBeVisible()
   expect(errors).toEqual([])
 })
@@ -250,7 +280,7 @@ test('IAM-A14 切换渠道清除筛选和旧请求，迟到 401 不影响新工�
     }
     await route.fulfill({ json: [] })
   })
-  await page.goto('/#/channels')
+  await page.goto('#/channels')
   await page.getByLabel('筛选渠道').fill('租号')
   deferA = true
   await page.getByRole('button', { name: '刷新', exact: true }).click()

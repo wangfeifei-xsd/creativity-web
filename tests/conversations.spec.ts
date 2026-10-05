@@ -47,7 +47,7 @@ async function fixture(page: Page, empty = false) {
 
 test('持久化时间线区分部分内容和取消终态并保留历史版本', async ({ page }) => {
   await fixture(page)
-  await page.goto('/#/conversations')
+  await page.goto('#/conversations')
   await page.getByRole('link', { name: '租号咨询' }).click()
   await expect(page.getByText('未完成', { exact: true })).toBeVisible()
   await expect(page.getByText('第 1 轮 · 初始版本')).toBeVisible()
@@ -60,7 +60,7 @@ test('持久化时间线区分部分内容和取消终态并保留历史版本',
 test('网络失败保留正文并复用客户端消息标识', async ({ page }) => {
   const state = await fixture(page, true)
   state.failFirst = true
-  await page.goto('/#/conversations/conversation_a')
+  await page.goto('#/conversations/conversation_a')
   await page.getByLabel('消息', { exact: true }).fill('请推荐杭州的账号')
   await page.getByRole('button', { name: '发送', exact: true }).click()
   await expect(page.getByText('网络连接失败，请重试')).toBeVisible()
@@ -74,7 +74,7 @@ test('网络失败保留正文并复用客户端消息标识', async ({ page }) 
 
 test('归档恢复与删除进度入口可用', async ({ page }) => {
   await fixture(page, true)
-  await page.goto('/#/conversations/conversation_a')
+  await page.goto('#/conversations/conversation_a')
   await page.getByRole('button', { name: '归档', exact: true }).click()
   await expect(page.getByText('已归档', { exact: true })).toBeVisible()
   await expect(page.getByLabel('消息', { exact: true })).toHaveCount(0)
@@ -94,7 +94,7 @@ test('窄屏摘要来源和截断记录可读且不泄露内部标识', async ({
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/#/conversations/conversation_a')
+  await page.goto('#/conversations/conversation_a')
   await page.getByRole('button', { name: '摘要与上下文' }).click()
   await expect(page.getByText('已确认租期三天')).toBeVisible()
   await expect(page.getByText(/消息序号 1、2/)).toBeVisible()

@@ -24,7 +24,7 @@ test('渠道管理员自动进入服务端默认渠道，切换不再经过工�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/')
+  await page.goto('#/')
   await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   expect(switches).toEqual([{ channel_id: a.channel_id, environment: 'test', data_scope_id: a.data_scope_id }])
   await expect(page.getByText('选择工作区', { exact: true })).toHaveCount(0)
@@ -51,7 +51,7 @@ test('未分配渠道不会显示平台身份，也不能通过页面获得平�
     user, workspace: null, workspace_options: [], default_workspace: null,
     can_access_platform: false, navigation: [], actions: [], expires_at: '2030-01-01T00:00:00Z',
   } }))
-  await page.goto('/#/')
+  await page.goto('#/')
   await expect(page.getByText('尚未分配可用渠道，请联系平台管理员')).toBeVisible()
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
   await expect(page.getByText('平台管理', { exact: true })).toHaveCount(0)
@@ -78,7 +78,7 @@ test('账号读取内置角色，渠道可多选，改为平台作用域时不�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await page.getByRole('button', { name: '创建账号', exact: true }).click()
   let dialog = page.getByRole('dialog')
   await dialog.getByLabel('登录名').fill('channel-admin')
@@ -130,7 +130,7 @@ test('渠道多选支持服务端搜索和分页，已选名称不随翻页丢�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await page.getByRole('button', { name: '创建账号', exact: true }).click()
   const picker = page.getByRole('dialog').getByLabel('授权渠道', { exact: true })
   await picker.click()
@@ -168,7 +168,7 @@ test('账号可选择角色目录中的自定义角色，按作用域联动渠�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/accounts')
+  await page.goto('#/accounts')
   await page.getByRole('button', { name: '创建账号', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText('渠道观察员', { exact: true })).toBeVisible()

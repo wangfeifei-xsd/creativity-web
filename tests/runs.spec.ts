@@ -26,7 +26,7 @@ async function fixture(page: Page, content = true) {
 
 test('执行中心展示名称、独立尝试、部分业务结果和费用完整性', async ({ page }) => {
   await fixture(page)
-  await page.goto('/#/runs')
+  await page.goto('#/runs')
   await page.getByRole('link', { name: '业务助手' }).click()
   await expect(page.getByText('部分完成', { exact: true })).toBeVisible()
   await expect(page.getByText('还有一项数据待确认')).toBeVisible()
@@ -44,7 +44,7 @@ test('执行中心展示名称、独立尝试、部分业务结果和费用完�
 test('窄屏无原文权限时仍可查看步骤，不提供输入输出或重新执行', async ({ page }) => {
   await fixture(page, false)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/#/runs/run_a')
+  await page.goto('#/runs/run_a')
   await expect(page.getByText('当前权限可查看执行轨迹，输入输出未授权')).toBeVisible()
   await expect(page.getByText('生成结果', { exact: true })).toBeVisible()
   await expect(page.getByText('输入与依赖版本', { exact: true })).toHaveCount(0)
@@ -64,7 +64,7 @@ test('原文权限收紧后隐藏部分内容并继续更新执行状态', async
   await page.route('**/admin/v1/runs/run_a/events', route => route.fulfill({
     contentType: 'text/event-stream', body: 'id: 1\nevent: text_delta\ndata: {"payload":{"text":"待校验的敏感片段"}}\n\n',
   }))
-  await page.goto('/#/runs/run_a')
+  await page.goto('#/runs/run_a')
   await page.getByText('部分内容（尚未通过结果校验）', { exact: true }).click()
   await expect(page.getByText('待校验的敏感片段', { exact: true })).toBeVisible()
   contentAllowed = false
@@ -87,7 +87,7 @@ test('删除运行先展示影响，清理失败可以重试并显示完成进�
   })
   await page.route('**/admin/v1/deletions/deletion_a/progress', route => route.fulfill({ json: progress() }))
   await page.route('**/admin/v1/deletions/deletion_a/retry', async route => { retried = true; await route.fulfill({ json: progress() }) })
-  await page.goto('/#/runs/run_a')
+  await page.goto('#/runs/run_a')
   await page.getByRole('button', { name: '删除运行内容' }).click()
   await expect(page.getByRole('dialog')).toContainText('删除立即阻断访问与恢复')
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
@@ -114,7 +114,7 @@ test('暂停运行的批准绑定本次确认摘要并保留原运行', async ({
     resumed = true
     await route.fulfill({ json: { ...receipt, state: 'QUEUED' } })
   })
-  await page.goto('/#/runs/run_a')
+  await page.goto('#/runs/run_a')
   await expect(page.getByText(/待确认内容/)).toBeVisible()
   await page.getByRole('button', { name: '批准执行', exact: true }).click()
   await expect.poll(() => resumed).toBe(true)
@@ -142,7 +142,7 @@ test('同一运行连续审批时刷新确认凭据，外部审批后也可继�
     interruption++
     await route.fulfill({ json: { ...receipt, state: 'QUEUED' } })
   })
-  await page.goto('/#/runs/run_a')
+  await page.goto('#/runs/run_a')
   await expect(page.getByText('批准第 1 步', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '批准执行', exact: true }).click()
   await expect(page.getByText('批准第 2 步', { exact: true })).toBeVisible()
@@ -173,7 +173,7 @@ test('连续补充按本次输入结构重置表单，显式否值与零值可�
     interruption++
     await route.fulfill({ json: { ...receipt, state: 'QUEUED' } })
   })
-  await page.goto('/#/runs/run_a')
+  await page.goto('#/runs/run_a')
   await page.getByLabel('数量', { exact: true }).fill('5')
   await page.getByRole('radio', { name: '是', exact: true }).check()
   await page.getByRole('button', { name: '提交并继续', exact: true }).click()

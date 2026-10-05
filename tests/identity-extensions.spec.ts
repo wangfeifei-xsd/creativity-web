@@ -32,7 +32,7 @@ test('外部身份交换失败保留凭据，成功后使用平台 Token 并可�
     }
     return route.fulfill({ json: path.endsWith('/auth/channels') ? [workspace] : [] })
   })
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('combobox', { name: '登录方式' }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('外部身份', { exact: true }).click()
   await page.getByLabel('身份源', { exact: true }).click()
@@ -77,7 +77,7 @@ test('自定义角色携带修订提交，冲突保留输入并显示停用影�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/roles')
+  await page.goto('#/roles')
   await expect(page.getByRole('row').filter({ hasText: '构建者' }).getByRole('button', { name: '编辑', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '编辑角色' })
@@ -130,7 +130,7 @@ test('角色管理展示两个内置作用域，新增渠道角色切换权限�
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/roles')
+  await page.goto('#/roles')
   const platform = page.getByRole('row').filter({ hasText: '平台管理员' })
   const channel = page.getByRole('row').filter({ hasText: '渠道管理员' })
   await expect(platform.getByRole('cell', { name: '平台', exact: true })).toBeVisible()

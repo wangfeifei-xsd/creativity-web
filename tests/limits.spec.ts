@@ -24,7 +24,7 @@ test('渠道并发限额可编辑，保留版本及隐藏周期字段', async ({
     limit = { ...limit, limit_value: String(submitted?.limit_value), revision: 3, remaining: '6' }
     return route.fulfill({ json: limit })
   })
-  await page.goto('/#/concurrency-limits')
+  await page.goto('#/concurrency-limits')
   await expect(page.getByRole('heading', { name: '并发限额' })).toBeVisible()
   await expect(page.getByRole('cell', { name: '5 个', exact: true })).toBeVisible()
   await page.getByRole('button', { name: '编辑', exact: true }).click()
@@ -53,7 +53,7 @@ test('平台限额展示占用，提交修订号并保留冲突表单', async ({
     }
     return route.fulfill({ json: [limit] })
   })
-  await page.goto('/#/platform-limits')
+  await page.goto('#/platform-limits')
   await expect(page.getByRole('cell', { name: '20 个', exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: '7 个', exact: true })).toBeVisible()
   await page.getByRole('button', { name: '编辑', exact: true }).click()
@@ -78,7 +78,7 @@ test('无权限及错误工作区不请求平台限额', async ({ page }) => {
   await session(page, false, false)
   let requests = 0
   await page.route('**/admin/v1/platform/budget-limits', route => { requests++; return route.fulfill({ json: [] }) })
-  await page.goto('/#/platform-limits')
+  await page.goto('#/platform-limits')
   await expect(page.getByText('无权管理平台限额')).toBeVisible()
   expect(requests).toBe(0)
 })

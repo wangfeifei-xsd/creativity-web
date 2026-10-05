@@ -4,6 +4,7 @@ import { chromium, expect } from '@playwright/test'
 let input = ''
 for await (const chunk of process.stdin) input += chunk
 const config = JSON.parse(input)
+const webURL = new URL('/creativity/', config.web).href
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
 const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } })
 page.setDefaultTimeout(20000)
@@ -47,7 +48,7 @@ async function capture(path, action) {
 const result = { model_evidence: 'controlled_fixture', requests }
 try {
   if (config.stage === 'model') {
-    await page.goto(`${config.web}/#/models`)
+    await page.goto(`${webURL}#/models`)
     await page.getByRole('tab', { name: '供应商连接', exact: true }).click()
     await button(page, '新增连接').click()
     await dialog().getByLabel('连接名称').fill('受控模型连接')
@@ -69,7 +70,7 @@ try {
     result.model = await capture('/admin/v1/models', () => button(dialog(), '保存').click())
     await expect(dialog()).toBeHidden()
   } else if (config.stage === 'dependencies') {
-    await page.goto(`${config.web}/#/usage`)
+    await page.goto(`${webURL}#/usage`)
     await page.getByRole('tab', { name: '预算', exact: true }).click()
     await button(page, '新增预算').click()
     await dialog().getByLabel('预算名称').fill('渠道并发限额')
@@ -77,7 +78,7 @@ try {
     await dialog().getByLabel('限额', { exact: true }).fill('5')
     result.budget = await capture('/admin/v1/budgets', () => button(dialog(), '确定').click())
     await expect(dialog()).toBeHidden()
-    await page.goto(`${config.web}/#/model-routes`)
+    await page.goto(`${webURL}#/model-routes`)
     await button(page, '新增路由').click()
     await dialog().getByLabel('路由名称').fill('验证模型路由')
     await dialog().getByLabel('路由编码').fill('controlled_route')
@@ -93,7 +94,7 @@ try {
     await expect(versionDialog).toBeHidden()
     await button(dialog('验证模型路由'), '正式发布').click()
     result.route_release = await capture(`/admin/v1/model-routes/${route.id}/releases`, () => button(dialog('发布 受控初版'), '保存').click())
-    await page.goto(`${config.web}/#/prompts`)
+    await page.goto(`${webURL}#/prompts`)
     await button(page, '导入').click()
     await dialog().getByLabel('名称', { exact: true }).fill('配置样例提示词')
     await dialog().getByLabel('编码', { exact: true }).fill('text-brief')

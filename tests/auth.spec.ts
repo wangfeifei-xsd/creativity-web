@@ -31,7 +31,7 @@ async function loginPage(page: Page, options: { failChallenge?: boolean; failVer
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('/#/')
+  await page.goto('#/')
   await page.getByLabel('登录名', { exact: true }).fill('admin')
   await page.getByLabel('密码', { exact: true }).fill('test-password')
   return state

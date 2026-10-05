@@ -63,7 +63,7 @@ Creativity AI 能力平台的管理前端，提供渠道与权限管理、模型
 
 脚本自动定位前端目录，优先使用项目上级 `.tools/js/node_modules/.bin` 中的 Node.js 和 pnpm，否则使用 PATH 中的工具，并检查版本。缺少 `.env` 时从模板创建，已有配置保留；随后按锁文件安装依赖并启动 Vite。本地配置已被 Git 忽略。
 
-访问 [http://127.0.0.1:5173/#/](http://127.0.0.1:5173/#/)，使用初始化的管理员账号登录。首次登录按页面提示修改密码。平台管理员直接进入平台后台；渠道管理员自动进入服务端核准的默认渠道，多渠道在顶部直接切换，无需另点“进入工作区”。账号管理单选管理员角色，渠道管理员可多选授权渠道。页面地址使用 Hash 路由，例如 `/#/channels`、`/#/agents` 和 `/#/runs/<run_id>`，可直接收藏、刷新或分享。
+访问 [http://127.0.0.1:5173/creativity/](http://127.0.0.1:5173/creativity/)，使用初始化的管理员账号登录。首次登录按页面提示修改密码。平台管理员直接进入平台后台；渠道管理员自动进入服务端核准的默认渠道，多渠道在顶部直接切换，无需另点“进入工作区”。账号管理单选管理员角色，渠道管理员可多选授权渠道。应用基础路径为 `/creativity/`，页面地址使用 Hash 路由，例如 `/creativity/#/channels`、`/creativity/#/agents` 和 `/creativity/#/runs/<run_id>`，可直接收藏、刷新或分享。
 
 Vite 参数可直接传给脚本，例如 `./scripts/start-local.sh --port 5174`。按 `Ctrl+C` 停止前端。
 
@@ -82,7 +82,7 @@ API_PROXY_TARGET=http://127.0.0.1:8000
 | `API_PROXY_TARGET` | `http://127.0.0.1:8000` | 本地 API 代理目标，由 Vite 读取 |
 | `PLAYWRIGHT_CHANNEL` | Playwright Chromium | 可选测试环境变量，例如 `chrome` 使用本机 Google Chrome |
 
-开发服务器将 `/admin/v1`、`/api/v1` 和 `/health` 代理到 `API_PROXY_TARGET`。浏览器请求使用同源相对地址，代理配置不会写入浏览器产物。配置模板见 [.env.example](.env.example)，代理规则见 [vite.config.ts](vite.config.ts)。
+开发服务器将 `/admin/v1`、`/api/v1` 和 `/health` 代理到 `API_PROXY_TARGET`。浏览器请求使用同源根路径，不随页面基础路径增加 `/creativity` 前缀；代理配置不会写入浏览器产物。配置模板见 [.env.example](.env.example)，代理规则见 [vite.config.ts](vite.config.ts)。
 
 ## 开发与测试
 
@@ -141,12 +141,13 @@ pnpm build
 | 请求 | 处理方式 |
 | --- | --- |
 | `/admin/v1`、`/api/v1`、`/health` | 转发到 Creativity Service，保留原始路径 |
-| `/` | 从 `dist/` 提供 `index.html` |
-| 已存在的静态文件 | 从 `dist/` 提供 |
+| `/creativity` | 重定向到 `/creativity/` |
+| `/creativity/` | 从 `dist/` 提供 `index.html` |
+| `/creativity/` 下已存在的静态文件 | 去掉 `/creativity/` 前缀后，从 `dist/` 提供 |
 
-页面路径位于 `#` 后，由浏览器中的 HashRouter 解析，不发送给静态服务器；普通页面无需配置 history 路由回落。站内跳转使用 React Router 的 `Link` / `navigate`，路由登记仍填写 `/channels` 这类路径。
+Vite 的 `base` 固定为 `/creativity/`，开发与生产构建共用这一基础路径，构建产物中的资源地址也带此前缀。页面路径位于 `#` 后，由浏览器中的 HashRouter 解析，不发送给静态服务器；普通页面无需配置 history 路由回落。站内跳转使用 React Router 的 `Link` / `navigate`，路由登记仍填写 `/channels` 这类路径，不向 HashRouter 添加 `/creativity` 的 `basename`。
 
-MCP OAuth 的 `redirect_uri` 配置为前端入口地址（例如 `https://console.example.com/`，不含 `#`）。提供方返回的 `code`、`state` 由管理壳在恢复服务端会话后提交，并从地址中清除；页面随后进入 `/#/mcp-connections`。
+MCP OAuth 的 `redirect_uri` 配置为前端入口地址（例如 `https://console.example.com/creativity/`，不含 `#`）。提供方返回的 `code`、`state` 由管理壳在恢复服务端会话后提交，并从地址中清除；页面随后进入 `/creativity/#/mcp-connections`。
 
 生产 API 地址由托管服务的反向代理配置；`API_PROXY_TARGET` 用于本地 Vite 环境。流式接口的代理需要支持 SSE，相关协议见 [运行事件文档](../creativity-service/docs/runtime.md#runtime-sse)。
 

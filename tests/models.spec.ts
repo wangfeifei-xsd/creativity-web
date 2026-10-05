@@ -36,7 +36,7 @@ test('模型详情展示能力证据、价格单位和不可执行的验证记�
     }
     return route.fulfill({ json: tests })
   })
-  await page.goto('/#/models')
+  await page.goto('#/models')
   await page.getByRole('button', { name: '业务模型', exact: true }).click()
   const drawer = page.getByRole('dialog')
   await drawer.getByRole('tab', { name: '能力', exact: true }).click()
@@ -61,7 +61,7 @@ test('连接编辑不回显凭据，保存保留凭据引用与修订号', async
     saved = route.request().postDataJSON()
     return route.fulfill({ json: connection })
   })
-  await page.goto('/#/models')
+  await page.goto('#/models')
   await page.getByRole('tab', { name: '供应商连接', exact: true }).click()
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.getByRole('dialog')
@@ -84,7 +84,7 @@ test('不支持的参数反馈保留输入，并阻止重复提交', async ({ pa
     }
     return route.fulfill({ json: model })
   })
-  await page.goto('/#/models')
+  await page.goto('#/models')
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('默认参数（JSON）').fill('{"max_tokens":100,"seed":1}')

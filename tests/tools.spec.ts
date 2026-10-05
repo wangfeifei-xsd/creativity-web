@@ -33,7 +33,7 @@ async function fixture(page: Page, execution = false) {
 
 test('工具列表和详情使用名称，缺少运行服务时禁止测试', async ({ page }) => {
   await fixture(page)
-  await page.goto('/#/tools')
+  await page.goto('#/tools')
   await page.getByRole('link', { name: '精确求和' }).click()
   await expect(page.getByRole('tab', { name: '契约', exact: true })).toBeVisible()
   await page.getByRole('tab', { name: '连接绑定' }).click()
@@ -52,7 +52,7 @@ test('测试只提交业务参数，服务器字段错误保留输入', async ({
     expect(route.request().postDataJSON()).toEqual({ revision: 1, arguments: { values: ['1.25'] } })
     await route.fulfill({ status: 422, json: { error: { code: 'TOOL_INPUT_INVALID', message: '参数不符合契约', fields: [{ path: ['values'], message: '数值范围不正确' }] } } })
   })
-  await page.goto('/#/tools/tool_a')
+  await page.goto('#/tools/tool_a')
   await page.getByRole('tab', { name: '测试', exact: true }).click()
   await page.getByLabel('数值列表').fill('["1.25"]')
   await page.getByRole('button', { name: '运行测试' }).click()
@@ -74,7 +74,7 @@ test('窄屏版本编辑和执行策略可用', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/#/tools/tool_a')
+  await page.goto('#/tools/tool_a')
   await page.getByRole('button', { name: '新增版本' }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByLabel('版本名称')).toBeVisible()
