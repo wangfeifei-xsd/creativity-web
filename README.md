@@ -111,7 +111,7 @@ pnpm test:e2e
 PLAYWRIGHT_CHANNEL=chrome pnpm test:e2e
 ```
 
-Playwright 会自动启动 Vite。常规页面用例使用受控接口响应；连接真实后端的工作区用例需要额外设置 `WORKSPACE_LIVE_API`，未配置时跳过。真实服务和多渠道组合验证的准备步骤见 [页面验证文档](../creativity-service/docs/workspace.md) 和 [组合验收文档](../creativity-service/docs/acceptance/README.md)。
+Playwright 会自动启动 Vite。常规页面用例使用受控接口响应；连接真实后端的工作区用例需要额外设置 `WORKSPACE_LIVE_API`，未配置时跳过。真实服务和多渠道组合验证的准备步骤见 [页面验证文档](../creativity-service/docs/development.md#workspace) 和 [组合验收文档](../creativity-service/docs/testing.md)。
 
 ## 接口类型生成
 
@@ -141,7 +141,7 @@ pnpm build
 | 已存在的静态文件 | 从 `dist/` 提供 |
 | 其他页面路径 | 回落到 `index.html`，交由前端路由处理 |
 
-生产 API 地址由托管服务的反向代理配置；`API_PROXY_TARGET` 用于本地 Vite 环境。流式接口的代理需要支持 SSE，相关协议见 [运行事件文档](../creativity-service/docs/runtime-sse.md)。
+生产 API 地址由托管服务的反向代理配置；`API_PROXY_TARGET` 用于本地 Vite 环境。流式接口的代理需要支持 SSE，相关协议见 [运行事件文档](../creativity-service/docs/runtime.md#runtime-sse)。
 
 ## 项目结构
 
@@ -169,13 +169,13 @@ creativity-web/
 | 主题 | 入口 |
 | --- | --- |
 | 本地运行 | [服务端说明](../creativity-service/README.md) · [平台说明](../README.md) |
-| 页面开发 | [页面接入](docs/workspace.md) · [公共设施与组件](../creativity-service/docs/core.md) |
-| 身份与工作区 | [认证与授权](../creativity-service/docs/iam.md) · [渠道管理](../creativity-service/docs/channels.md) |
-| Agent 与配置 | [Agent](../creativity-service/docs/agents.md) · [配置示例](../creativity-service/docs/configuration-delivery.md) |
-| 会话与记忆 | [会话](../creativity-service/docs/conversations.md) · [记忆](../creativity-service/docs/memory.md) |
-| 用量与评测 | [用量和预算](../creativity-service/docs/usage.md) · [效果评测](../creativity-service/docs/evaluations.md) |
-| 扩展能力 | [配置与页面说明](../creativity-service/docs/enhancements/configuration.md) |
-| 测试与验收 | [页面验证](../creativity-service/docs/workspace.md) · [组合验收](../creativity-service/docs/acceptance/README.md) |
+| 页面开发 | [页面接入](docs/workspace.md) · [公共设施与组件](../creativity-service/docs/development.md#core) |
+| 身份与工作区 | [认证与授权](../creativity-service/docs/development.md#iam) · [渠道管理](../creativity-service/docs/development.md#channels) |
+| Agent 与配置 | [Agent](../creativity-service/docs/configuration.md#agents) · [配置示例](../creativity-service/docs/configuration.md#configuration-delivery) |
+| 会话与记忆 | [会话](../creativity-service/docs/runtime.md#conversations) · [记忆](../creativity-service/docs/runtime.md#memory) |
+| 用量与评测 | [用量和预算](../creativity-service/docs/operations.md#usage) · [效果评测](../creativity-service/docs/operations.md#evaluations) |
+| 扩展能力 | [配置与页面说明](../creativity-service/docs/configuration.md#enhancements) |
+| 测试与验收 | [页面验证](../creativity-service/docs/development.md#workspace) · [组合验收](../creativity-service/docs/testing.md) |
 
 ## 参与开发
 
