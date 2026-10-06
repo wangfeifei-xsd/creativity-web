@@ -1,4 +1,4 @@
-import { Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography } from 'antd'
+import { Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, theme } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -13,6 +13,7 @@ import { AgentEditor } from './AgentEditor'
 import { Debug } from './Debug'
 import { Flow } from './Flow'
 import { type Detail, type Options, type Version, dependencyNames, pretty, workflowNames } from './types'
+import './agents.css'
 
 export function AgentsPage() {
   const { '*': path } = useParams()
@@ -40,6 +41,7 @@ function AgentList() {
 }
 
 function AgentDetail({ agentId }: { agentId: string }) {
+  const { token } = theme.useToken()
   const query = useQuery<Detail>(`/admin/v1/agents/${agentId}`)
   const options = useQuery<Options>('/admin/v1/agents/options')
   const [selected, setSelected] = useState<string>()
@@ -62,18 +64,23 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const definition = version?.definition
   const depIds = definition ? [definition.bindings.prompt_version, definition.bindings.model_route_version, ...definition.bindings.tool_versions, ...definition.bindings.skill_versions].filter((id): id is string => !!id) : []
   const dependencies = depIds.map(id => options.data?.dependencies.find(d => d.version_id === id) ?? { version_id: id, name: '依赖名称不可用', version_label: '版本不可用', resource_type: '' })
-  return <PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={query.reload}>刷新</Button>
+  return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={detail.agent.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
       offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>
     <ErrorNotice error={error ?? options.error} />
-    <Descriptions items={[{ key: 'status', label: '当前环境状态', children: <StatusTag status={detail.agent.status} /> },
+    <div className="agent-detail-summary" style={{ background: token.colorFillAlter, borderRadius: token.borderRadiusLG }}>
+    <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} items={[{ key: 'status', label: '当前环境状态', children: <StatusTag status={detail.agent.status} /> },
       { key: 'owner', label: '负责人', children: detail.agent.owner }, { key: 'purpose', label: '用途', children: detail.agent.description }]} />
-    <Space wrap style={{ marginBottom: 16 }}><Select aria-label="智能体版本" style={{ minWidth: 240, maxWidth: '100%' }} value={version?.version_id}
+    </div>
+    <div className="agent-version-toolbar">
+      <div className="agent-version-picker"><Typography.Text type="secondary">版本</Typography.Text><Select aria-label="智能体版本" className="agent-version-select" value={version?.version_id}
       options={detail.versions.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.status.label}${v.version_id === detail.release_version_id ? ' · 当前环境生效' : ''}` }))}
-      onChange={value => { setSelected(value); setValidation(undefined) }} />
+      onChange={value => { setSelected(value); setValidation(undefined) }} /></div>
+      <div className="agent-version-actions">
       {version && <ActionButtons actions={version.actions} disabled={busy} handlers={{ edit: options.data ? () => setEditor('version') : undefined, validate: () => void validate(), test: () => setTab('debug'), release: () => setEditor('release') }} />}
-    </Space>
-    {definition && version && <Tabs activeKey={tab} onChange={setTab} items={[
+      </div>
+    </div>
+    {definition && version && <Tabs className="agent-detail-tabs" activeKey={tab} onChange={setTab} items={[
       { key: 'base', label: '基本信息', children: <Descriptions items={[
         { key: 'flow', label: '流程类型', children: workflowNames[definition.workflow_type] },
         { key: 'code', label: '接入调用编码', children: <Typography.Text copyable>{detail.agent.agent_code}</Typography.Text> },
@@ -130,7 +137,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
       fields={[{ name: 'reason', label: '操作原因', required: true }]} onClose={() => setEditor(undefined)} onSaved={saved}
       onSave={values => send(`/admin/v1/agents/${agentId}/state`, 'POST', { ...values, revision: detail.agent.revision, operation: editor })} />}
     {editor === 'release' && version && options.data && <ReleaseDialog version={version} detail={detail} options={options.data} onClose={() => setEditor(undefined)} onSaved={saved} />}
-  </PageContainer>
+  </PageContainer></div>
 }
 
 function JsonContent({ value }: { value: unknown }) {
