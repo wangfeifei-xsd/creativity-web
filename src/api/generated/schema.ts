@@ -2688,6 +2688,23 @@ export interface paths {
         patch: operations["update_model_admin_v1_models__model_id__patch"];
         trace?: never;
     };
+    "/admin/v1/models/{model_id}/connection-test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Connection */
+        post: operations["test_connection_admin_v1_models__model_id__connection_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/models/{model_id}/grants": {
         parameters: {
             query?: never;
@@ -6759,6 +6776,8 @@ export interface components {
         };
         /** ConnectionInput */
         ConnectionInput: {
+            /** Allowed Networks */
+            allowed_networks?: string[];
             /** Credential Ref */
             credential_ref: string;
             /** Endpoint */
@@ -6793,10 +6812,32 @@ export interface components {
             /** Items */
             items: components["schemas"]["ConnectionView"][];
         };
+        /** ConnectionTestView */
+        ConnectionTestView: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Connection Id */
+            connection_id: string;
+            /** Error Code */
+            error_code?: string | null;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Message */
+            message: string;
+            /** Model Id */
+            model_id: string;
+            /** Success */
+            success: boolean;
+        };
         /** ConnectionView */
         ConnectionView: {
             /** Actions */
             actions?: components["schemas"]["VisibleAction"][];
+            /** Allowed Networks */
+            allowed_networks?: string[];
             /** Credential Ref */
             credential_ref: string;
             /** Current Version Id */
@@ -9141,7 +9182,7 @@ export interface components {
         /** ModelView */
         ModelView: {
             /** Actions */
-            actions?: components["schemas"]["VisibleAction"][];
+            actions?: components["schemas"]["AccessAction"][];
             /** Capabilities */
             capabilities: components["schemas"]["CapabilityView"][];
             /** Config Digest */
@@ -38848,6 +38889,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelView"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    test_connection_admin_v1_models__model_id__connection_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionTestView"];
                 };
             };
             /** @description Bad Request */

@@ -6,7 +6,7 @@ const session = { user: { user_id: 'user1', display_name: '模型管理员', log
   actions: [{ action_key: 'model:manage', label: '管理模型' }, { action_key: 'channel:govern', label: '治理渠道' }], expires_at: '2030-01-01T00:00:00Z' }
 const connection = { id: 'connection1', name: '业务模型连接', provider_id: 'provider1', provider_name: '供应商甲', protocol: 'chat_completions', protocol_name: 'Chat Completions 兼容', endpoint: 'https://models.example/v1', timeout_seconds: 60, status: 'ACTIVE', status_label: '启用', health_status: 'UNKNOWN', health_label: '未知', health_reason: null, health_checked_at: null, current_version_id: 'cv1', revision: 1, credential_ref: 'secret-reference', actions: [{ action_key: 'edit', label: '编辑' }] }
 const model = { id: 'model1', name: '业务模型', model_code: 'business', connection_id: 'connection1', connection_name: connection.name, provider_model_name: 'provider-v1', provider_name: '供应商甲', protocol: 'chat_completions', protocol_name: connection.protocol_name, status: 'ACTIVE', status_label: '启用', context_limit: null, parameters: { max_tokens: 100 }, parameter_allowlist: ['max_tokens'], parameter_reasons: { temperature: '该模型未开放此参数' }, usage_subsets: { cache_read: 'input' }, revision: 1, current_version_id: 'v1', config_digest: 'digest', verified_at: null,
-  capabilities: [{ capability: 'tools', name: '工具调用', state: 'UNVERIFIED', label: '未验证', verified_at: null, reason: '当前配置尚未通过真实验证' }], actions: [{ action_key: 'edit', label: '编辑' }, { action_key: 'test', label: '能力验证' }, { action_key: 'history', label: '历史版本' }] }
+  capabilities: [{ capability: 'tools', name: '工具调用', state: 'UNVERIFIED', label: '未验证', verified_at: null, reason: '当前配置尚未通过真实验证' }], actions: [{ action_key: 'edit', label: '编辑', enabled: true }, { action_key: 'test_connection', label: '测试连接', enabled: true }, { action_key: 'test', label: '能力验证', enabled: true }, { action_key: 'history', label: '历史版本', enabled: true }] }
 const provider = { id: 'provider1', code: 'provider', name: '供应商甲', protocols: ['chat_completions'], template_content: { endpoint: 'https://models.example/v1', protocol: 'chat_completions' }, revision: 1 }
 async function setup(page: Page) {
   await page.route('**/admin/v1/**', route => {
@@ -67,9 +67,10 @@ test('连接编辑不回显凭据，保存保留凭据引用与修订号', async
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByLabel('新凭据（留空保留原凭据）')).toHaveValue('')
   await dialog.getByLabel('连接名称').fill('修改后的连接')
+  await dialog.getByLabel('允许的 IP 范围').fill('10.20.0.0/16\n2001:2::59/128')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).toBeHidden()
-  expect(saved).toMatchObject({ name: '修改后的连接', credential_ref: 'secret-reference', revision: 1 })
+  expect(saved).toMatchObject({ name: '修改后的连接', allowed_networks: ['10.20.0.0/16', '2001:2::59/128'], credential_ref: 'secret-reference', revision: 1 })
   expect(saved).not.toHaveProperty('secret')
 })
 
@@ -92,4 +93,42 @@ test('不支持的参数反馈保留输入，并阻止重复提交', async ({ pa
   await expect(dialog.getByText('参数未获协议或模型支持：seed')).toBeVisible()
   await expect(dialog.getByLabel('默认参数（JSON）')).toHaveValue('{"max_tokens":100,"seed":1}')
   expect(count).toBe(1)
+})
+
+
+for (const success of [true, false]) {
+  test(`模型列表测试连接显示${success ? '成功' : '失败'}结果和耗时`, async ({ page }) => {
+    await setup(page)
+    let requests = 0
+    await page.route('**/admin/v1/models/model1/connection-test', async route => {
+      requests++
+      expect(route.request().method()).toBe('POST')
+      expect(route.request().postData()).toBeNull()
+      await new Promise(resolve => setTimeout(resolve, 350))
+      return route.fulfill({ json: {
+        model_id: 'model1', connection_id: 'connection1', success,
+        message: success ? '连接成功，供应商接口与凭据检查通过' : '供应商鉴权失败，请检查连接凭据及其访问权限',
+        error_code: success ? null : 'MODEL_AUTH_FAILED', latency_ms: 238, checked_at: '2026-10-06T03:00:00Z',
+      } })
+    })
+    await page.goto('#/models')
+    await page.getByRole('button', { name: '测试连接', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: '测试连接 · 业务模型' })
+    await expect(dialog).toBeVisible()
+    await expect(page.getByRole('button', { name: '测试连接', exact: true })).toBeDisabled()
+    await expect(dialog.getByText(success ? '连接成功，供应商接口与凭据检查通过' : '供应商鉴权失败，请检查连接凭据及其访问权限')).toBeVisible()
+    await expect(dialog.getByText('238 毫秒')).toBeVisible()
+    expect(requests).toBe(1)
+    await dialog.getByRole('button', { name: '关闭', exact: true }).last().click()
+    await expect(dialog).toBeHidden()
+  })
+}
+
+test('无凭据使用权限时禁用测试连接', async ({ page }) => {
+  await setup(page)
+  await page.route('**/admin/v1/models', route => route.fulfill({ json: {
+    items: [{ ...model, actions: [{ action_key: 'test_connection', label: '测试连接', enabled: false, disabled_reason: '没有使用连接凭据的权限' }] }], actions: [],
+  } }))
+  await page.goto('#/models')
+  await expect(page.getByRole('button', { name: '测试连接', exact: true })).toBeDisabled()
 })
