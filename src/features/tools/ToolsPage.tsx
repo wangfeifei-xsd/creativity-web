@@ -1,3 +1,4 @@
+import { toolPermissionLabel } from './permissionLabel'
 import { App, Button, Descriptions, Input, Select, Space, Tabs, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -129,7 +130,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
       { key: 'permissions', label: '权限', children: <Descriptions column={1} items={[
         { key: 'domain', label: '业务数据域', children: session.workspace && definition.allowed_data_domains.includes(session.workspace.data_scope_id) ? session.workspace.data_scope_name : '名称不可用' },
         { key: 'environment', label: '环境', children: definition.environments.map(environment => ({ dev: '开发', test: '测试', fat: '验收', prod: '生产' })[environment]).join('、') },
-        { key: 'actions', label: '必要授权', children: definition.required_scopes?.map(scope => session.actions.find(a => a.action_key === scope)?.label ?? '授权名称不可用').join('、') },
+        { key: 'actions', label: '必要授权', children: definition.required_scopes?.map(scope => toolPermissionLabel(scope, session.actions)).join('、') },
         { key: 'subject', label: '主体要求', children: definition.subject_requirements?.required ? '需要受信业务主体' : '使用当前身份' },
       ]} /> },
       { key: 'policy', label: '执行策略', children: <Descriptions column={2} items={[

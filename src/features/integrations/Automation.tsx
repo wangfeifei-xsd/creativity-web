@@ -3,12 +3,14 @@ import { Table } from '../../components/Table'
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Alerts } from './Alerts'
-import { RunSourceNames, RunSources, type RunClient } from './RunSources'
+import { RunSourceNames, RunSources } from './RunSources'
+import { useRunClients } from './useRunClients'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
 import { ErrorNotice, type Schema } from '../../components/Management'
+import { useSession } from '../../app/workspace/context'
 
 type Schedule = { id: string; name: string; revision: number; state: string; state_label: string; next_at: string; spec: { timezone: string; interval_seconds?: number; daily_at?: string } }
 type Endpoint = { id: string; name: string; url: string; events: string[]; client_ids: string[]; revision: number; state: string; state_label: string }
@@ -16,16 +18,20 @@ type Delivery = { id: string; endpoint_name?: string; revision: number; state: s
 type Batch = { batch_id: string; name: string; revision: number; state_label: string; items: { item_id: string; event_id: string; revision: number; state: string; state_label: string; run_id?: string; error?: { message: string } }[] }
 
 export function Automation() {
-  return <Tabs items={[{ key: 'schedules', label: '定时运行', children: <Schedules /> }, { key: 'webhooks', label: '事件投递', children: <Webhooks /> }, { key: 'batches', label: '批量运行', children: <Batches /> }, { key: 'alerts', label: '外部告警', children: <Alerts /> }]} />
+  const { session } = useSession()
+  const canReadRuns = session.actions.some(action => action.action_key === 'run:read')
+  return <Tabs items={[{ key: 'schedules', label: '定时运行', children: <Schedules /> }, { key: 'webhooks', label: '事件投递', children: <Webhooks /> }, { key: 'batches', label: '批量运行', disabled: !canReadRuns, children: <Batches /> }, { key: 'alerts', label: '外部告警', children: <Alerts /> }]} />
 }
 
 function Schedules() {
+  const { session } = useSession()
+  const canRun = session.actions.some(action => action.action_key === 'run:create')
   const query = useQuery<Schedule[]>('/admin/v1/schedules')
   const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number }>()
   const mode = Form.useWatch('mode', form)
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" onClick={() => setOpen(true)}>新增计划</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前工作区没有运行权限' : undefined} onClick={() => setOpen(true)}>新增计划</Button><Button onClick={query.reload}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' },
       { title: '周期', render: (_, r) => r.spec.interval_seconds ? `每 ${r.spec.interval_seconds} 秒` : `每日 ${r.spec.daily_at}` },
@@ -50,7 +56,7 @@ function Schedules() {
 
 function Webhooks() {
   const query = useQuery<Endpoint[]>('/admin/v1/webhooks'), deliveries = useQuery<Delivery[]>('/admin/v1/webhook-deliveries')
-  const clients = useQuery<RunClient[]>('/admin/v1/run-subscription-options')
+  const clients = useRunClients()
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [editing, setEditing] = useState<Endpoint>()
   const [form] = Form.useForm<{ name: string; url: string; secret: string; events: string[]; client_ids: string[] }>()
@@ -67,17 +73,19 @@ function Webhooks() {
           <Form.Item name="url" label="接收地址" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="secret" label="签名密钥" rules={[{ required: true }, { min: 32, message: '至少 32 个字符' }]}><Input.Password autoComplete="new-password" /></Form.Item>
           <Form.Item name="events" label="事件类型" rules={[{ required: true }]}><Select mode="multiple" options={[{ value: 'run.terminal', label: '运行终结' }, { value: 'alert.triggered', label: '告警触发' }, { value: 'alert.resolved', label: '告警解除' }]} /></Form.Item></>}
-        {(editing?.events ?? events)?.includes('run.terminal') && <RunSources />}
+        {(editing?.events ?? events)?.includes('run.terminal') && <RunSources clients={clients} />}
       </Form>
     </Modal></>
 }
 
 function Batches() {
+  const { session } = useSession()
+  const canRun = session.actions.some(action => action.action_key === 'run:create')
   const query = useQuery<Batch[]>('/admin/v1/batches')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; items: string }>()
   const key = useRef('')
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" onClick={() => { key.current = crypto.randomUUID(); setOpen(true) }}>新建批次</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} onClick={() => { key.current = crypto.randomUUID(); setOpen(true) }}>新建批次</Button><Button onClick={query.reload}>刷新</Button></Space>
     <Table rowKey="batch_id" dataSource={query.data} columns={[{ title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' }, { title: '条目数', render: (_, r) => r.items.length }, { title: '操作', render: (_, r) => r.state_label === '启用' && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/batches/${r.batch_id}/cancel`, 'POST', { revision: r.revision, cancel_runs: true }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>取消批次</Button> }]} expandable={{ expandedRowRender: r => <Table rowKey="item_id" dataSource={r.items} pagination={false} columns={[{ title: '外部事件编号', dataIndex: 'event_id' }, { title: '状态', dataIndex: 'state_label' }, { title: '反馈', render: (_, i) => i.error?.message ?? '无' }, { title: '操作', render: (_, i) => <Space>{i.run_id && <Link to={`/runs/${i.run_id}`}>查看运行</Link>}{i.state === 'FAILED' && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/batch-items/${i.item_id}/retry`, 'POST', { revision: i.revision }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>重试受理</Button>}</Space> }]} /> }} />
     <Modal open={open} title="新建批量运行" onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>
       <ErrorNotice error={error} />

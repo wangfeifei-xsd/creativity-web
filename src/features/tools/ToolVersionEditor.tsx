@@ -6,6 +6,7 @@ import { useQuery } from '../../api/useQuery'
 import { useSession } from '../../app/workspace/context'
 import { ErrorNotice, type Schema } from '../../components/Management'
 import { ErrorState, LoadingState } from '../../components/States'
+import { toolPermissionLabel } from './permissionLabel'
 
 type Version = Schema<'ToolVersionView'>
 type Values = { label: string; input: string; output: string; adapter: string; required: boolean;
@@ -107,7 +108,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
           </> },
           { key: 'permission', label: '权限', forceRender: true, children: <>
             <Typography.Paragraph>{workspace?.environment_name ?? '环境未确认'} · {workspace?.data_scope_name ?? '业务数据域未确认'}</Typography.Paragraph>
-            <Form.Item name="scopes" label="必要授权" rules={[{ required: true }]}><Select mode="multiple" options={session.actions.map(a => ({ value: a.action_key, label: a.label }))} /></Form.Item>
+            <Form.Item name="scopes" label="必要授权" rules={[{ required: true }]}><Select mode="multiple" labelRender={({ value }) => toolPermissionLabel(String(value), session.actions)} options={session.actions.map(a => ({ value: a.action_key, label: a.label }))} /></Form.Item>
             <Form.Item name="required" label="要求业务主体" valuePropName="checked"><Switch /></Form.Item>
             <Form.Item name="types" label="允许的主体类型"><Select mode="tags" /></Form.Item>
           </> },

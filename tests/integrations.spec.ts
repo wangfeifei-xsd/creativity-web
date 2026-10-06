@@ -70,7 +70,7 @@ test('运行失败告警保存所选调用服务并显示监测范围', async ({
   await dialog.getByRole('button', { name: '确定', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await expect(page.getByRole('cell', { name: '业务 API 服务', exact: true })).toBeVisible()
-  await page.screenshot({ path: '../.logs/run-subscription-alert.png', fullPage: true, animations: 'disabled' })
+  await page.screenshot({ path: '.local/channel-validation/run-subscription-alert.png', fullPage: true, animations: 'disabled' })
 })
 
 async function fixture(page: Page) {
@@ -78,7 +78,7 @@ async function fixture(page: Page) {
     const path = new URL(route.request().url()).pathname
     let json: unknown = []
     if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin_a', login_name: 'admin', display_name: '管理员' }, workspace,
-      navigation: [{ navigation_key: 'integrations', label: '业务接入' }], actions: [action('integration:manage', '管理业务接入'), action('key:manage', '管理接入凭据')], expires_at: '2030-01-01T00:00:00Z' }
+      navigation: [{ navigation_key: 'integrations', label: '业务接入' }], actions: [action('integration:manage', '管理业务接入'), action('key:manage', '管理接入凭据'), action('run:read', '查看运行元数据'), action('run:create', '执行能力')], expires_at: '2030-01-01T00:00:00Z' }
     else if (path.endsWith('/auth/channels')) json = [workspace]
     else if (path === '/admin/v1/agents') json = { items: [], actions: [] }
     else if (path === '/admin/v1/integrations') json = { items: [row], actions: [action('integration:create', '新建连接')] }
@@ -228,4 +228,27 @@ test('定时运行按时区保存，批量失败保留条目并重用幂等键',
   expect(keys[0]).toBeTruthy()
   expect(keys[1]).toBe(keys[0])
   await expect(batch.getByLabel('运行条目')).toHaveValue(items)
+})
+
+test('管理工作区禁用运行操作且不请求无权限的运行目录', async ({ page }) => {
+  await fixture(page)
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
+    user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' }, workspace,
+    navigation: [{ navigation_key: 'integrations', label: '业务接入' }],
+    actions: [action('integration:manage', '管理业务接入')], expires_at: '2030-01-01T00:00:00Z',
+  } }))
+  const deniedReads: string[] = []
+  page.on('request', request => {
+    if (/\/(run-subscription-options|batches)(\?|$)/.test(request.url())) deniedReads.push(request.url())
+  })
+  await page.goto('#/integrations')
+  await page.getByRole('tab', { name: '运行与事件', exact: true }).click()
+  await expect(page.getByRole('button', { name: '新增计划', exact: true })).toBeDisabled()
+  await expect(page.getByRole('tab', { name: '批量运行', exact: true })).toHaveAttribute('aria-disabled', 'true')
+  await page.getByRole('tab', { name: '事件投递', exact: true }).click()
+  await expect(page.getByRole('button', { name: '新增端点', exact: true })).toBeVisible()
+  await page.getByRole('tab', { name: '外部告警', exact: true }).click()
+  await page.getByRole('button', { name: '新增告警', exact: true }).click()
+  await expect(page.getByLabel('调用服务', { exact: true })).toBeDisabled()
+  expect(deniedReads).toEqual([])
 })

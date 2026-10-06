@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
 import { ErrorNotice } from '../../components/Management'
-import { RunSourceNames, RunSources, type RunClient } from './RunSources'
+import { RunSourceNames, RunSources } from './RunSources'
+import { useRunClients } from './useRunClients'
 
 type Rule = { id: string; revision: number; name: string; kind: string; kind_label: string; threshold: number; window_seconds: number; endpoint_id: string; client_ids: string[]; enabled: boolean; state_label: string; last_value: number; generation: number }
 export function Alerts() {
   const query = useQuery<Rule[]>('/admin/v1/alert-rules')
   const endpoints = useQuery<{ id: string; name: string; events: string[] }[]>('/admin/v1/webhooks')
-  const clients = useQuery<RunClient[]>('/admin/v1/run-subscription-options')
+  const clients = useRunClients()
   const [editor, setEditor] = useState<{ row?: Rule }>(), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; kind: string; threshold: number; window_seconds: number; endpoint_id: string; client_ids: string[]; active: boolean }>()
   const kind = Form.useWatch('kind', form)
@@ -22,7 +23,7 @@ export function Alerts() {
       <Form name="alert" form={form} layout="vertical" disabled={busy} onFinish={async v => { if (busy) return; setBusy(true); try { await send(editor?.row ? `/admin/v1/alert-rules/${editor.row.id}` : '/admin/v1/alert-rules', editor?.row ? 'PATCH' : 'POST', { ...v, client_ids: v.kind === 'run_failure' ? v.client_ids ?? [] : [], revision: editor?.row?.revision }); setEditor(undefined); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
         <Form.Item name="name" label="名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
         <Form.Item name="kind" label="监测类型" rules={[{ required: true }]}><Select disabled={!!editor?.row} options={[{ value: 'budget', label: '预算阈值' }, { value: 'run_failure', label: '运行失败' }, { value: 'cleanup_failure', label: '清理异常' }, { value: 'delivery_failure', label: '投递异常' }]} /></Form.Item>
-        {kind === 'run_failure' && <RunSources />}
+        {kind === 'run_failure' && <RunSources clients={clients} />}
         {kind !== 'budget' && <><Form.Item name="threshold" label="次数阈值" rules={[{ required: true }]}><InputNumber min={1} max={10000} /></Form.Item><Form.Item name="window_seconds" label="统计窗口（秒）" rules={[{ required: true }]}><InputNumber min={60} max={604800} /></Form.Item></>}
         <Form.Item name="endpoint_id" label="投递端点" rules={[{ required: true }]}><Select disabled={!!editor?.row} options={endpoints.data?.filter(e => e.events.includes('alert.triggered') && e.events.includes('alert.resolved')).map(e => ({ value: e.id, label: e.name }))} /></Form.Item>
         <Form.Item name="active" label="启用" valuePropName="checked"><Switch /></Form.Item>

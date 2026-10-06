@@ -18,7 +18,6 @@ type Summary = Schema<'UsageSummary'>
 type Record = Schema<'RecordView'>
 type Detail = Schema<'RecordDetail'>
 type FilterValues = { start_at: string; end_at: string; timezone: string; key_id?: string; environment?: string; model_id?: string; agent_id?: string; data_scope_id?: string; actor_id?: string; purpose?: string; subject_type?: string; subject_id?: string; target_currency?: string }
-const initial: FilterValues = { start_at: localTime(new Date(Date.now() - 7 * 86400000)), end_at: localTime(new Date(Date.now() + 60000)), timezone: 'Asia/Shanghai' }
 function parameters(values: FilterValues) {
   return Object.fromEntries(Object.entries({ ...values, start_at: new Date(values.start_at).toISOString(), end_at: new Date(values.end_at).toISOString() }).filter(([, value]) => value)) as { [key: string]: string }
 }
@@ -27,6 +26,7 @@ function number(value?: number | null) { return value == null ? '未确认' : va
 export function UsagePage() {
   const { session } = useSession()
   const { message } = App.useApp()
+  const [initial] = useState<FilterValues>(() => ({ start_at: localTime(new Date(Date.now() - 7 * 86400000)), end_at: localTime(new Date(Date.now() + 60000)), timezone: 'Asia/Shanghai' }))
   const [filters, setFilters] = useState(() => parameters(initial))
   const [offset, setOffset] = useState(0)
   const suffix = new URLSearchParams(filters).toString()

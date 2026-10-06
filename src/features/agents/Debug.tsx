@@ -11,6 +11,7 @@ import { type Version, pretty } from './types'
 type Field = { title?: string; type?: string; enum?: unknown[] }
 
 export function Debug({ version }: { version: Version }) {
+  const allowed = version.actions.some(action => action.action_key === 'test')
   const [form] = Form.useForm()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
@@ -18,6 +19,7 @@ export function Debug({ version }: { version: Version }) {
   const properties = (version.definition.input_schema.properties ?? {}) as Record<string, Field>
   const required = (version.definition.input_schema.required ?? []) as string[]
   async function run(values: Record<string, unknown>) {
+    if (!allowed) return
     setBusy(true); setError(undefined); setResult(undefined)
     try {
       const input = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined).map(([key, value]) => [key, ['object', 'array'].includes(properties[key].type ?? '') && typeof value === 'string' ? JSON.parse(value) : value]))
@@ -28,7 +30,7 @@ export function Debug({ version }: { version: Version }) {
     {Object.entries(properties).map(([name, field]) => <Form.Item key={name} name={name} label={field.title ?? name} valuePropName={field.type === 'boolean' ? 'checked' : 'value'} rules={[{ required: required.includes(name) }]}>
       {field.enum ? <Select options={field.enum.map(v => ({ value: String(v), label: String(v) }))} /> : field.type === 'boolean' ? <Switch /> : ['number', 'integer'].includes(field.type ?? '') ? <InputNumber precision={field.type === 'integer' ? 0 : undefined} style={{ width: '100%' }} /> : <Input.TextArea rows={3} />}
     </Form.Item>)}
-    <Button type="primary" htmlType="submit" loading={busy}>开始调试</Button>
+    <Button type="primary" htmlType="submit" loading={busy} disabled={!allowed} title={!allowed ? '当前工作区没有运行权限' : undefined}>开始调试</Button>
   </Form>
     {result && <><Descriptions style={{ marginTop: 16 }} items={[
       { key: 'state', label: '状态', children: <StatusTag status={result.state} /> },
