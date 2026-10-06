@@ -1,3 +1,4 @@
+import { resourceSummary } from './resource-fixtures'
 import { expect, test, type Page } from '@playwright/test'
 
 const actions = [
@@ -24,7 +25,7 @@ async function setup(page: Page) {
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
     const payload = path.endsWith('/auth/session') ? session : path === '/admin/v1/prompts' ? { items: [prompt], actions } :
-      path === '/admin/v1/prompts/p1' ? prompt : path.endsWith('/versions') ? [version] :
+      path.includes('/resource-management/') ? [resourceSummary('p1', prompt.name)] : path === '/admin/v1/prompts/p1' ? prompt : path.endsWith('/configuration') ? version :
         path === '/admin/v1/prompt-versions/v1' ? version : path.endsWith('/render') ? rendered : []
     await route.fulfill({ json: payload })
   })
@@ -32,11 +33,11 @@ async function setup(page: Page) {
   await page.getByRole('button', { name: '风险分析', exact: true }).click()
 }
 
-test('提示词六个操作区、中文变量、脱敏预览和未知上下文上限', async ({ page }) => {
+test('提示词编辑与调试操作区、中文变量、脱敏预览和未知上下文上限', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await setup(page)
-  for (const name of ['编辑', '变量', '预览', '调试', '版本', '引用']) await expect(page.getByRole('tab', { name, exact: true })).toBeVisible()
+  for (const name of ['编辑', '变量', '预览', '调试', '实验']) await expect(page.getByRole('tab', { name, exact: true })).toBeVisible()
   await page.getByRole('tab', { name: '变量', exact: true }).click()
   await expect(page.getByLabel('中文名称', { exact: true })).toHaveValue('待评估文本')
   await page.getByRole('tab', { name: '预览', exact: true }).click()
@@ -45,19 +46,19 @@ test('提示词六个操作区、中文变量、脱敏预览和未知上下文�
   await expect(page.getByText('敏感内容已脱敏', { exact: true })).toBeVisible()
   await expect(page.getByText('尚未确认', { exact: true })).toHaveCount(2)
   await expect(page.getByText('••••••', { exact: true })).toBeVisible()
-  await page.screenshot({ path: '/tmp/prompts-preview.png', fullPage: true })
+  await page.screenshot({ path: test.info().outputPath('prompts-preview.png'), fullPage: true })
   expect(errors).toEqual([])
 })
 
 test('草稿冲突保留输入并展示最新修订', async ({ page }) => {
   await setup(page)
-  await page.route('**/admin/v1/prompt-versions/v1', async route => {
+  await page.route('**/admin/v1/prompts/p1/configuration', async route => {
     if (route.request().method() === 'PATCH') await route.fulfill({ status: 409,
       json: { error: { code: 'REVISION_CONFLICT', message: '草稿已变更，请检查差异', fields: [] }, request_id: 'r1' } })
     else await route.fulfill({ json: { ...version, revision: 2, version: { ...version.version, draft_revision: 2 } } })
   })
   await page.getByLabel('系统指令', { exact: true }).fill('本地未保存内容')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存', exact: true }).click()
   await expect(page.getByText('当前内容已更新至修订 2', { exact: true })).toBeVisible()
   await expect(page.getByLabel('系统指令', { exact: true })).toHaveValue('本地未保存内容')
   await page.getByText('最新已保存内容', { exact: true }).click()
@@ -74,7 +75,6 @@ test('旧测试读取固定快照，后续草稿不替换测试内容', async ({
   await page.getByRole('tab', { name: '调试', exact: true }).click()
   await page.getByRole('button', { name: '查看快照', exact: true }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog.getByText('旧草稿', { exact: true })).toBeVisible()
   await dialog.getByText('模板配置快照', { exact: true }).click()
   await expect(dialog.getByText(/历史模板原文/)).toBeVisible()
   await expect(dialog.getByRole('button', { name: '查看完整渲染和结果' })).toHaveCount(0)

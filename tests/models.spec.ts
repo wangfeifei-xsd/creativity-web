@@ -1,3 +1,4 @@
+import { resourceSummary } from './resource-fixtures'
 import { expect, test, type Page } from '@playwright/test'
 
 const workspace = { channel_id: 'channel1', channel_name: '测试渠道', environment: 'test', environment_name: '测试',  }
@@ -138,22 +139,21 @@ async function openRouteVersion(page: Page, routeModels = [model]) {
   await page.route('**/admin/v1/models', route => route.fulfill({ json: { items: routeModels, actions: [] } }))
   await page.route('**/admin/v1/model-routes', route => route.fulfill({ json: { items: [{ id: 'route1', name: '测试路由', status_label: '启用', released_version_id: null }], actions: [] } }))
   let saved: Record<string, unknown> | undefined
-  await page.route('**/admin/v1/model-routes/route1/versions', route => {
-    if (route.request().method() === 'POST') {
+  await page.route('**/admin/v1/model-routes/route1/configuration', route => {
+    if (route.request().method() === 'PUT') {
       saved = route.request().postDataJSON()
       return route.fulfill({ json: { version_id: 'route-version1', version_label: 'v1', content: saved } })
     }
     return route.fulfill({ json: [] })
   })
+  await page.route('**/resource-management/model_route/summaries', route => route.fulfill({ json: [resourceSummary('route1', '测试路由')] }))
   await page.goto('#/model-routes')
-  await page.getByRole('button', { name: '版本', exact: true }).click()
-  await page.getByRole('button', { name: '新增版本', exact: true }).click()
-  await page.getByRole('dialog', { name: '新增路由版本', exact: true }).getByLabel('版本名称').fill('v1')
+  await page.getByRole('button', { name: '修改', exact: true }).click()
   return () => saved
 }
 
 async function chooseRouteModel(page: Page, field: string, name: string) {
-  const input = page.getByRole('dialog', { name: '新增路由版本', exact: true }).getByLabel(field, { exact: true })
+  const input = page.getByRole('dialog', { name: '修改路由配置', exact: true }).getByLabel(field, { exact: true })
   await input.click()
   await page.locator('.ant-select-dropdown:visible').getByText(`供应商甲 · 业务模型连接 · ${name}`, { exact: true }).click()
   if (await input.getAttribute('aria-expanded') === 'true') await input.press('Escape')
@@ -162,7 +162,7 @@ async function chooseRouteModel(page: Page, field: string, name: string) {
 
 test('单模型路由可以不设置回退，通过重试上限重复尝试', async ({ page }) => {
   const saved = await openRouteVersion(page)
-  const dialog = page.getByRole('dialog', { name: '新增路由版本', exact: true })
+  const dialog = page.getByRole('dialog', { name: '修改路由配置', exact: true })
   await chooseRouteModel(page, '首选模型', '业务模型')
   await dialog.getByLabel('回退模型（按选择顺序）', { exact: true }).click()
   await expect(page.getByText('暂无其他模型，可不设置回退')).toBeVisible()
@@ -176,7 +176,7 @@ test('单模型路由可以不设置回退，通过重试上限重复尝试', as
 
 test('切换首选时移除同名回退并保留其他回退顺序', async ({ page }) => {
   const saved = await openRouteVersion(page, [model, ...['乙', '丙', '丁'].map((name, index) => ({ ...model, id: `model${index + 2}`, name: `模型${name}` }))])
-  const dialog = page.getByRole('dialog', { name: '新增路由版本', exact: true })
+  const dialog = page.getByRole('dialog', { name: '修改路由配置', exact: true })
   await chooseRouteModel(page, '首选模型', '业务模型')
   await chooseRouteModel(page, '回退模型（按选择顺序）', '模型乙')
   await chooseRouteModel(page, '回退模型（按选择顺序）', '模型丙')
@@ -192,41 +192,37 @@ async function openRoutePublish(page: Page, reason?: string) {
   await setup(page)
   let released = false
   let submitted: unknown
-  await page.route('**/admin/v1/model-routes', route => route.fulfill({ json: { items: [{ id: 'route1', name: '测试路由', status_label: '启用', released_version_id: null }], actions: [] } }))
-  await page.route('**/admin/v1/model-routes/route1/versions', route => route.fulfill({ json: [{
-    version_id: 'route-version1', version_label: 'v1', content: { primary_model: 'model1', fallback_models: [] },
-    actions: [{ action_key: 'release', label: '发布', enabled: !reason && !released, disabled_reason: released ? '该版本已是当前发布版本' : reason }],
-  }] }))
-  await page.route('**/admin/v1/model-routes/route1/releases', route => {
+  await page.route('**/admin/v1/model-routes', route => route.fulfill({ json: { items: [{ id: 'route1', name: '测试路由' }], actions: [] } }))
+  await page.route('**/resource-management/model_route/summaries', route => {
+    const summary = resourceSummary('route1', '测试路由', released)
+    if (reason) summary.actions[1] = { ...summary.actions[1], enabled: false, disabled_reason: reason }
+    return route.fulfill({ json: [summary] })
+  })
+  await page.route('**/resource-management/model_route/route1/publish', route => {
     submitted = route.request().postDataJSON()
     released = true
-    return route.fulfill({ json: { version_id: 'route-version1' } })
+    return route.fulfill({ status: 204, body: '' })
   })
   await page.goto('#/model-routes')
-  await page.getByRole('button', { name: '版本', exact: true }).click()
   return () => submitted
 }
 
-for (const reason of ['当前角色未获此环境的发布权限，请联系有授权权限的管理员', '业务模型：以下能力尚未通过当前配置验证：文本生成']) {
-  test(`路由发布不可用时显示禁用按钮与原因：${reason}`, async ({ page }) => {
-    await openRoutePublish(page, reason)
-    const drawer = page.getByRole('dialog', { name: '测试路由', exact: true })
-    await expect(drawer.getByRole('button', { name: '发布', exact: true })).toBeDisabled()
-    await expect(drawer.getByText(reason, { exact: true })).toBeVisible()
-  })
-}
+test('路由发布权限不足时显示禁用原因', async ({ page }) => {
+  const reason = '缺少发布权限'
+  await openRoutePublish(page, reason)
+  await expect(page.getByRole('button', { name: '发布', exact: true })).toBeDisabled()
+  await expect(page.getByText(reason, { exact: true })).toBeVisible()
+})
 
-test('路由按服务端版本操作展示发布入口，发布后更新状态并阻止重复发布', async ({ page }) => {
+test('路由从列表直接发布，发布后展示下架', async ({ page }) => {
   const submitted = await openRoutePublish(page)
-  const drawer = page.getByRole('dialog', { name: '测试路由', exact: true })
-  await drawer.getByRole('button', { name: '发布', exact: true }).click()
-  const dialog = page.getByRole('dialog', { name: '发布 v1', exact: true })
-  await expect(dialog.getByText('发布后新的运行将使用该路由版本。')).toBeVisible()
-  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await page.getByRole('button', { name: '发布', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: '发布', exact: true }).click()
   await expect(dialog).toBeHidden()
-  await expect(drawer.getByText('当前发布', { exact: true })).toBeVisible()
-  await expect(drawer.getByRole('button', { name: '发布', exact: true })).toBeDisabled()
-  expect(submitted()).toEqual({ version_id: 'route-version1', expected_version_id: null })
+  await expect(page.getByText('已发布', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '下架', exact: true })).toBeEnabled()
+  expect(submitted()).toEqual({ revision: 1, configuration_revision: 1, confirm_used: false })
 })
 
 test('配置和业务页面统一使用渠道与环境', async ({ page }) => {

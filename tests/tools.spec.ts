@@ -1,3 +1,4 @@
+import { resourceSummary } from './resource-fixtures'
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
@@ -12,7 +13,7 @@ const definition = { input_schema: { type: 'object', properties: { values: { typ
   binding: { adapter_key: 'decimal_sum', implementation_version: '1', connection_id: null }, effect_type: 'READ_ONLY', required_scopes: ['run:create'],
    environments: ['test'], subject_requirements: { required: false, allowed_types: [] },
   timeout_seconds: 10, max_result_size: 262144, retry_policy: { max_attempts: 1, delay_ms: 100 }, cache_policy: { ttl_seconds: 0, freshness_seconds: 60, volatile: false }, idempotency_policy: 'none' }
-const version = { version: { version_id: 'version_a', version_label: '初始版本', state: 'DRAFT' }, revision: 1, definition,
+const version = { version: { version_id: 'tool_a', version_label: '初始版本', state: 'DRAFT' }, revision: 1, definition,
   status: { value: 'DRAFT', label: '草稿', tone: 'default' }, execution_enabled: true, unavailable_reason: null,
   actions: [action('edit', '保存草稿'), action('freeze', '冻结版本'), action('test', '测试')] }
 const detail = { tool, versions: [version], release_version_id: null, release_revision: null, impact: { tool_id: 'tool_a', references: [], ongoing_calls: 0, message: '停用后阻断后续调用和重试。' } }
@@ -21,12 +22,13 @@ async function fixture(page: Page, execution = false) {
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
     let json: unknown = []
-    if (path.endsWith('/auth/session')) json = session
+    if (path.includes('/resource-management/')) json = [resourceSummary('tool_a', tool.name)]
+    else if (path.endsWith('/auth/session')) json = session
     else if (path.endsWith('/auth/channels')) json = [workspace]
     else if (path === '/admin/v1/tools') json = { items: [tool], actions: [action('create', '新增工具')] }
     else if (path === '/admin/v1/tools/tool_a') json = detail
     else if (path === '/admin/v1/tool-bindings') json = [{ binding: definition.binding, name: '十进制求和', source_type: 'builtin', effect_type: 'READ_ONLY', effect_label: '只读', execution_enabled: true, unavailable_reason: null }]
-    else if (path.endsWith('/test-description')) json = { version_id: 'version_a', revision: 1, input_schema: definition.input_schema, trusted_scope: { ...workspace }, principal_name: '管理员', executable: execution, unavailable_reason: execution ? null : '工具测试暂不可用' }
+    else if (path.endsWith('/test-description')) json = { version_id: 'tool_a', revision: 1, input_schema: definition.input_schema, trusted_scope: { ...workspace }, principal_name: '管理员', executable: execution, unavailable_reason: execution ? null : '工具测试暂不可用' }
     await route.fulfill({ json })
   })
 }
@@ -47,7 +49,7 @@ test('工具列表和详情使用名称，缺少运行服务时禁止测试', as
 test('测试只提交业务参数，服务器字段错误保留输入', async ({ page }) => {
   await fixture(page, true)
   let calls = 0
-  await page.route('**/tool-versions/version_a/tests', async route => {
+  await page.route('**/tool-versions/tool_a/tests', async route => {
     calls++
     expect(route.request().postDataJSON()).toEqual({ revision: 1, arguments: { values: ['1.25'] } })
     await route.fulfill({ status: 422, json: { error: { code: 'TOOL_INPUT_INVALID', message: '参数不符合契约', fields: [{ path: ['values'], message: '数值范围不正确' }] } } })
@@ -69,15 +71,15 @@ test('测试只提交业务参数，服务器字段错误保留输入', async ({
   await expect.poll(() => calls).toBe(2)
 })
 
-test('窄屏版本编辑和执行策略可用', async ({ page }) => {
+test('窄屏配置编辑和执行策略可用', async ({ page }) => {
   await fixture(page)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('#/tools/tool_a')
-  await page.getByRole('button', { name: '新增版本' }).click()
+  await page.getByRole('button', { name: '修改' }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog.getByLabel('版本名称')).toBeVisible()
+  await expect(dialog.getByLabel('版本名称')).toHaveCount(0)
   await dialog.getByRole('tab', { name: '执行策略', exact: true }).click()
   await expect(dialog.getByRole('tab', { name: '执行策略', exact: true })).toHaveAttribute('aria-selected', 'true')
   await expect(dialog.getByLabel('超时（秒）')).toBeVisible()
