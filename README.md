@@ -65,7 +65,13 @@ Creativity AI 能力平台的管理前端，提供渠道与权限管理、模型
 
 访问 [http://127.0.0.1:5173/creativity/](http://127.0.0.1:5173/creativity/)，使用初始化的管理员账号登录。首次登录按页面提示修改密码。平台管理员直接进入平台后台；渠道管理员自动进入服务端核准的默认渠道，多渠道在顶部直接切换，无需另点“进入工作区”。账号管理多选管理角色，渠道管理员可多选授权渠道。应用基础路径为 `/creativity/`，页面地址使用 Hash 路由，例如 `/creativity/#/channels`、`/creativity/#/agents` 和 `/creativity/#/runs/<run_id>`，可直接收藏、刷新或分享。
 
-Vite 参数可直接传给脚本，例如 `./scripts/start-local.sh --port 5174`。按 `Ctrl+C` 停止前端。
+Vite 参数可直接传给脚本，例如 `./scripts/start-local.sh --port 5174`。按 `Ctrl+C` 停止前端，也可在另一个终端执行：
+
+```bash
+./scripts/stop-local.sh
+```
+
+终止脚本使用系统 `lsof` 和 `ps` 按项目目录定位 Vite，停止本项目的全部 Vite 实例（含自定义端口），不影响其他目录的前端服务；未运行时可重复执行，无需安装依赖。
 
 ### 3. 联调自定义 API 地址
 
@@ -89,6 +95,7 @@ API_PROXY_TARGET=http://127.0.0.1:8000
 | 命令 | 说明 |
 | --- | --- |
 | `./scripts/start-local.sh` | 检查工具版本、准备配置与依赖并启动前端 |
+| `./scripts/stop-local.sh` | 停止本项目目录的 Vite 开发进程 |
 | `pnpm dev` | 启动本地开发服务器，默认端口为 `5173` |
 | `pnpm typecheck` | 执行 TypeScript 类型检查 |
 | `pnpm lint` | 执行 ESLint 检查 |
@@ -162,7 +169,7 @@ creativity-web/
 │   ├── features/        # 平台功能页面与路由登记
 │   └── main.tsx         # React 挂载入口
 ├── docs/                # 页面接入文档
-├── scripts/             # 本地启动与接口类型生成工具
+├── scripts/             # 本地启停与接口类型生成工具
 ├── tests/               # Playwright 及组合验证脚本
 ├── .env.example         # 本地代理配置模板
 ├── package.json         # 依赖与开发命令
