@@ -50,7 +50,7 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
             item.navigation_key === 'usage' ? <ChannelUsage channelId={channelId} /> :
               <ChannelCollection key={item.navigation_key} page={page} kind={item.navigation_key} onConfigured={() => {
                 query.reload()
-                if (item.navigation_key === 'data-scopes') void reloadSession()
+                if (item.navigation_key === 'data-scopes' || item.navigation_key === 'environments') void reloadSession()
               }} />,
       }))} />
     {editing && <EditorDialog title="编辑渠道" initial={{ name: channel.name, owner: channel.owner, revision: channel.revision,

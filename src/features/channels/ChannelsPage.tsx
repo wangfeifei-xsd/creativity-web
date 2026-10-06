@@ -50,9 +50,9 @@ function ChannelList() {
         { title: '渠道名称', render: (_, row) => <Link to={`/channels/${row.channel_id}`}>{row.name}</Link> },
         { title: '负责人', dataIndex: 'owner' },
         { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> }, { title: '开通时间', width: 210, render: (_, row) => formatTimestamp(row.created_at) },
-        { title: '配置状态', width: 360, render: (_, row) => row.configuration_status?.length ? <Space wrap size={[4, 4]}>
-          {row.configuration_status.map(item => <Tooltip key={item.key} title={item.message}>
-            <Link to={item.path} aria-label={`${item.label}：${item.completed ? '已完成' : '未完成'}`}>
+        { title: '环境配置', width: 140, render: (_, row) => row.configuration_status?.some(item => item.key === 'environments') ? <Space wrap size={[4, 4]}>
+          {row.configuration_status.filter(item => item.key === 'environments').map(item => <Tooltip key={item.key} title={item.message}>
+            <Link to={item.path} aria-label={`${item.label}：${item.completed ? '已配置' : '未配置'}`}>
               <Tag color={item.completed ? 'success' : 'error'} style={{ marginInlineEnd: 0 }}
                 icon={item.completed ? <CheckCircleOutlined aria-hidden /> : <CloseCircleOutlined aria-hidden />}>{item.label}</Tag>
             </Link>
