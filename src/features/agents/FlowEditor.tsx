@@ -2,6 +2,8 @@ import { Button, Card, Col, Form, Input, InputNumber, Modal, Row, Select, Space,
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { ErrorNotice } from '../../components/Management'
+import { SchemaFields } from '../../components/schema-fields/SchemaFields'
+import { schemaRules } from '../../components/schema-fields/schema'
 import { type Definition, type Options, parseObject, pretty } from './types'
 
 type Step = Definition['steps'][number]
@@ -87,8 +89,8 @@ function StepEditor({ step, definition, options, onClose, onSave }: { step?: Ste
       <Form.Item name="kind" label="步骤类型"><Select options={kinds} /></Form.Item>
       {kind === 'compute' && <Form.Item name="operator" label="操作"><Select options={[{ value: 'object', label: '对象组装' }, { value: 'input', label: '等待补充' }, { value: 'approval', label: '等待审批' }]} /></Form.Item>}
       {kind !== 'compute' && <Form.Item name="dependency" label={kind === 'tool' ? '工具' : '模型路由'}><Select allowClear options={options.dependencies.filter(item => item.resource_type === (kind === 'tool' ? 'tool' : 'model_route')).map(item => ({ value: item.version_id, label: item.name }))} /></Form.Item>}
-      <Form.Item name="input_schema" label="输入结构"><Input.TextArea rows={4} /></Form.Item>
-      <Form.Item name="output_schema" label="输出结构"><Input.TextArea rows={4} /></Form.Item>
+      <Form.Item name="input_schema" label="输入结构" rules={schemaRules}><SchemaFields label="步骤输入结构" /></Form.Item>
+      <Form.Item name="output_schema" label="输出结构" rules={schemaRules}><SchemaFields label="步骤输出结构" /></Form.Item>
       <Form.List name="mappings">{(fields, { add, remove }) => <Space orientation="vertical" style={{ width: '100%' }}>{fields.map(field => <Card size="small" key={field.key} extra={<Button danger onClick={() => remove(field.name)}>删除映射</Button>}>
         <Form.Item name={[field.name, 'field']} label="输入字段" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name={[field.name, 'source']} label="来源" rules={[{ required: true }]}><Select options={[{ value: 'input', label: '运行输入' }, { value: 'step', label: '步骤输出' }, { value: 'constant', label: '固定值' }]} /></Form.Item>

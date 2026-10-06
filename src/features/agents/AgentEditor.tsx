@@ -2,6 +2,8 @@ import { Button, Form, Input, InputNumber, Modal, Select, Space, Steps, Switch }
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { ErrorNotice } from '../../components/Management'
+import { SchemaFields } from '../../components/schema-fields/SchemaFields'
+import { schemaRules } from '../../components/schema-fields/schema'
 import { SkillLoadingFields } from './SkillLoadingFields'
 import { FlowEditor } from './FlowEditor'
 import { type Definition, type Detail, type Options, type Version, parseObject, pretty, workflowNames } from './types'
@@ -39,6 +41,7 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
   async function save() {
     setBusy(true); setError(undefined)
     try {
+      await form.validateFields()
       const v = form.getFieldsValue(true) as Values
       const steps: unknown = JSON.parse(v.steps), edges: unknown = JSON.parse(v.edges)
       if (!Array.isArray(steps) || !Array.isArray(edges)) throw new Error('步骤和流转边必须为 JSON 数组')
@@ -81,8 +84,8 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
           setDefinition(next)
           form.setFieldsValue({ steps: pretty(next.steps), edges: pretty(next.edges), start_step: next.start_step })
         }} />
-        <Form.Item name="input_schema" label="输入结构"><Input.TextArea rows={7} /></Form.Item>
-        <Form.Item name="output_schema" label="输出结构"><Input.TextArea rows={7} /></Form.Item>
+        <Form.Item name="input_schema" label="输入结构" rules={schemaRules}><SchemaFields label="输入结构" disabled={busy} /></Form.Item>
+        <Form.Item name="output_schema" label="输出结构" rules={schemaRules}><SchemaFields label="输出结构" disabled={busy} /></Form.Item>
         <Form.Item name="start_step" hidden><Input /></Form.Item>
         <Form.Item name="steps" hidden><Input /></Form.Item>
         <Form.Item name="edges" hidden><Input /></Form.Item>

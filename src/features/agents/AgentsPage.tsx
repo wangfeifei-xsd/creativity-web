@@ -9,10 +9,12 @@ import { ActionButtons, EditorDialog, ErrorNotice, type Schema } from '../../com
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { StatusTag } from '../../components/StatusTag'
+import { SchemaView } from '../../components/schema-fields/SchemaFields'
 import { AgentEditor } from './AgentEditor'
+import { AgentDifferences } from './AgentDifferences'
 import { Debug } from './Debug'
 import { Flow } from './Flow'
-import { type Detail, type Options, type Version, dependencyNames, pretty, workflowNames } from './types'
+import { type Detail, type Options, type Version, dependencyNames, workflowNames } from './types'
 import './agents.css'
 
 export function AgentsPage() {
@@ -87,8 +89,8 @@ function AgentDetail({ agentId }: { agentId: string }) {
         { key: 'rev', label: '修订号', children: version.revision },
       ]} /> },
       { key: 'schema', label: '输入输出', children: <Tabs items={[
-        { key: 'input', label: '输入结构', children: <JsonContent value={definition.input_schema} /> },
-        { key: 'output', label: '输出结构', children: <JsonContent value={definition.output_schema} /> },
+        { key: 'input', label: '输入结构', children: <SchemaView value={definition.input_schema} label="输入结构" /> },
+        { key: 'output', label: '输出结构', children: <SchemaView value={definition.output_schema} label="输出结构" /> },
       ]} /> },
       { key: 'flow', label: '流程', children: <Flow definition={definition} /> },
       { key: 'dependencies', label: '模型、提示词与工具技能', children: <Space orientation="vertical" style={{ width: '100%' }}>
@@ -118,10 +120,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
         { key: 'cost', label: '费用上限', children: definition.limits.cost_limit ? formatAmount(definition.limits.cost_limit.amount, definition.limits.cost_limit.currency) : '未设置' },
       ]} /> },
       { key: 'debug', label: '调试', children: <Debug key={`${version.version_id}:${version.revision}`} version={version} /> },
-      { key: 'diff', label: '草稿与当前发布差异', children: <Table rowKey="field" dataSource={detail.differences} pagination={false} scroll={{ x: 600 }} columns={[
-        { title: '配置', dataIndex: 'label', width: 140 }, { title: '当前发布', render: (_, d) => <JsonContent value={displayDifference(d.field, d.before, options.data)} /> },
-        { title: '草稿', render: (_, d) => <JsonContent value={displayDifference(d.field, d.after, options.data)} /> },
-      ]} /> },
+      { key: 'diff', label: '草稿与当前发布差异', children: <AgentDifferences detail={detail} options={options.data} /> },
       { key: 'releases', label: '发布记录', children: <Table rowKey="release_id" dataSource={detail.releases} scroll={{ x: 640 }} columns={[
         { title: '环境', dataIndex: 'environment_label' }, { title: '版本', dataIndex: 'version_label' }, { title: '操作', dataIndex: 'operation_label' },
         { title: '说明', dataIndex: 'note' }, { title: '操作人', render: (_, r) => r.actor_name ?? '名称不可用' }, { title: '时间', render: (_, r) => formatTimestamp(r.created_at) },
@@ -138,20 +137,6 @@ function AgentDetail({ agentId }: { agentId: string }) {
       onSave={values => send(`/admin/v1/agents/${agentId}/state`, 'POST', { ...values, revision: detail.agent.revision, operation: editor })} />}
     {editor === 'release' && version && options.data && <ReleaseDialog version={version} detail={detail} options={options.data} onClose={() => setEditor(undefined)} onSaved={saved} />}
   </PageContainer></div>
-}
-
-function JsonContent({ value }: { value: unknown }) {
-  return <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxWidth: '100%' }}>{value == null ? '未设置' : typeof value === 'string' ? value : pretty(value)}</pre>
-}
-
-function displayDifference(field: string, value: unknown, options?: Options): unknown {
-  if (value == null) return '尚无版本'
-  if (field === 'workflow_type') return workflowNames[value as keyof typeof workflowNames] ?? '类型不可用'
-  if (field === 'bindings' && typeof value === 'object') return Object.entries(value).map(([key, ids]) => ({
-    类型: ({ prompt_id: '提示词', model_route_id: '模型路由', tool_ids: '工具', skill_ids: '技能' } as Record<string, string>)[key],
-    资源: (Array.isArray(ids) ? ids : ids ? [ids] : []).map(id => { const dep = options?.dependencies.find(d => d.version_id === id); return dep ? `${dep.name} · ${dep.version_label}` : '依赖名称不可用' }),
-  }))
-  return value
 }
 
 function ReleaseDialog({ detail, version, options, onClose, onSaved }: { detail: Detail; version: Version; options: Options; onClose: () => void; onSaved: () => void }) {

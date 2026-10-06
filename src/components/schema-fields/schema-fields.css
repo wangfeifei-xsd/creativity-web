@@ -1,0 +1,13 @@
+.schema-fields { min-width: 0; width: 100%; }
+.schema-fields-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.schema-fields-name { display: inline-flex; flex-direction: column; max-width: 100%; vertical-align: top; overflow-wrap: anywhere; }
+.schema-fields-name > .ant-typography { font-size: 12px; }
+.schema-fields-description { overflow-wrap: anywhere; font-size: 12px; }
+.schema-fields-policy { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.schema-fields-policy .ant-select { min-width: 140px; }
+.schema-fields-json { font-family: monospace; }
+.schema-fields-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.schema-comparison-complete { display: flex; flex-direction: column; gap: 20px; }
+@media (max-width: 575px) {
+  .schema-fields-form-grid { grid-template-columns: minmax(0, 1fr); }
+}
