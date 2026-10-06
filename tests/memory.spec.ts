@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
 const attributes = [{ key: 'usual_budget', label: '通常预算', memory_type: 'PREFERENCE', value_schema: { type: 'object' } }, { key: 'interests', label: '长期兴趣', memory_type: 'PREFERENCE', value_schema: { type: 'array', items: { type: 'string' } } }]
-const workspaces = ['租号渠道', '陪玩渠道'].map((channel_name, index) => ({ channel_id: `channel_${index}`, channel_name, environment: 'test', environment_name: '测试', data_scope_id: 'domain', data_scope_name: '业务数据域' }))
+const workspaces = ['租号渠道', '陪玩渠道'].map((channel_name, index) => ({ channel_id: `channel_${index}`, channel_name, environment: 'test', environment_name: '测试',  }))
 
 async function fixture(page: Page) {
   const state = { channel: 0, status: 'PROPOSED', enabled: true, revision: 1, prefRevision: 0, min: 100, max: 200, conflict: false, writes: [] as Record<string, unknown>[] }

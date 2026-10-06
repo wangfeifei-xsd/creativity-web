@@ -50,7 +50,7 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
             item.navigation_key === 'usage' ? <ChannelUsage channelId={channelId} /> :
               <ChannelCollection key={item.navigation_key} page={page} kind={item.navigation_key} onConfigured={() => {
                 query.reload()
-                if (item.navigation_key === 'data-scopes' || item.navigation_key === 'environments') void reloadSession()
+                if (item.navigation_key === 'environments') void reloadSession()
               }} />,
       }))} />
     {editing && <EditorDialog title="编辑渠道" initial={{ name: channel.name, owner: channel.owner, revision: channel.revision,
@@ -71,7 +71,7 @@ function Overview({ channelId }: { channelId: string }) {
   return <Descriptions bordered column={{ xs: 1, sm: 2 }} items={[
     { key: 'owner', label: '负责人', children: data.channel.owner },
     { key: 'created', label: '开通时间', children: formatTimestamp(data.channel.created_at) }, { key: 'retention', label: '数据保存', children: `${data.channel.retention_policy.retention_days} 天` },
-    ...([['environments', '环境'], ['data_scopes', '数据域'], ['clients', '接入服务'], ['active_keys', '有效 Key']] as const).map(([key, label]) => ({ key, label, children: `${data[key]} 个` })),
+    ...([['environments', '环境'], ['clients', '接入服务'], ['active_keys', '有效 Key']] as const).map(([key, label]) => ({ key, label, children: `${data[key]} 个` })),
   ]} />
 }
 function ChannelUsage({ channelId }: { channelId: string }) {

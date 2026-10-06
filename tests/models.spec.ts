@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const workspace = { channel_id: 'channel1', channel_name: '测试渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope1', data_scope_name: '默认域' }
+const workspace = { channel_id: 'channel1', channel_name: '测试渠道', environment: 'test', environment_name: '测试',  }
 const session = { user: { user_id: 'user1', display_name: '模型管理员', login_name: 'admin' }, workspace,
   navigation: [{ navigation_key: 'models', label: '模型配置' }, { navigation_key: 'model-routes', label: '模型路由' }, { navigation_key: 'model-providers', label: '模型供应商' }],
   actions: [{ action_key: 'model:manage', label: '管理模型' }, { action_key: 'channel:govern', label: '治理渠道' }], expires_at: '2030-01-01T00:00:00Z' }
@@ -186,4 +186,76 @@ test('切换首选时移除同名回退并保留其他回退顺序', async ({ pa
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).toBeHidden()
   expect(saved()).toMatchObject({ primary_model: 'model3', fallback_models: ['model2', 'model4', 'model1'] })
+})
+
+async function openRoutePublish(page: Page, reason?: string) {
+  await setup(page)
+  let released = false
+  let submitted: unknown
+  await page.route('**/admin/v1/model-routes', route => route.fulfill({ json: { items: [{ id: 'route1', name: '测试路由', status_label: '启用', released_version_id: null }], actions: [] } }))
+  await page.route('**/admin/v1/model-routes/route1/versions', route => route.fulfill({ json: [{
+    version_id: 'route-version1', version_label: 'v1', content: { primary_model: 'model1', fallback_models: [] },
+    actions: [{ action_key: 'release', label: '发布', enabled: !reason && !released, disabled_reason: released ? '该版本已是当前发布版本' : reason }],
+  }] }))
+  await page.route('**/admin/v1/model-routes/route1/releases', route => {
+    submitted = route.request().postDataJSON()
+    released = true
+    return route.fulfill({ json: { version_id: 'route-version1' } })
+  })
+  await page.goto('#/model-routes')
+  await page.getByRole('button', { name: '版本', exact: true }).click()
+  return () => submitted
+}
+
+for (const reason of ['当前角色未获此环境的发布权限，请联系有授权权限的管理员', '业务模型：以下能力尚未通过当前配置验证：文本生成']) {
+  test(`路由发布不可用时显示禁用按钮与原因：${reason}`, async ({ page }) => {
+    await openRoutePublish(page, reason)
+    const drawer = page.getByRole('dialog', { name: '测试路由', exact: true })
+    await expect(drawer.getByRole('button', { name: '发布', exact: true })).toBeDisabled()
+    await expect(drawer.getByText(reason, { exact: true })).toBeVisible()
+  })
+}
+
+test('路由按服务端版本操作展示发布入口，发布后更新状态并阻止重复发布', async ({ page }) => {
+  const submitted = await openRoutePublish(page)
+  const drawer = page.getByRole('dialog', { name: '测试路由', exact: true })
+  await drawer.getByRole('button', { name: '发布', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '发布 v1', exact: true })
+  await expect(dialog.getByText('发布后新的运行将使用该路由版本。')).toBeVisible()
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  await expect(drawer.getByText('当前发布', { exact: true })).toBeVisible()
+  await expect(drawer.getByRole('button', { name: '发布', exact: true })).toBeDisabled()
+  expect(submitted()).toEqual({ version_id: 'route-version1', expected_version_id: null })
+})
+
+test('配置和业务页面统一使用渠道与环境', async ({ page }) => {
+  await setup(page)
+  const management = { ...workspace,  }
+  let current = management
+  const switches: unknown[] = []
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
+    ...session, workspace: current, workspace_options: [management, workspace],
+    navigation: [...session.navigation, { navigation_key: 'conversations', label: '会话管理' }],
+  } }))
+  await page.route('**/admin/v1/auth/channel-context', route => {
+    switches.push(route.request().postDataJSON())
+    current = workspace
+    return route.fulfill({ json: { access_token: 'scoped-token', token_type: 'Bearer', expires_in: 28800 } })
+  })
+  await page.route('**/admin/v1/conversations?**', route => route.fulfill({ json: {
+    items: [], has_more: false, actions: [], agents: [], unavailable_reason: null,
+  } }))
+  await page.goto('#/models')
+  const header = page.locator('header')
+  await expect(header.getByText('测试渠道', { exact: true })).toBeVisible()
+  await expect(header.getByText('测试', { exact: true })).toBeVisible()
+  await expect(header.getByText('管理工作区')).toHaveCount(0)
+  await expect(header.getByRole('combobox', { name: '业务数据范围' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '能力验证', exact: true })).toBeEnabled()
+  await page.getByRole('menuitem', { name: '会话管理', exact: true }).click()
+  await expect(header.getByRole('combobox', { name: '业务数据范围' })).toHaveCount(0)
+  expect(switches).toEqual([])
+  await page.getByRole('menuitem', { name: '模型路由', exact: true }).click()
+  await expect(header.getByRole('combobox', { name: '业务数据范围' })).toHaveCount(0)
 })

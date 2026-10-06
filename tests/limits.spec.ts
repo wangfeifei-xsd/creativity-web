@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const workspace = { channel_id: 'channel-a', channel_name: '测试渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域' }
+const workspace = { channel_id: 'channel-a', channel_name: '测试渠道', environment: 'test', environment_name: '测试',  }
 async function session(page: Page, platform: boolean, writable = true) {
   await page.route('**/admin/v1/**', route => {
     const path = new URL(route.request().url()).pathname

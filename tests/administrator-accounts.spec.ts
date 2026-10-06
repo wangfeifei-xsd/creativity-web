@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-const a = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'domain-a', data_scope_name: '业务域甲' }
-const b = { channel_id: 'channel-b', channel_name: '渠道乙', environment: 'test', environment_name: '测试', data_scope_id: 'domain-b', data_scope_name: '业务域乙' }
+const a = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试',  }
+const b = { channel_id: 'channel-b', channel_name: '渠道乙', environment: 'test', environment_name: '测试',  }
 const roles = [{ role_code: 'platform_admin', name: '平台管理员', grant_scope: 'platform' }, { role_code: 'channel_admin', name: '渠道管理员', grant_scope: 'channel' }]
 const user = { user_id: 'admin', login_name: 'admin', display_name: '管理员' }
 
@@ -26,7 +26,7 @@ test('渠道管理员自动进入服务端默认渠道，切换不再经过工�
   })
   await page.goto('#/')
   await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
-  expect(switches).toEqual([{ channel_id: a.channel_id, environment: 'test', data_scope_id: a.data_scope_id }])
+  expect(switches).toEqual([{ channel_id: a.channel_id, environment: 'test' }])
   await expect(page.getByText('选择工作区', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: '进入工作区' })).toHaveCount(0)
   await expect(page.getByRole('menuitem', { name: '账号管理', exact: true })).toHaveCount(0)
@@ -39,11 +39,11 @@ test('渠道管理员自动进入服务端默认渠道，切换不再经过工�
   await page.keyboard.press('Escape')
   await page.getByLabel('切换渠道', { exact: true }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('渠道乙', { exact: true }).click()
-  await expect(page.getByText('业务域乙', { exact: true })).toBeVisible()
+  await expect(page.getByText('渠道乙', { exact: true })).toBeVisible()
   expect(switches).toHaveLength(2)
-  expect(switches[1]).toEqual({ channel_id: b.channel_id, environment: 'test', data_scope_id: b.data_scope_id })
+  expect(switches[1]).toEqual({ channel_id: b.channel_id, environment: 'test' })
   await page.reload()
-  await expect(page.getByText('业务域乙', { exact: true })).toBeVisible()
+  await expect(page.getByText('渠道乙', { exact: true })).toBeVisible()
   expect(switches).toHaveLength(2)
 })
 

@@ -29,7 +29,7 @@ function IntegrationList() {
     <Tabs items={[...(session.actions.some(a => a.action_key === 'integration:manage') ? [{ key: 'review', label: '当前主体复核', children: <SubjectReviews /> }, { key: 'automation', label: '运行与事件', children: <Automation /> }] : []),
       { key: 'connections', label: '旧 HTTP 连接', children: query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="integration_id" dataSource={query.data.items} scroll={{ x: 780 }} columns={[
         { title: '接入名称', render: (_, row) => <Link to={`/integrations/${row.integration_id}`}>{row.name}</Link> },
-        { title: '环境', dataIndex: 'environment_name' }, { title: '数据域', dataIndex: 'data_scope_name' },
+        { title: '环境', dataIndex: 'environment_name' },
         { title: '适配器', dataIndex: 'adapter_name' }, { title: '版本', dataIndex: 'adapter_version' },
         { title: '连接健康', dataIndex: 'health_name' }, { title: '状态', dataIndex: 'status_name' },
       ]} /> }, ...(session.actions.some(a => a.action_key === 'key:manage')
@@ -51,7 +51,6 @@ function IntegrationDetail({ id }: { id: string }) {
   return <PageContainer title={row.name} actions={<Space wrap><Link to="/integrations">返回业务接入</Link><Button onClick={reload}>刷新</Button>
     <ActionButtons actions={row.actions} handlers={{ 'integration:edit': () => setEditing(true), 'integration:test': () => setTesting(true) }} /></Space>}>
     <Descriptions items={[{ key: 'env', label: '环境', children: row.environment_name },
-      { key: 'scope', label: '数据域', children: row.data_scope_name },
       { key: 'adapter', label: '适配器', children: `${row.adapter_name} · ${row.adapter_version}` },
       { key: 'health', label: '连接健康', children: row.health_name }, { key: 'status', label: '状态', children: row.status_name },
       { key: 'endpoint', label: '业务服务地址', children: row.business_endpoint }]} />

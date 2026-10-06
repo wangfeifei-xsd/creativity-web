@@ -82,7 +82,7 @@ export function PromptVersions({ prompt, versions, current, onChanged }: {
       }}>
       {error && <Alert type="error" title={error} />}
       <Descriptions items={[{ key: 'version', label: '目标版本', children: release?.version.version.version_label },
-        { key: 'environment', label: '目标环境', children: '当前工作区环境' }]} />
+        { key: 'environment', label: '目标环境', children: '当前环境' }]} />
       <Form form={form} layout="vertical"><Form.Item name="note" label="变更说明" rules={[{ required: true, message: '请填写变更说明' }]}><Input.TextArea rows={3} /></Form.Item></Form>
     </Modal>
   </Space>

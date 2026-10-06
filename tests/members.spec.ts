@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('成员逐行操作区分编辑和移除权限，刷新后采用最新状态', async ({ page }) => {
-  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'domain-a', data_scope_name: '业务域甲' }
+  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试',  }
   let readonly = false
   const writes: string[] = []
   const actions = (edit: boolean, remove: boolean) => [
@@ -23,7 +23,7 @@ test('成员逐行操作区分编辑和移除权限，刷新后采用最新状�
     } })
     if (path.endsWith('/members')) return route.fulfill({ json: ['超出范围', '仅可移除', '可管理成员'].map((name, index) => ({
       user_id: `member-${index}`, display_name: name, revision: 1, roles: ['builder'], role_names: ['开发者'],
-      environments: ['test'], environment_names: ['测试'], data_scopes: ['domain-a'], data_scope_names: ['业务域甲'],
+      environments: ['test'], environment_names: ['测试'],
       status: 'ACTIVE', status_label: '启用', actions: actions(index === 2 && !readonly, index > 0 && !readonly),
     })) })
     return route.fulfill({ json: [] })

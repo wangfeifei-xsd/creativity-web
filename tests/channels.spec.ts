@@ -11,9 +11,8 @@ async function fixture(page: Page) {
     else if (path.endsWith('/channel-create-options')) json = { accounts: [{ value: 'admin_a', label: '管理员' }], environments: [{ value: 'test', label: '测试' }],
       independent_actions: [{ action_key: 'run:approve', label: '审批运行操作' }] }
     else if (path === '/admin/v1/channels/page') json = { items: [channel], total: 1, offset: 0, limit: 20 }
-    else if (path.endsWith('/page')) json = { channel, tabs: [{ navigation_key: 'data-scopes', label: '业务数据域' }], actions: [{ action_key: 'data_scope:create', label: '创建数据域' }], service_actions: [], management_missing_environments: [] }
+    else if (path.endsWith('/page')) json = { channel, tabs: [{ navigation_key: 'environments', label: '环境' }], actions: [], service_actions: [] }
     else if (path.endsWith('/environments')) json = [{ environment: 'test', name: '测试', status: 'ACTIVE' }]
-    else if (path.endsWith('/data-scopes')) json = [{ data_scope_id: 'scope_a', name: '研发资料', environment: 'test', environment_name: '测试', external_scope_type: '源系统/workspace', external_scope_type_name: null, external_scope_id: '研发:001/甲', status: 'ACTIVE', status_label: '启用', revision: 1 }]
     await route.fulfill({ json })
   })
 }
@@ -31,7 +30,7 @@ for (const width of [1391, 390]) test(`渠道列表仅提示环境，接入服�
   } }))
   await page.route('**/channels/channel_a/page', route => route.fulfill({ json: {
     channel, tabs: [{ navigation_key: check.key, label: check.label }],
-    actions: [], service_actions: [], management_missing_environments: [],
+    actions: [], service_actions: [],
   } }))
   await page.goto('#/channels')
   await expect(page.getByRole('columnheader')).toHaveText(['渠道名称', '负责人', '状态', '开通时间', '环境配置'])
@@ -122,78 +121,32 @@ for (const width of [1280, 390]) test(`渠道开通只填写基本信息，成�
   expect(body).not.toHaveProperty('data_scope')
 })
 
-const managementWorkspace = { channel_id: 'channel_a', channel_name: '资料渠道', environment: 'test',
-  environment_name: '测试', data_scope_id: 'manage_a', data_scope_name: '管理工作区' }
 
-async function managementFixture(page: Page) {
+test('渠道内展示全部授权环境并切换，页面没有数据域或工作区划分', async ({ page }) => {
   await fixture(page)
+  const dev = { channel_id: channel.channel_id, channel_name: channel.name, environment: 'dev', environment_name: '开发环境' }
+  const prod = { ...dev, environment: 'prod', environment_name: '生产环境' }
+  let current = dev
+  const switches: unknown[] = []
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
     user: { user_id: 'admin_a', login_name: 'admin', display_name: '管理员' },
-    workspace: managementWorkspace, can_access_platform: true, default_workspace: managementWorkspace,
-    workspace_options: [managementWorkspace],
+    workspace: current, workspace_options: [dev, prod], can_access_platform: false,
     navigation: [{ navigation_key: 'channels', label: '渠道管理' }], actions: [], expires_at: '2030-01-01T00:00:00Z',
   } }))
-}
-
-test('数据域没有配置目录时不能手填，提示先接入目录', async ({ page }) => {
-  await managementFixture(page)
-  await page.route('**/channels/channel_a/data-scope-sources', route => route.fulfill({ json: [] }))
-  await page.goto('#/channels/channel_a?tab=data-scopes')
-  await page.getByRole('button', { name: '创建数据域' }).click()
-  const dialog = page.getByRole('dialog')
-  await expect(dialog.getByText('当前工作区尚无可用的数据域目录工具。', { exact: false })).toBeVisible()
-  await expect(dialog.getByLabel('外部数据域类型')).toHaveCount(0)
-  await expect(dialog.getByLabel('外部数据域编号')).toHaveCount(0)
-  await expect(dialog.getByRole('button', { name: '确认' })).toBeDisabled()
-})
-
-test('旧渠道可从已有环境显式补齐管理入口', async ({ page }) => {
-  await fixture(page)
-  let provisioned = false
-  await page.route('**/channels/channel_a/page', route => route.fulfill({ json: {
-    channel, tabs: [{ navigation_key: 'environments', label: '环境' }],
-    actions: [{ action_key: 'environment:edit', label: '编辑' }],
-    service_actions: [], pending_administrator: { value: 'admin_a', label: '管理员' },
-    management_missing_environments: provisioned ? [] : ['test'],
-  } }))
-  await page.route('**/channels/channel_a/environments/test/management-workspace', route => {
-    provisioned = true
-    return route.fulfill({ status: 204, body: '' })
+  await page.route('**/channels/channel_a/environments', route => route.fulfill({ json:
+    [dev, prod].map(env => ({ ...env, name: env.environment_name, status: 'ACTIVE', status_label: '启用' }))
+  }))
+  await page.route('**/admin/v1/auth/channel-context', route => {
+    switches.push(route.request().postDataJSON()); current = prod
+    return route.fulfill({ json: { access_token: 'prod-token', token_type: 'Bearer', expires_in: 3600 } })
   })
   await page.goto('#/channels/channel_a?tab=environments')
-  await page.getByRole('button', { name: '开通管理入口' }).click()
+  await expect(page.getByRole('row').filter({ hasText: '生产环境' })).toBeVisible()
   await expect(page.getByRole('button', { name: '开通管理入口' })).toHaveCount(0)
-  expect(provisioned).toBe(true)
-})
-
-for (const width of [1391, 390]) test(`从真实目录选择数据域，自动带入名称、类型和编号（${width}）`, async ({ page }, testInfo) => {
-  await managementFixture(page)
-  await page.setViewportSize({ width, height: 1000 })
-  const source = { connection_id: 'mcp_a', remote_tool_name: 'list_data_scopes', label: '俱乐部系统 · 业务范围目录' }
-  let created: Record<string, unknown> | undefined
-  await page.route('**/channels/channel_a/data-scope-sources', route => route.fulfill({ json: [source] }))
-  await page.route('**/channels/channel_a/data-scope-directory', route => {
-    expect(route.request().postDataJSON()).toEqual({ environment: 'test', connection_id: source.connection_id, remote_tool_name: source.remote_tool_name })
-    return route.fulfill({ json: { items: [{ name: '俱乐部甲', type: 'club', id: 'club-001' }, { name: '俱乐部乙', type: 'club', id: 'club-002' }] } })
-  })
-  await page.route('**/channels/channel_a/data-scopes/from-source', route => {
-    created = route.request().postDataJSON()
-    return route.fulfill({ status: 201, json: {} })
-  })
-  await page.goto('#/channels/channel_a?tab=data-scopes')
-  await page.getByRole('button', { name: '创建数据域' }).click()
-  const dialog = page.getByRole('dialog')
-  await expect(dialog.getByLabel('名称', { exact: true })).toHaveCount(0)
-  await expect(dialog.getByLabel('外部数据域类型')).toHaveCount(0)
-  await expect(dialog.getByLabel('外部数据域编号')).toHaveCount(0)
-  await dialog.getByLabel('目录来源').click()
-  await page.locator('.ant-select-dropdown:visible').getByText(source.label).click()
-  await dialog.getByLabel('可选数据域').click()
-  await page.locator('.ant-select-dropdown:visible').getByText('俱乐部乙 · club / club-002').click()
-  await page.screenshot({ path: testInfo.outputPath('source-directory.png'), fullPage: true })
-  await dialog.getByRole('button', { name: '确认' }).click()
-  await expect(dialog).toBeHidden()
-  expect(created).toEqual({ environment: 'test', connection_id: source.connection_id,
-    remote_tool_name: source.remote_tool_name, external_scope_type: 'club', external_scope_id: 'club-002' })
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+  await expect(page.getByRole('tab', { name: /数据域/ })).toHaveCount(0)
+  await expect(page.getByLabel('业务数据范围')).toHaveCount(0)
+  await page.getByLabel('切换环境', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('生产环境', { exact: true }).click()
+  expect(switches).toEqual([{ channel_id: channel.channel_id, environment: 'prod' }])
+  await expect(page.locator('header').getByText('生产环境', { exact: true })).toBeVisible()
 })

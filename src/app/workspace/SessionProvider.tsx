@@ -27,7 +27,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         tokenStore.invalidate(); setGeneration(n => n + 1)
         const workspace = session.default_workspace
         const response = await send<Schema<'TokenResponse'>>('/admin/v1/auth/channel-context', 'POST', {
-          channel_id: workspace.channel_id, environment: workspace.environment, data_scope_id: workspace.data_scope_id,
+          channel_id: workspace.channel_id, environment: workspace.environment,
         })
         tokenStore.set(response.access_token)
         session = await apiClient.get('/admin/v1/auth/session')
@@ -59,11 +59,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const switchWorkspace = async (workspace: Schema<'WorkspaceOption'> | null) => {
     if (switching.current) return
     switching.current = true
+    const keepPage = workspace && state.phase === 'ready' &&
+      workspace.channel_id === state.session.workspace?.channel_id &&
+      workspace.environment === state.session.workspace?.environment
     tokenStore.invalidate(); setGeneration(n => n + 1); setState({ phase: 'loading' })
     try {
       const response = await send<Schema<'TokenResponse'>>(workspace ? '/admin/v1/auth/channel-context' : '/admin/v1/auth/platform-context', 'POST',
-        workspace ? { channel_id: workspace.channel_id, environment: workspace.environment, data_scope_id: workspace.data_scope_id } : undefined)
-      tokenStore.set(response.access_token); navigate('/', { replace: true }); await reload()
+        workspace ? { channel_id: workspace.channel_id, environment: workspace.environment } : undefined)
+      tokenStore.set(response.access_token)
+      if (!keepPage) navigate('/', { replace: true })
+      await reload()
     } catch (error) {
       if (!isAbort(error)) { void message.error(error instanceof Error ? error.message : '切换失败'); await reload() }
     } finally { switching.current = false }

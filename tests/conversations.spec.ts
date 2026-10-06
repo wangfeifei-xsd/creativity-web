@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
-const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'data_a', data_scope_name: '业务数据域' }
+const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
 const session = { user: { user_id: 'admin', display_name: '管理员', login_name: 'admin' }, workspace,
   navigation: [{ navigation_key: 'conversations', label: '会话管理' }], actions: [action('conversation:read', '查看会话')], expires_at: '2030-01-01T00:00:00Z' }
 

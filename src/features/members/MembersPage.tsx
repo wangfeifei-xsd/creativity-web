@@ -16,7 +16,7 @@ type Grant = Schema<'GrantView'>
 export function MembersPage({ channelId, initialTab = 'members' }: { channelId?: string; initialTab?: string }) {
   const { session } = useSession()
   const target = channelId ?? session.workspace?.channel_id
-  if (!target) return <PageContainer title="成员与权限"><EmptyState message="请先选择渠道工作区" /></PageContainer>
+  if (!target) return <PageContainer title="成员与权限"><EmptyState message="请先选择渠道环境" /></PageContainer>
   return <AccessPage key={target} channelId={target} initialTab={initialTab} />
 }
 export function GrantsPage() { return <MembersPage initialTab="grants" /> }
@@ -37,8 +37,6 @@ function scopeFields(options: Schema<'AccessOptions'>): Field[] {
   return [
     { name: 'environments', label: '可用环境', kind: 'multiple', required: true,
       options: [...new Map(options.workspaces.map(o => [o.environment, { value: o.environment, label: o.environment_name }])).values()] },
-    { name: 'data_scopes', label: '业务数据域', kind: 'multiple', required: true,
-      options: options.workspaces.map(o => ({ value: o.data_scope_id, label: `${o.environment_name} · ${o.data_scope_name}` })) },
   ]
 }
 type AccessProps = { channelId: string; options: Schema<'AccessOptions'>; onSaved: () => void }
@@ -66,7 +64,7 @@ function MemberTable({ channelId, options, onSaved }: AccessProps) {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="user_id" dataSource={query.data} scroll={{ x: 800 }}
       columns={[{ title: '成员', render: (_, row) => row.display_name ?? '名称不可用' },
         { title: '角色', render: (_, row) => names(row.role_names) }, { title: '环境', render: (_, row) => names(row.environment_names) },
-        { title: '数据域', render: (_, row) => names(row.data_scope_names) }, { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> },
+        { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> },
         { title: '操作', render: (_, row) => <ActionButtons actions={row.actions} handlers={{ 'member:edit': () => edit(row), 'member:remove': () => remove(row) }} /> }]} />}
     {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload(); onSaved() }} />}
   </PageContainer>
@@ -86,7 +84,7 @@ function GrantTable({ channelId, options, onSaved }: AccessProps) {
         { title: '资源', width: 170, ellipsis: true, render: (_, r) => r.resource_name ?? '名称不可用' },
         { title: '动作', ellipsis: true, render: (_, r) => names(r.action_names) },
         { title: '环境', width: 100, ellipsis: true, render: (_, r) => names(r.environment_names) },
-        { title: '数据域', width: 150, ellipsis: true, render: (_, r) => names(r.data_scope_names) }, { title: '操作', width: 200, render: (_, r) => <ActionButtons actions={r.actions}
+        { title: '操作', width: 200, render: (_, r) => <ActionButtons actions={r.actions}
           handlers={{ 'grant:edit': () => { setGranteeType(r.grantee_type); setSelectedResource(undefined); setEditor({ row: r }) }, 'grant:revoke': () => setEditor({ row: r, revoke: true }) }} /> }]} />}
     {editor && <EditorDialog key={`${row?.grant_id ?? 'new'}-${granteeType}-${editor.revoke}`} title={editor.revoke ? '撤销资源授权' : row ? '编辑资源授权' : '添加资源授权'}
       initial={row ? { ...row, resource: `${row.resource_type}|${row.resource_id}` } : { revision: null }} danger={editor.revoke}

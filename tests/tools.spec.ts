@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
-const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '租号数据域' }
+const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
 const session = { user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' }, workspace,
   navigation: [{ navigation_key: 'tools', label: '工具管理' }], actions: [action('tool:manage', '管理工具'), action('run:create', '执行能力')], expires_at: '2030-01-01T00:00:00Z' }
 const tool = { tool_id: 'tool_a', tool_code: 'sum', name: '精确求和', description: '计算统计合计', source_type: 'builtin', source_label: '预置函数',
@@ -10,7 +10,7 @@ const tool = { tool_id: 'tool_a', tool_code: 'sum', name: '精确求和', descri
 const definition = { input_schema: { type: 'object', properties: { values: { type: 'array', title: '数值列表', items: { type: 'string' } } }, required: ['values'], additionalProperties: false },
   output_schema: { type: 'object', properties: { sum: { type: 'string' } }, required: ['sum'], additionalProperties: false }, model_fields_allowed: ['values'],
   binding: { adapter_key: 'decimal_sum', implementation_version: '1', connection_id: null }, effect_type: 'READ_ONLY', required_scopes: ['run:create'],
-  allowed_data_domains: ['domain_a'], environments: ['test'], subject_requirements: { required: false, allowed_types: [] },
+   environments: ['test'], subject_requirements: { required: false, allowed_types: [] },
   timeout_seconds: 10, max_result_size: 262144, retry_policy: { max_attempts: 1, delay_ms: 100 }, cache_policy: { ttl_seconds: 0, freshness_seconds: 60, volatile: false }, idempotency_policy: 'none' }
 const version = { version: { version_id: 'version_a', version_label: '初始版本', state: 'DRAFT' }, revision: 1, definition,
   status: { value: 'DRAFT', label: '草稿', tone: 'default' }, execution_enabled: true, unavailable_reason: null,

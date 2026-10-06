@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
-const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '业务数据域' }
+const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
 const definition = { workflow_type: 'structured', entrypoint: 'structured.v1', start_step: 'answer',
   input_schema: { type: 'object', properties: { request: { type: 'string', title: '业务诉求' } }, required: ['request'], additionalProperties: false },
   output_schema: { type: 'object', properties: { data: { type: 'object' } }, required: ['data'] },

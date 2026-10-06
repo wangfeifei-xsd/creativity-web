@@ -45,7 +45,7 @@ export function OAuthPanel({ connectionId }: { connectionId: string }) {
   }
   return <Space orientation="vertical"><ErrorNotice error={error ?? profiles.error} />
     <Select aria-label="身份提供方" style={{ minWidth: 220 }} value={profile} onChange={setProfile} options={profiles.data?.map(p => ({ value: p.profile_id, label: p.name }))} />
-    <Select aria-label="授权归属" style={{ minWidth: 220 }} value={ownership} onChange={setOwnership} options={[{ value: 'user', label: '当前身份' }, { value: 'service', label: '当前数据域服务' }]} />
+    <Select aria-label="授权归属" style={{ minWidth: 220 }} value={ownership} onChange={setOwnership} options={[{ value: 'user', label: '当前身份' }, { value: 'service', label: '当前环境服务' }]} />
     <Space><Button disabled={!profile} loading={busy} type="primary" onClick={() => void act('start')}>前往授权</Button><Button disabled={!profile || busy} danger onClick={() => void act('revoke')}>撤销授权</Button></Space>
     {feedback && <Typography.Text>{feedback}</Typography.Text>}
   </Space>

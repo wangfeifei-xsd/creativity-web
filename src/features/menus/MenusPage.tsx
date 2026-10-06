@@ -38,7 +38,7 @@ export function MenusPage() {
     <Table<MenuTreeNode> key={search} rowKey="id" loading={!query.data && !query.error} dataSource={menuTree(nodes, search)} pagination={false}
       expandable={{ defaultExpandAllRows: true }} scroll={{ x: 1050 }} columns={[
         { title: '名称', dataIndex: 'name' }, { title: '类型', dataIndex: 'kind_label', width: 80 },
-        { title: '工作区', dataIndex: 'workspace_label' }, { title: '页面 / 操作', render: (_, node) => node.page_name ?? node.action_name ?? '—' },
+        { title: '适用范围', dataIndex: 'workspace_label' }, { title: '页面 / 操作', render: (_, node) => node.page_name ?? node.action_name ?? '—' },
         { title: '排序', dataIndex: 'sort_order', width: 70 }, { title: '显示', render: (_, node) => node.visible ? '显示' : '隐藏', width: 70 },
         { title: '状态', render: (_, node) => <Tag>{node.status_label}</Tag> },
         { title: '操作', width: 230, render: (_, node) => <Space wrap>
@@ -55,7 +55,7 @@ export function MenusPage() {
         { name: 'name', label: '菜单名称', required: true },
         { name: 'kind', label: '节点类型', required: true, control: <NodeType changed={setKind} /> },
         { name: 'parent_id', label: '父级', control: <TreeSelect allowClear placeholder="根目录" treeDefaultExpandAll treeData={menuTree(parents).map(node => ({ ...node }))} fieldNames={{ value: 'id', label: 'name' }} /> },
-        { name: 'workspace', label: '适用工作区', kind: 'select', required: true, options: [
+        { name: 'workspace', label: '适用范围', kind: 'select', required: true, options: [
           { value: 'both', label: '平台与渠道' }, { value: 'platform', label: '平台' }, { value: 'channel', label: '渠道' },
         ] },
         ...(kind === 'MENU' ? [{ name: 'page_key', label: '页面', kind: 'select' as const, required: true, options: options.data.pages }] : []),

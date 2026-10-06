@@ -31,7 +31,7 @@ function Schedules() {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number }>()
   const mode = Form.useWatch('mode', form)
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前工作区没有运行权限' : undefined} onClick={() => setOpen(true)}>新增计划</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => setOpen(true)}>新增计划</Button><Button onClick={query.reload}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' },
       { title: '周期', render: (_, r) => r.spec.interval_seconds ? `每 ${r.spec.interval_seconds} 秒` : `每日 ${r.spec.daily_at}` },

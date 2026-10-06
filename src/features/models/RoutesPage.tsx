@@ -1,9 +1,8 @@
-import { Button, Drawer, Form, Input, InputNumber, Select, Space, Switch, Tag } from 'antd'
+import { Button, Drawer, Form, Input, InputNumber, Select, Space, Switch, Tag, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
-import { useSession } from '../../app/workspace/context'
 import { ActionButtons, type Choice, type Schema } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
@@ -26,8 +25,7 @@ export function RoutesPage() {
   </PageContainer>
 }
 function RouteVersions({ route }: { route: Schema<'RouteView'> }) {
-  const { session } = useSession()
-  const query = useQuery<Schema<'ResourceVersion'>[]>(`/admin/v1/model-routes/${route.id}/versions`)
+  const query = useQuery<Schema<'RouteVersionView'>[]>(`/admin/v1/model-routes/${route.id}/versions`)
   const models = useQuery<Schema<'ModelList'>>('/admin/v1/models')
   const [open, setOpen] = useState(false)
   const [release, setRelease] = useState<Schema<'ResourceVersion'>>()
@@ -39,7 +37,11 @@ function RouteVersions({ route }: { route: Schema<'RouteView'> }) {
       { title: '版本', dataIndex: 'version_label' }, { title: '首选模型', render: (_, v) => modelName(v.content.primary_model) },
       { title: '回退顺序', render: (_, v) => Array.isArray(v.content.fallback_models) ? v.content.fallback_models.map(modelName).join(' → ') || '无' : '未记录' },
       { title: '发布状态', render: (_, v) => current === v.version_id ? '当前发布' : '未发布' },
-      { title: '操作', render: (_, v) => <ActionButtons actions={session.actions} handlers={{ 'release:publish': () => setRelease(v) }} /> },
+      { title: '操作', render: (_, v) => <Space orientation="vertical" size={4}>
+        <ActionButtons actions={v.actions ?? []} handlers={{ release: () => setRelease(v) }} disabled={current === v.version_id} />
+        {v.actions?.filter(a => a.enabled === false && a.disabled_reason).map(a =>
+          <Typography.Text key={a.action_key} type="secondary" style={{ display: 'block', maxWidth: 260 }}>{a.disabled_reason}</Typography.Text>)}
+      </Space> },
     ]} />}
     {open && <ModelDialog title="新增路由版本" initial={{ required_capabilities: ['text'], parameters: '{}', max_attempts: 3, retries_per_model: 0, fallback_models: [], hard_amount_budget: false }} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); query.reload() }} onSave={v => {
       const { max_attempts, retries_per_model, ...body } = v

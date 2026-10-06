@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
-const workspace = { channel_id: 'channel_a', channel_name: '示例渠道', environment: 'prod', environment_name: '生产', data_scope_id: 'domain_a', data_scope_name: '业务数据域' }
+const workspace = { channel_id: 'channel_a', channel_name: '示例渠道', environment: 'prod', environment_name: '生产',  }
 const sample = { case_key: 'normal', title: '固定结果样本', input: { request: '固定输入' }, assertions: [{ kind: 'equal', path: 'data.answer', expected: '完成', name: '结果一致' }], labels: ['正常'], label_source: '人工固定预期', human_label: { decision: 'approved', reason: '已审阅' }, fixture: [] }
 const dataset = { dataset_id: 'dataset_a', name: '结构输出样本', scenario: '结构契约', owner: '审阅人员', applicability: '通用结构输出', revision: 2, current_version_id: 'version_a', actions: [action('version', '新建样本版本'), action('import', '导入样本'), action('review', '人工标注')], versions: [{ version_id: 'version_a', version_label: '固定第一版', content_digest: 'a'.repeat(64), captured_at: '2026-10-02T10:00:00Z', reference_versions: [], cases: [{ case_id: 'case_a', case_key: 'normal', title: '固定结果样本', valid: true, payload: sample }] }] }
 const task = { evaluation_id: 'evaluation_a', name: '生产发布回归', dataset_name: dataset.name, dataset_version_label: '固定第一版', revision: 3, state: { value: 'PAUSED', label: '已暂停派发', tone: 'default' }, execution_mode: 'fixture', execution_mode_label: '固定数据评测', candidates: [], config: {}, human_review: null, created_at: '2026-10-02T10:00:00Z', actions: [action('refresh', '更新报告'), action('resume', '继续派发'), action('cancel', '取消评测')] }

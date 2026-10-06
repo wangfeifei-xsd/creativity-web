@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
-const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope_a', data_scope_name: '默认业务域' }
-const row = { integration_id: 'int_a', name: '租号业务服务', environment_name: '测试', data_scope_name: '默认业务域',
+const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
+const row = { integration_id: 'int_a', name: '租号业务服务', environment_name: '测试',
   adapter_code: 'standard_http', adapter_name: '标准业务接口', adapter_version: '1.0.0', business_endpoint: 'https://business.example',
   credential_ref: 'credential_a', allowed_operations: ['dictionary'], operation_paths: { dictionary: '/dictionary' }, field_mapping: {},
   health: 'HEALTHY', health_name: '正常', status: 'ACTIVE', status_name: '启用', contract_version: '1.0.0', revision: 1,
@@ -230,7 +230,7 @@ test('定时运行按时区保存，批量失败保留条目并重用幂等键',
   await expect(batch.getByLabel('运行条目')).toHaveValue(items)
 })
 
-test('管理工作区禁用运行操作且不请求无权限的运行目录', async ({ page }) => {
+test('缺少运行授权时禁用运行操作且不请求运行目录', async ({ page }) => {
   await fixture(page)
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
     user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' }, workspace,

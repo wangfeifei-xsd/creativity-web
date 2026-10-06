@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const workspace = { channel_id: 'channel_a', channel_name: '业务渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '业务数据域' }
+const workspace = { channel_id: 'channel_a', channel_name: '业务渠道', environment: 'test', environment_name: '测试',  }
 const receipt = { run_id: 'run_a', state: 'SUCCEEDED', state_label: '已完成', created_at: '2026-10-02T03:00:00Z', deadline: '2026-10-02T03:01:00Z', status_url: '/api/v1/runs/run_a', events_url: '/api/v1/runs/run_a/events' }
 const result = { ...receipt, channel_id: 'channel_a', release_snapshot_id: 'snapshot_a', result: { business_status: 'PARTIAL', schema_version: '1.0', data: { answer: '已完成可核实的部分' }, warnings: ['还有一项数据待确认'], evidence_refs: [] }, partial_output: null, error: null, artifacts: [], usage_summary: { attempt_count: 2, input_tokens: null, output_tokens: null, complete: false, unpriced_count: 1, amounts: { CNY: { reported_amount: '0.0012', complete: false } } } }
 const detail = { ...receipt, name: '业务助手', purpose_label: '调试', completed_at: '2026-10-02T03:00:04Z', conversation_id: null, parent_run_id: null, content_allowed: true, input: { request: '请处理' }, versions: [{ name: '提示词初版', type: 'prompt', version_id: 'prompt_v1' }], actual_inputs: [{ name: '生成结果', value: { messages: [{ role: 'user', content: '请处理' }] } }], evidence: [{ title: '工具查询结果', observed_at: '2026-10-02T03:00:03Z', source_version: '1.0', location: {} }], error: null, result, actions: [{ action_key: 'rerun', label: '重新执行' }] }

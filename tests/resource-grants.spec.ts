@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 for (const path of ['members', 'resource-grants']) {
   test(`${path} 按服务端逐行状态禁用授权操作，并显示原因`, async ({ page }) => {
-    const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'domain-a', data_scope_name: '业务域甲' }
+    const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试',  }
     let revoked = false
     const writes: string[] = []
     const actions = (enabled: boolean) => [
@@ -27,7 +27,7 @@ for (const path of ['members', 'resource-grants']) {
         grant_id: `grant-${index}`, revision: 1, grantee_type: 'role', grantee_id: 'builder', grantee_name: name,
         resource_type: 'version', resource_id: '*', resource_name: '该类全部资源',
         allowed_actions: ['version:read'], action_names: ['查看版本'], environments: ['test'], environment_names: ['测试'],
-        data_scopes: ['domain-a'], data_scope_names: ['业务域甲'], actions: actions(index === 1 && !revoked),
+          actions: actions(index === 1 && !revoked),
       })) })
       return route.fulfill({ json: [] })
     })

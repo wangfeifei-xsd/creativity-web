@@ -17,7 +17,7 @@ async function fixture(page: Page, items = navigation, channel = false) {
     return route.fulfill({ json: path.endsWith('/auth/session') ? {
       user: { user_id: 'admin', login_name: 'admin', display_name: '管理员' },
       workspace: channel ? { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test',
-        environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域甲' } : null,
+        environment_name: '测试',  } : null,
       workspace_options: [], default_workspace: null, can_access_platform: !channel,
       navigation: items, actions: [], expires_at: '2030-01-01T00:00:00Z',
     } : [] })

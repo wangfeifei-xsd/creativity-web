@@ -53,19 +53,21 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const entries = resolveNavigation(session.navigation, features)
   const options = [...new Map([
     ...(session.workspace_options ?? []), ...(session.workspace ? [session.workspace] : []),
-  ].map(option => [JSON.stringify([option.channel_id, option.environment, option.data_scope_id]), option])).values()]
+  ].map(option => [JSON.stringify([option.channel_id, option.environment]), option])).values()]
   const channels = [...new Map(options.map(option => [option.channel_id, { value: option.channel_id, label: option.channel_name }])).values()]
   const ranges = options.filter(option => option.channel_id === session.workspace?.channel_id)
   const environments = [...new Map(ranges.map(option => [option.environment, { value: option.environment, label: option.environment_name }])).values()]
-  const domains = ranges.filter(option => option.environment === session.workspace?.environment)
+  const preferredEnvironment = (available: typeof options) => available[0]
   function selectMode(mode: string) {
     if (mode === 'platform') { void switchWorkspace(null).catch(setError); return }
-    const target = options[0]
+    const first = options[0]
+    const target = first && preferredEnvironment(options.filter(option => option.channel_id === first.channel_id && option.environment === first.environment))
     if (target) void switchWorkspace(target).catch(setError)
   }
   function selectChannel(channelId: string) {
     const available = options.filter(option => option.channel_id === channelId)
-    const target = available.find(option => option.environment === session.workspace?.environment) ?? available[0]
+    const sameEnvironment = available.filter(option => option.environment === session.workspace?.environment)
+    const target = preferredEnvironment(sameEnvironment.length ? sameEnvironment : available)
     if (target) void switchWorkspace(target).catch(setError)
   }
   const current = entries.filter(entry => location.pathname === entry.path || location.pathname.startsWith(`${entry.path}/`))
@@ -127,22 +129,13 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
                 prefix={<CloudServerOutlined aria-hidden />}
                 value={session.workspace.environment} options={environments}
                 onChange={environment => {
-                  const target = ranges.find(option => option.environment === environment)
+                  const target = preferredEnvironment(ranges.filter(option => option.environment === environment))
                   if (target) void switchWorkspace(target).catch(setError)
                 }} /> : <Typography.Text className="workspace-context-control workspace-context-label workspace-environment-select" title={session.workspace.environment_name}>
                   <CloudServerOutlined aria-hidden /><span className="workspace-context-value">{session.workspace.environment_name}</span>
                 </Typography.Text>}
             </>}
           </div>
-          {session.workspace && <>
-            {domains.length > 1 ? <Select aria-label="切换数据域" variant="borderless" className="workspace-domain-select"
-              showSearch optionFilterProp="label" value={session.workspace.data_scope_id}
-              options={domains.map(option => ({ value: option.data_scope_id, label: option.data_scope_name }))}
-              onChange={id => {
-                const target = domains.find(option => option.data_scope_id === id)
-                if (target) void switchWorkspace(target).catch(setError)
-              }} /> : <span className="workspace-scope" title={session.workspace.data_scope_name}>{session.workspace.data_scope_name}</span>}
-          </>}
         </div>
         <div className="workspace-tools">
           <Tooltip title="刷新当前页面"><Button type="text" aria-label="刷新当前页面" icon={<ReloadOutlined aria-hidden />}

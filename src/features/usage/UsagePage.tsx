@@ -17,7 +17,7 @@ import { localTime, purposes, zones, type UsageOptions } from './types'
 type Summary = Schema<'UsageSummary'>
 type Record = Schema<'RecordView'>
 type Detail = Schema<'RecordDetail'>
-type FilterValues = { start_at: string; end_at: string; timezone: string; key_id?: string; environment?: string; model_id?: string; agent_id?: string; data_scope_id?: string; actor_id?: string; purpose?: string; subject_type?: string; subject_id?: string; target_currency?: string }
+type FilterValues = { start_at: string; end_at: string; timezone: string; key_id?: string; environment?: string; model_id?: string; agent_id?: string; actor_id?: string; purpose?: string; subject_type?: string; subject_id?: string; target_currency?: string }
 function parameters(values: FilterValues) {
   return Object.fromEntries(Object.entries({ ...values, start_at: new Date(values.start_at).toISOString(), end_at: new Date(values.end_at).toISOString() }).filter(([, value]) => value)) as { [key: string]: string }
 }
@@ -65,7 +65,7 @@ export function UsagePage() {
       <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
       <Form.Item name="timezone" label="统计时区"><Select style={{ width: 140 }} options={zones} /></Form.Item>
       {([
-        ['key_id', '接入凭据', options.data?.keys], ['environment', '环境', environments], ['model_id', '模型', options.data?.models], ['agent_id', '智能体', options.data?.agents], ['data_scope_id', '数据域', options.data?.data_scopes], ['actor_id', '操作人', options.data?.actors], ['purpose', '用途', purposes],
+        ['key_id', '接入凭据', options.data?.keys], ['environment', '环境', environments], ['model_id', '模型', options.data?.models], ['agent_id', '智能体', options.data?.agents], ['actor_id', '操作人', options.data?.actors], ['purpose', '用途', purposes],
       ] as const).map(([name, label, choices]) => <Form.Item key={name} name={name} label={label}><Select style={{ width: 150 }} allowClear showSearch optionFilterProp="label" options={choices} /></Form.Item>)}
       <Form.Item name="subject_type" label="主体类型"><Input style={{ width: 100 }} /></Form.Item><Form.Item name="subject_id" label="主体编号"><Input style={{ width: 130 }} /></Form.Item>
       <Form.Item name="target_currency" label="折算币种"><Select allowClear style={{ width: 130 }} options={[{ value: 'USD', label: '美元（USD）' }, { value: 'CNY', label: '人民币（CNY）' }]} /></Form.Item>

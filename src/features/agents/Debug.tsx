@@ -30,7 +30,7 @@ export function Debug({ version }: { version: Version }) {
     {Object.entries(properties).map(([name, field]) => <Form.Item key={name} name={name} label={field.title ?? name} valuePropName={field.type === 'boolean' ? 'checked' : 'value'} rules={[{ required: required.includes(name) }]}>
       {field.enum ? <Select options={field.enum.map(v => ({ value: String(v), label: String(v) }))} /> : field.type === 'boolean' ? <Switch /> : ['number', 'integer'].includes(field.type ?? '') ? <InputNumber precision={field.type === 'integer' ? 0 : undefined} style={{ width: '100%' }} /> : <Input.TextArea rows={3} />}
     </Form.Item>)}
-    <Button type="primary" htmlType="submit" loading={busy} disabled={!allowed} title={!allowed ? '当前工作区没有运行权限' : undefined}>开始调试</Button>
+    <Button type="primary" htmlType="submit" loading={busy} disabled={!allowed} title={!allowed ? '当前渠道环境没有运行权限' : undefined}>开始调试</Button>
   </Form>
     {result && <><Descriptions style={{ marginTop: 16 }} items={[
       { key: 'state', label: '状态', children: <StatusTag status={result.state} /> },

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
-const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '业务数据域' }
+const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
 const skill = { skill_id: 'skill_a', skill_code: 'rental_intent', name: '租赁诉求解析', description: '提取用户确认的条件', owner: '业务负责人', tags: [], revision: 1,
   status: { value: 'ACTIVE', label: '已启用', tone: 'success' }, actions: [action('edit', '编辑技能'), action('create_version', '新增版本')] }
 const source = '---\nname: rental-intent\ndescription: 提取用户条件\n---\n只提取已确认的事实。'

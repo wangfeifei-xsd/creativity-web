@@ -793,92 +793,6 @@ export interface paths {
         patch: operations["update_client_admin_v1_channels__channel_id__clients__client_id__patch"];
         trace?: never;
     };
-    "/admin/v1/channels/{channel_id}/data-scope-directory": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Data Scope Directory */
-        post: operations["data_scope_directory_admin_v1_channels__channel_id__data_scope_directory_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/channels/{channel_id}/data-scope-sources": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Data Scope Sources */
-        get: operations["data_scope_sources_admin_v1_channels__channel_id__data_scope_sources_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/channels/{channel_id}/data-scopes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Data Scopes */
-        get: operations["data_scopes_admin_v1_channels__channel_id__data_scopes_get"];
-        put?: never;
-        /** Create Data Scope Legacy */
-        post: operations["create_data_scope_legacy_admin_v1_channels__channel_id__data_scopes_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/channels/{channel_id}/data-scopes/{data_scope_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Data Scope */
-        patch: operations["update_data_scope_admin_v1_channels__channel_id__data_scopes__data_scope_id__patch"];
-        trace?: never;
-    };
-    "/admin/v1/channels/{channel_id}/data-scopes/from-source": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Data Scope From Source */
-        post: operations["create_data_scope_from_source_admin_v1_channels__channel_id__data_scopes_from_source_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/v1/channels/{channel_id}/environments": {
         parameters: {
             query?: never;
@@ -912,23 +826,6 @@ export interface paths {
         head?: never;
         /** Update Environment */
         patch: operations["update_environment_admin_v1_channels__channel_id__environments__environment__patch"];
-        trace?: never;
-    };
-    "/admin/v1/channels/{channel_id}/environments/{environment}/management-workspace": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enable Management Workspace */
-        post: operations["enable_management_workspace_admin_v1_channels__channel_id__environments__environment__management_workspace_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/admin/v1/channels/{channel_id}/impact": {
@@ -5967,8 +5864,6 @@ export interface components {
             actor_name: string | null;
             /** Changed Fields */
             changed_fields: string[];
-            /** Data Scope Name */
-            data_scope_name?: string | null;
             /** Details */
             details?: {
                 [key: string]: string;
@@ -6533,8 +6428,6 @@ export interface components {
         ChannelContextInput: {
             /** Channel Id */
             channel_id: string;
-            /** Data Scope Id */
-            data_scope_id: string;
             /**
              * Environment
              * @enum {string}
@@ -6543,16 +6436,7 @@ export interface components {
         };
         /** ChannelCreate */
         ChannelCreate: {
-            /**
-             * @deprecated
-             * @description 兼容一次性开通；新流程在详情中配置数据域
-             */
-            data_scope?: components["schemas"]["InitialDataScope"] | null;
-            /**
-             * Environment
-             * @deprecated
-             * @description 兼容一次性开通；须与初始数据域同时提供
-             */
+            /** Environment */
             environment?: ("dev" | "test" | "fat" | "prod") | null;
             /** First Admin User Id */
             first_admin_user_id: string;
@@ -6578,9 +6462,6 @@ export interface components {
             /** Actions */
             actions: components["schemas"]["VisibleAction"][];
             channel: components["schemas"]["ChannelView"];
-            /** Management Missing Environments */
-            management_missing_environments?: string[];
-            pending_administrator?: components["schemas"]["NamedOption"] | null;
             /** Service Actions */
             service_actions: components["schemas"]["VisibleAction"][];
             /** Tabs */
@@ -6599,8 +6480,6 @@ export interface components {
             channel_status: ("ACTIVE" | "SUSPENDED" | "ARCHIVED") | null;
             /** Client Active */
             client_active: boolean | null;
-            /** Data Scope Active */
-            data_scope_active: boolean | null;
             /**
              * Environment
              * @enum {string}
@@ -6677,8 +6556,6 @@ export interface components {
         };
         /** ClientCreate */
         ClientCreate: {
-            /** Data Scopes */
-            data_scopes: string[];
             /**
              * Environment
              * @enum {string}
@@ -6691,8 +6568,6 @@ export interface components {
         };
         /** ClientUpdate */
         ClientUpdate: {
-            /** Data Scopes */
-            data_scopes?: string[] | null;
             /** Name */
             name?: string | null;
             /** Revision */
@@ -6706,10 +6581,6 @@ export interface components {
         ClientView: {
             /** Client Id */
             client_id: string;
-            /** Data Scope Names */
-            data_scope_names: (string | null)[];
-            /** Data Scopes */
-            data_scopes: string[];
             /**
              * Environment
              * @enum {string}
@@ -7201,95 +7072,6 @@ export interface components {
             priced: string;
             /** Provisional */
             provisional: string;
-        };
-        /** DataScopeDirectory */
-        DataScopeDirectory: {
-            /** Items */
-            items: components["schemas"]["DataScopeDirectoryItem"][];
-            /** Source Revision */
-            source_revision?: number | null;
-        };
-        /** DataScopeDirectoryItem */
-        DataScopeDirectoryItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-        };
-        /** DataScopeFromSource */
-        DataScopeFromSource: {
-            /** Connection Id */
-            connection_id: string;
-            /**
-             * Environment
-             * @enum {string}
-             */
-            environment: "dev" | "test" | "fat" | "prod";
-            /** External Scope Id */
-            external_scope_id: string;
-            /** External Scope Type */
-            external_scope_type: string;
-            /** Remote Tool Name */
-            remote_tool_name: string;
-        };
-        /** DataScopeSource */
-        DataScopeSource: {
-            /** Connection Id */
-            connection_id: string;
-            /** Label */
-            label: string;
-            /** Remote Tool Name */
-            remote_tool_name: string;
-        };
-        /** DataScopeSourceInput */
-        DataScopeSourceInput: {
-            /** Connection Id */
-            connection_id: string;
-            /**
-             * Environment
-             * @enum {string}
-             */
-            environment: "dev" | "test" | "fat" | "prod";
-            /** Remote Tool Name */
-            remote_tool_name: string;
-        };
-        /** DataScopeUpdate */
-        DataScopeUpdate: {
-            /** Revision */
-            revision: number;
-            /** Status */
-            status?: ("ACTIVE" | "DISABLED") | null;
-        };
-        /** DataScopeView */
-        DataScopeView: {
-            /** Data Scope Id */
-            data_scope_id: string;
-            /**
-             * Environment
-             * @enum {string}
-             */
-            environment: "dev" | "test" | "fat" | "prod";
-            /** Environment Name */
-            environment_name: string | null;
-            /** External Scope Id */
-            external_scope_id: string;
-            /** External Scope Type */
-            external_scope_type: string;
-            /** External Scope Type Name */
-            external_scope_type_name: string | null;
-            /** Name */
-            name: string;
-            /** Revision */
-            revision: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "ACTIVE" | "DISABLED";
-            /** Status Label */
-            status_label: string;
         };
         /** DatasetCreate */
         DatasetCreate: {
@@ -7944,8 +7726,6 @@ export interface components {
         GrantInput: {
             /** Allowed Actions */
             allowed_actions: string[];
-            /** Data Scopes */
-            data_scopes: string[];
             /** Environments */
             environments: ("dev" | "test" | "fat" | "prod")[];
             /** Grantee Id */
@@ -7970,10 +7750,6 @@ export interface components {
             actions: components["schemas"]["AccessAction"][];
             /** Allowed Actions */
             allowed_actions: string[];
-            /** Data Scope Names */
-            data_scope_names: (string | null)[];
-            /** Data Scopes */
-            data_scopes: string[];
             /** Environment Names */
             environment_names: string[];
             /** Environments */
@@ -8133,15 +7909,6 @@ export interface components {
             /** Row Number */
             row_number: number;
         };
-        /** InitialDataScope */
-        InitialDataScope: {
-            /** External Scope Id */
-            external_scope_id: string;
-            /** External Scope Type */
-            external_scope_type: string;
-            /** Name */
-            name: string;
-        };
         /** InputSource */
         InputSource: {
             /**
@@ -8259,8 +8026,6 @@ export interface components {
             contract_version: string;
             /** Credential Ref */
             credential_ref: string;
-            /** Data Scope Name */
-            data_scope_name: string;
             /** Environment Name */
             environment_name: string;
             /** Field Mapping */
@@ -8765,8 +8530,6 @@ export interface components {
         };
         /** MembershipInput */
         MembershipInput: {
-            /** Data Scopes */
-            data_scopes: string[];
             /** Environments */
             environments: ("dev" | "test" | "fat" | "prod")[];
             /** Revision */
@@ -8784,10 +8547,6 @@ export interface components {
         MembershipView: {
             /** Actions */
             actions: components["schemas"]["AccessAction"][];
-            /** Data Scope Names */
-            data_scope_names: (string | null)[];
-            /** Data Scopes */
-            data_scopes: string[];
             /** Display Name */
             display_name: string | null;
             /** Environment Names */
@@ -9328,8 +9087,6 @@ export interface components {
             channel: components["schemas"]["ChannelView"];
             /** Clients */
             clients: number;
-            /** Data Scopes */
-            data_scopes: number;
             /** Environments */
             environments: number;
             /** Members Path */
@@ -10261,7 +10018,7 @@ export interface components {
              * @default business
              * @enum {string}
              */
-            purpose: "business" | "subject_review" | "data_scope_directory";
+            purpose: "business" | "subject_review";
             /** Schema Hash */
             schema_hash: string;
             /** Title */
@@ -10530,6 +10287,42 @@ export interface components {
              */
             required_capabilities: ("text" | "tools" | "structured_output" | "streaming" | "vision" | "embedding")[];
             retry_policy?: components["schemas"]["creativity_service__modules__models__schemas__RetryPolicy"];
+        };
+        /** RouteVersionView */
+        RouteVersionView: {
+            /** Actions */
+            actions?: components["schemas"]["AccessAction"][];
+            /** Channel Id */
+            channel_id: string;
+            /** Content */
+            content: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Content Digest */
+            content_digest: string;
+            /** Dependencies Digest */
+            dependencies_digest: string;
+            /** Dependency Version Ids */
+            dependency_version_ids: string[];
+            /** Draft Revision */
+            draft_revision: number | null;
+            /** Output Schema */
+            output_schema: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Resource Id */
+            resource_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "DRAFT" | "PUBLISHED" | "RETIRED";
+            /** Version Id */
+            version_id: string;
+            /** Version Label */
+            version_label: string;
         };
         /** RouteView */
         RouteView: {
@@ -10815,11 +10608,6 @@ export interface components {
         Scope: {
             /** Channel Id */
             channel_id: string;
-            /**
-             * Data Scope Id
-             * @default null
-             */
-            data_scope_id: string | null;
             /**
              * Environment
              * @enum {string}
@@ -11687,8 +11475,6 @@ export interface components {
         };
         /** ToolDefinition */
         ToolDefinition: {
-            /** Allowed Data Domains */
-            allowed_data_domains: string[];
             analysis_policy?: components["schemas"]["AnalysisPolicy"] | null;
             binding: components["schemas"]["ToolBinding"];
             /**
@@ -12027,8 +11813,6 @@ export interface components {
             actor_id?: string | null;
             /** Agent Id */
             agent_id?: string | null;
-            /** Data Scope Id */
-            data_scope_id?: string | null;
             /**
              * End At
              * Format: date-time
@@ -12207,10 +11991,6 @@ export interface components {
             channel_id: string;
             /** Channel Name */
             channel_name: string;
-            /** Data Scope Id */
-            data_scope_id: string;
-            /** Data Scope Name */
-            data_scope_name: string;
             /**
              * Environment
              * @enum {string}
@@ -19979,823 +19759,6 @@ export interface operations {
             };
         };
     };
-    data_scope_directory_admin_v1_channels__channel_id__data_scope_directory_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataScopeSourceInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataScopeDirectory"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    data_scope_sources_admin_v1_channels__channel_id__data_scope_sources_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataScopeSource"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    data_scopes_admin_v1_channels__channel_id__data_scopes_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataScopeView"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    create_data_scope_legacy_admin_v1_channels__channel_id__data_scopes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Successful Response */
-            410: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    update_data_scope_admin_v1_channels__channel_id__data_scopes__data_scope_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-                data_scope_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataScopeUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataScopeView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    create_data_scope_from_source_admin_v1_channels__channel_id__data_scopes_from_source_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DataScopeFromSource"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataScopeView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     environments_admin_v1_channels__channel_id__environments_get: {
         parameters: {
             query?: never;
@@ -21094,139 +20057,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EnvironmentView"];
                 };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    enable_management_workspace_admin_v1_channels__channel_id__environments__environment__management_workspace_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                channel_id: string;
-                environment: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -37944,7 +36774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResourceVersion"][];
+                    "application/json": components["schemas"]["RouteVersionView"][];
                 };
             };
             /** @description Bad Request */
@@ -53250,7 +52080,6 @@ export interface operations {
             query: {
                 actor_id?: string | null;
                 agent_id?: string | null;
-                data_scope_id?: string | null;
                 end_at: string;
                 environment?: ("dev" | "test" | "fat" | "prod") | null;
                 key_id?: string | null;
@@ -53671,7 +52500,6 @@ export interface operations {
             query: {
                 actor_id?: string | null;
                 agent_id?: string | null;
-                data_scope_id?: string | null;
                 end_at: string;
                 environment?: ("dev" | "test" | "fat" | "prod") | null;
                 key_id?: string | null;
@@ -54503,7 +53331,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -54842,7 +53670,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -55017,7 +53845,7 @@ export interface operations {
             query?: never;
             header: {
                 "idempotency-key": string;
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -55189,7 +54017,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -55359,7 +54187,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -55542,7 +54370,7 @@ export interface operations {
                 subject?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -55710,7 +54538,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -55882,7 +54710,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -56052,7 +54880,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -56222,7 +55050,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -56396,7 +55224,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -56568,7 +55396,7 @@ export interface operations {
                 name: string;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -56743,7 +55571,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -56914,7 +55742,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -57088,7 +55916,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -57258,7 +56086,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -57431,7 +56259,7 @@ export interface operations {
                 limit?: number;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -57601,7 +56429,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -57775,7 +56603,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -57945,7 +56773,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -58116,7 +56944,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -58287,7 +57115,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -58459,7 +57287,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -58631,7 +57459,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -58801,7 +57629,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -58971,7 +57799,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -59141,7 +57969,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -59313,7 +58141,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -59489,7 +58317,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -59665,7 +58493,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -59844,7 +58672,7 @@ export interface operations {
                 status?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -60014,7 +58842,7 @@ export interface operations {
                 anchor_id?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -60186,7 +59014,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -60356,7 +59184,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -60526,7 +59354,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -60700,7 +59528,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -60876,7 +59704,7 @@ export interface operations {
                 anchor_id?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -61046,7 +59874,7 @@ export interface operations {
                 anchor_id?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -61214,7 +60042,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -61388,7 +60216,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -61560,7 +60388,7 @@ export interface operations {
                 anchor_id?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -61730,7 +60558,7 @@ export interface operations {
                 anchor_id?: string | null;
             };
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -61903,7 +60731,7 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": string;
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path?: never;
@@ -62086,7 +60914,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -62256,7 +61084,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -62430,7 +61258,7 @@ export interface operations {
             header: {
                 /** @description 最后已处理的事件序号；优先于 after_sequence */
                 "Last-Event-ID"?: string | null;
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -62600,7 +61428,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {
@@ -62770,7 +61598,7 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v1 委托 */
+                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
                 "X-Business-Delegation": string;
             };
             path: {

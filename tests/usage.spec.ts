@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const workspace = { channel_id: 'channel-a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '租号业务域' }
+const workspace = { channel_id: 'channel-a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
 const record = { id: 'usage-1', channel_id: 'channel-a', run_id: 'run-1', attempt_id: 'attempt-1', created_at: '2026-10-02T02:00:00Z', names: { model: '文本模型', agent: '匹配助手' }, purpose: 'production', purpose_label: '正式调用', input_tokens: null, output_tokens: null, cached_tokens: null, reasoning_tokens: null, usage_status: 'MISSING', usage_label: '用量缺失', pricing_status: 'UNPRICED', pricing_label: '未定价', amount: null, currency: null, state: 'PENDING', state_label: '待核实', outcome_label: '结果待核实', revision: 1, normalized_tokens: {}, subset_relations: {}, calculation: {} }
 const summary = { requests: 2, attempts: 3, success_rate: '0.5000', input_tokens: 200, output_tokens: 50, missing_usage: 1, unpriced: 1, costs: [{ currency: 'USD', priced: '0.03000000', provisional: '0.01000000' }, { currency: 'CNY', priced: '0.12000000', provisional: '0.00000000' }], trend: [{ date: '2026-10-02', attempts: 3, input_tokens: 200, output_tokens: 50, costs: {} }], aggregate_updated_at: '2026-10-02T02:01:00Z', ledger_watermark: '2026-10-02T02:00:00Z', price_complete: false, timezone: 'Asia/Shanghai' }
 async function setup(page: Page) {
@@ -10,7 +10,7 @@ async function setup(page: Page) {
       : path.endsWith('/auth/channels') ? [workspace]
         : path.endsWith('/usage/summary') ? summary
           : path.endsWith('/usage/records') ? { items: [record], total: 1, offset: 0, limit: 20 }
-            : path.endsWith('/usage/options') ? { models: [{ value: 'm1', label: '文本模型' }], agents: [], actors: [], data_scopes: [], keys: [] }
+            : path.endsWith('/usage/options') ? { models: [{ value: 'm1', label: '文本模型' }], agents: [], actors: [],  keys: [] }
               : path.endsWith('/usage/records/usage-1') ? { ...record, source: {}, events: [], adjustments: [] } : []
     await route.fulfill({ json })
   })

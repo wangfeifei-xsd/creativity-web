@@ -43,7 +43,7 @@ export function AuditPage({ channelId }: { channelId?: string }) {
     {detail && <Drawer open title="审计详情" onClose={() => setDetail(undefined)} size="large"><Descriptions column={1} bordered items={[
       { key: 'action', label: '操作', children: detail.action_name }, { key: 'target', label: '对象', children: detail.target_name ?? '名称不可用' },
       { key: 'actor', label: '操作人', children: detail.actor_name ?? '名称不可用' }, { key: 'time', label: '时间', children: formatTimestamp(detail.time) },
-      { key: 'scope', label: '环境 / 数据域', children: [detail.environment_name, detail.data_scope_name].filter(Boolean).join(' / ') || '未提供' },
+      { key: 'scope', label: '环境', children: detail.environment_name || '未提供' },
       { key: 'outcome', label: '结果', children: detail.outcome_label }, { key: 'request', label: '请求标识', children: detail.request_id },
       { key: 'fields', label: '变更字段', children: detail.changed_fields.join('、') || '本事件未记录字段差异' },
       ...Object.entries(detail.details ?? {}).map(([key, value]) => ({ key, label: key, children: value })),

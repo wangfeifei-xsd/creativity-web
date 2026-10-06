@@ -14,7 +14,7 @@ const prompt = { prompt_id: 'p1', prompt_code: 'risk', name: '风险分析', pur
   version_label: '初版', status: version.status, releases: [], last_test_at: null, agent_count: 0, actions }
 const session = { user: { user_id: 'alice', display_name: '配置人员', login_name: 'alice' },
   navigation: [{ navigation_key: 'prompts', label: '提示词' }], actions,
-  workspace: { channel_id: 'rental', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'orders', data_scope_name: '订单' },
+  workspace: { channel_id: 'rental', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  },
   expires_at: '2026-10-03T00:00:00Z' }
 const rendered = { sections: [{ source: 'system', label: '系统指令', text: '只分析事实', original_characters: 5, truncated_characters: 0 },
   { source: 'input', label: '调用输入', text: '••••••', original_characters: 6, truncated_characters: 0 }],

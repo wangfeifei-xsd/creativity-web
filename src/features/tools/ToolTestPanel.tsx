@@ -39,7 +39,6 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
       { key: 'user', label: '操作成员', children: session.user.display_name },
       { key: 'channel', label: '渠道', children: session.workspace?.channel_name ?? '名称不可用' },
       { key: 'env', label: '环境', children: session.workspace?.environment_name ?? '名称不可用' },
-      { key: 'domain', label: '业务数据域', children: session.workspace?.data_scope_name ?? '名称不可用' },
     ]} />
     {query.data.unavailable_reason && <Alert type="warning" title={query.data.unavailable_reason} />}
     <ErrorNotice error={error} />

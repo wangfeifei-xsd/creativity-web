@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const workspace = { channel_id: 'channel_a', channel_name: '业务渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '资料域' }
+const workspace = { channel_id: 'channel_a', channel_name: '业务渠道', environment: 'test', environment_name: '测试',  }
 const session = {
   user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' }, workspace,
   navigation: [{ navigation_key: 'members', label: '成员与权限' }],

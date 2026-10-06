@@ -46,11 +46,10 @@ test('开发环境旧入口重定向后保留 Hash 页面', async ({ page }) => 
 })
 
 for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默认首个授权范围并保留环境（${width}）`, async ({ page }) => {
-  const a = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'prod', environment_name: '生产', data_scope_id: 'a-one', data_scope_name: '业务域甲' }
-  const secondDomain = { ...a, data_scope_id: 'a-two', data_scope_name: '第二业务域' }
-  const bTest = { channel_id: 'channel-b', channel_name: '客户服务渠道', environment: 'test', environment_name: '测试', data_scope_id: 'b-test', data_scope_name: '测试业务域' }
-  const b = { ...bTest, environment: 'prod', environment_name: '生产', data_scope_id: 'b-prod', data_scope_name: '生产业务域' }
-  const workspaces = [a, secondDomain, bTest, b]
+  const a = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'prod', environment_name: '生产',  }
+  const bTest = { channel_id: 'channel-b', channel_name: '客户服务渠道', environment: 'test', environment_name: '测试',  }
+  const b = { ...bTest, environment: 'prod', environment_name: '生产',  }
+  const workspaces = [a, bTest, b]
   let current: typeof a | null = null
   const switches: Record<string, unknown>[] = []
   let platformSwitches = 0
@@ -60,7 +59,7 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
     if (path.endsWith('/auth/channel-context')) {
       const input = request.postDataJSON() as Record<string, unknown>
       switches.push(input)
-      current = workspaces.find(option => option.channel_id === input.channel_id && option.environment === input.environment && option.data_scope_id === input.data_scope_id) ?? null
+      current = workspaces.find(option => option.channel_id === input.channel_id && option.environment === input.environment) ?? null
       return route.fulfill({ json: { access_token: `workspace-${switches.length}`, token_type: 'Bearer', expires_in: 3600 } })
     }
     if (path.endsWith('/auth/platform-context')) {
@@ -82,15 +81,14 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
   await popup.getByText('渠道管理', { exact: true }).click()
   await expect(header.getByText('渠道管理', { exact: true })).toBeVisible()
   await expect(header.getByText(a.channel_name, { exact: true })).toBeVisible()
-  expect(switches).toEqual([{ channel_id: a.channel_id, environment: a.environment, data_scope_id: a.data_scope_id }])
+  expect(switches).toEqual([{ channel_id: a.channel_id, environment: a.environment }])
   await page.getByLabel('切换渠道', { exact: true }).click()
   await expect(popup.locator('.ant-select-item-option')).toHaveCount(2)
   await expect(popup.getByText('平台管理', { exact: true })).toHaveCount(0)
   await popup.getByText(b.channel_name, { exact: true }).click()
   await expect(header.getByText(b.channel_name, { exact: true })).toBeVisible()
   await expect(header.getByText('生产', { exact: true })).toBeVisible()
-  await expect(header.getByText(b.data_scope_name, { exact: true })).toBeVisible()
-  expect(switches[1]).toEqual({ channel_id: b.channel_id, environment: b.environment, data_scope_id: b.data_scope_id })
+  expect(switches[1]).toEqual({ channel_id: b.channel_id, environment: b.environment })
   await page.reload()
   await expect(header.getByText(b.channel_name, { exact: true })).toBeVisible()
   expect(switches).toHaveLength(2)
@@ -104,7 +102,7 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
 })
 
 test('没有可切换项时以正常文字展示模式、渠道和环境', async ({ page }) => {
-  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域甲' }
+  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试',  }
   let available = false
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
     ...session, can_access_platform: !available, workspace: available ? workspace : null, workspace_options: available ? [workspace] : [],
@@ -123,7 +121,7 @@ test('没有可切换项时以正常文字展示模式、渠道和环境', async
 })
 
 test('管理模式切换失败后仍显示服务端确认的原模式', async ({ page }) => {
-  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域甲' }
+  const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试',  }
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session, workspace_options: [workspace] } }))
   await page.route('**/admin/v1/auth/channel-context', route => route.fulfill({ status: 403, json: {
     error: { code: 'FORBIDDEN', message: '该渠道授权已失效', fields: [] },
@@ -186,13 +184,12 @@ test('侧栏沿用服务端导航，跳转、历史记录与顶部刷新保留�
 
 for (const width of [375, 820]) test(`窄屏抽屉可跳转和关闭，工作区信息保持可见（${width}）`, async ({ page }) => {
   await authenticated(page)
-  const workspace = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '产品研发资料域' }
+  const workspace = { channel_id: 'channel-a', channel_name: '研发资料协作渠道', environment: 'test', environment_name: '测试',  }
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session, workspace } }))
   await page.setViewportSize({ width, height: 812 })
   await page.goto('#/')
   await expect(page.getByText(workspace.channel_name, { exact: true })).toBeVisible()
   await expect(page.getByText(workspace.environment_name, { exact: true })).toBeVisible()
-  await expect(page.getByText(workspace.data_scope_name, { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '打开导航菜单' }).click()
   const drawer = page.getByRole('dialog')
   await expect(drawer.getByRole('navigation', { name: '主导航' })).toBeVisible()
@@ -259,8 +256,8 @@ test('窄屏与未知页面没有横向溢出或浏览器错误', async ({ page 
 })
 
 test('IAM-A14 切换渠道清除筛选和旧请求，迟到 401 不影响新工作区', async ({ page }) => {
-  const a = { channel_id: 'channel-a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '租号数据域' }
-  const b = { channel_id: 'channel-b', channel_name: '陪玩渠道', environment: 'prod', environment_name: '生产', data_scope_id: 'scope-b', data_scope_name: '俱乐部' }
+  const a = { channel_id: 'channel-a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  }
+  const b = { channel_id: 'channel-b', channel_name: '陪玩渠道', environment: 'prod', environment_name: '生产',  }
   let deferA = false
   let release!: () => void
   let pending = false

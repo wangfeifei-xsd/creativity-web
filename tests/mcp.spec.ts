@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const action = (action_key: string, label: string) => ({ action_key, label })
 const session = { user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' },
-  workspace: { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试', data_scope_id: 'domain_a', data_scope_name: '默认业务域' },
+  workspace: { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  },
   navigation: [{ navigation_key: 'mcp-connections', label: 'MCP 连接' }], actions: [action('run:create', '执行能力')], expires_at: '2030-01-01T00:00:00Z' }
 const connection = { connection_id: 'mcp_a', name: '目录服务', endpoint: 'https://example.com/mcp', transport: 'streamable_http', transport_label: 'Streamable HTTP',
   revision: 3, configuration_revision: 1, credential_mask: '••••••••', timeouts: { connect_seconds: 10, operation_seconds: 30 }, health_policy: { interval_seconds: 300, failure_threshold: 3 },

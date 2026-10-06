@@ -50,7 +50,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
       if (tool.source_type === 'sandbox' && !profile) throw new Error('请选择可用的隔离环境')
       const body = { input_schema: input, output_schema: output, model_fields_allowed: Object.keys(input.properties),
         binding: tool.source_type === 'sandbox' ? { adapter_key: 'sandbox_python', implementation_version: '1', connection_id: null, script: { profile_id: profile?.profile_id, profile_digest: profile?.digest, skill_version_id: values.skillVersion, path: values.scriptPath } } : selected?.binding, effect_type: selected?.effect_type ?? 'READ_ONLY', required_scopes: values.scopes,
-        allowed_data_domains: [workspace.data_scope_id], environments: [workspace.environment],
+        environments: [workspace.environment],
         subject_requirements: { required: values.required, allowed_types: values.types ?? [] },
         timeout_seconds: values.timeout, max_result_size: values.maxSize,
         retry_policy: { max_attempts: values.attempts, delay_ms: values.delay },
@@ -107,7 +107,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
             </>}
           </> },
           { key: 'permission', label: '权限', forceRender: true, children: <>
-            <Typography.Paragraph>{workspace?.environment_name ?? '环境未确认'} · {workspace?.data_scope_name ?? '业务数据域未确认'}</Typography.Paragraph>
+            <Typography.Paragraph>{workspace?.environment_name ?? '环境未确认'}</Typography.Paragraph>
             <Form.Item name="scopes" label="必要授权" rules={[{ required: true }]}><Select mode="multiple" labelRender={({ value }) => toolPermissionLabel(String(value), session.actions)} options={session.actions.map(a => ({ value: a.action_key, label: a.label }))} /></Form.Item>
             <Form.Item name="required" label="要求业务主体" valuePropName="checked"><Switch /></Form.Item>
             <Form.Item name="types" label="允许的主体类型"><Select mode="tags" /></Form.Item>

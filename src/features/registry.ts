@@ -10,7 +10,7 @@ export interface FeatureRegistration {
   Component: ComponentType
 }
 
-// 仅登记组件与路径。目录中的独立模块可导出 registration 或 registrations 接入。
+// 登记组件、路径及业务数据选择需求；目录模块可导出 registration 或 registrations 接入。
 const modules = import.meta.glob<{ registration?: FeatureRegistration; registrations?: FeatureRegistration[] }>(
   './*/registration.ts', { eager: true },
 )
