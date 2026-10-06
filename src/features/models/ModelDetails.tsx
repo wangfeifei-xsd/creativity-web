@@ -1,5 +1,7 @@
+import { DateTimeInput } from '../../components/DateTimeInput'
 import { RunViewer } from '../../components/run-viewer/RunViewer'
-import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Table, Tabs, Tag } from 'antd'
+import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Tabs, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
@@ -73,7 +75,7 @@ function Prices({ model }: { model: Schema<'ModelView'> }) {
       <Form.Item name="currency" label="币种" rules={[{ required: true }]}><Select options={[{ value: 'CNY', label: '人民币（CNY）' }, { value: 'USD', label: '美元（USD）' }]} /></Form.Item>
       <Form.Item name="per_units" label="计费单位（Token）" rules={[{ required: true }]}><InputNumber min={1} /></Form.Item>
       {dimensions.map(d => <Form.Item key={d} name={d} label={`${dimensionNames[d]}单价`} rules={[{ required: true }]}><InputNumber stringMode min="0" style={{ width: '100%' }} /></Form.Item>)}
-      <Form.Item name="effective_at" label="生效时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item>
+      <Form.Item name="effective_at" label="生效时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
       <Form.Item name="source" label="价格来源" rules={[{ required: true }]}><Input /></Form.Item>
     </ModelDialog>}
   </Space>

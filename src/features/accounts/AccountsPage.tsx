@@ -1,6 +1,7 @@
 import { useDirectory } from '../../api/useDirectory'
 import { names, send, statuses } from '../../api/management'
-import { Button, Space, Table, Tag } from 'antd'
+import { Button, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { formatTimestamp } from '../../api/presentation'

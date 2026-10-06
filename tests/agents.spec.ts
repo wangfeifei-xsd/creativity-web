@@ -62,7 +62,7 @@ test('配置、流程、资源名称和发布记录可查看', async ({ page }) 
   await expect(page.getByRole('cell', { name: '结构化路由', exact: true })).toBeVisible()
   await page.getByRole('tab', { name: '发布记录', exact: true }).click()
   await expect(page.getByRole('cell', { name: '发布人员' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: '2026/10/02 11:00:00' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '2026年10月2日 11:00:00' })).toBeVisible()
 })
 
 test('生产门禁错误明确显示，发布携带修订与工作区环境', async ({ page }) => {

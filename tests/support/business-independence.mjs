@@ -4,6 +4,7 @@ import { chromium, expect } from '@playwright/test'
 let input = ''
 for await (const chunk of process.stdin) input += chunk
 const config = JSON.parse(input)
+const expires = config.expires.replace(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})(?::(\d{2}))?.*$/, (_, year, month, day, time, seconds) => `${year}年${Number(month)}月${Number(day)}日 ${time}:${seconds ?? '00'}`)
 const webURL = new URL('/creativity/', config.web).href
 const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
 const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } })
@@ -96,7 +97,8 @@ try {
     await choose(dialog(), '环境', '测试')
     for (const action of ['执行能力', '查看运行元数据', '查看运行内容', '读取敏感原文']) await choose(dialog(), '可调用能力', action)
     await choose(dialog(), '接入服务', '验证后端 · 测试')
-    await dialog().getByLabel('有效期至').fill(config.expires)
+    await dialog().getByLabel('有效期至').fill(expires)
+    await dialog().getByLabel('有效期至').press('Enter')
     result.key = await capture(`/admin/v1/channels/${result.channel.channel_id}/keys`, () => button(dialog(), '确认').click(), 201)
     await expect(page.getByLabel('完整 Key')).toBeVisible()
     await button(page, '完成').click()
@@ -106,7 +108,8 @@ try {
     await selected(dialog(), '接入服务', '验证后端')
     await dialog().getByLabel('签发者').fill('controlled-source')
     await dialog().getByLabel('受众').fill('creativity-api')
-    await dialog().getByLabel('密钥到期时间').fill(config.expires)
+    await dialog().getByLabel('密钥到期时间').fill(expires)
+    await dialog().getByLabel('密钥到期时间').press('Enter')
     result.delegation = await capture('/admin/v1/delegation-keys', () => button(dialog(), '确认').click(), 201)
     await expect(page.getByRole('textbox', { name: '委托签名密钥', exact: true })).toBeVisible()
     await button(page, '完成').click()

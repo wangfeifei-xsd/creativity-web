@@ -1,6 +1,7 @@
 import { useDirectory } from '../../api/useDirectory'
 import { actionsAsOptions, send } from '../../api/management'
-import { Button, Modal, Space, Table, Tag } from 'antd'
+import { Button, Modal, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { formatTimestamp } from '../../api/presentation'

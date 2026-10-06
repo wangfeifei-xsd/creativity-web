@@ -1,4 +1,5 @@
-import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Table, Tag, Typography } from 'antd'
+import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Tag, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { formatTimestamp } from '../../api/presentation'

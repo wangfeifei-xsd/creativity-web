@@ -1,4 +1,5 @@
-import { Descriptions, Drawer, Table, Typography } from 'antd'
+import { Descriptions, Drawer, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'

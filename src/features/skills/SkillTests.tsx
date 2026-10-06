@@ -1,5 +1,6 @@
 import { RunViewer } from '../../components/run-viewer/RunViewer'
-import { Button, Form, Input, InputNumber, Select, Space, Switch, Table, Typography } from 'antd'
+import { Button, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'

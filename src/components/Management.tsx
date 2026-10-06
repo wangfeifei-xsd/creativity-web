@@ -5,6 +5,7 @@ import { ApiError } from '../api/client'
 import { applyFormErrors } from '../api/form-errors'
 import { isAbort } from '../api/useQuery'
 import type { components } from '../api/generated/schema'
+import { DateTimeInput } from './DateTimeInput'
 
 export type Schema<K extends keyof components['schemas']> = components['schemas'][K]
 export type Values = Record<string, unknown>
@@ -30,7 +31,8 @@ export function Fields({ fields }: { fields: Field[] }) {
       : field.kind === 'number' ? <InputNumber min={field.min} max={field.max} style={{ width: '100%' }} />
         : field.kind === 'switch' ? <Switch disabled={field.disabled} />
           : field.kind === 'password' ? <Input.Password autoComplete="new-password" />
-            : <Input disabled={field.disabled} type={field.kind === 'datetime' ? 'datetime-local' : 'text'} />)}
+            : field.kind === 'datetime' ? <DateTimeInput disabled={field.disabled} />
+              : <Input disabled={field.disabled} />)}
   </Form.Item>)
 }
 export type EditorProps = { title: string; fields: Field[]; initial?: Values; children?: ReactNode;

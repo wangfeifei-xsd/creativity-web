@@ -1,4 +1,6 @@
-import { App, Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Table, Tabs, Tag, Typography } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { App, Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Tabs, Tag, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
 import { apiClient } from '../../api/client'
 import { environments, send } from '../../api/management'
@@ -58,9 +60,9 @@ export function UsagePage() {
     { title: '已计价 / 暂估费用', render: (_, r) => Object.entries(r.costs).map(([currency, cost]) => <div key={currency}>{formatAmount(cost.priced, currency)} / {formatAmount(cost.provisional, currency)}</div>) },
   ]} />
   return <PageContainer title="用量" actions={<Space><Button onClick={() => { summary.reload(); records.reload() }}>刷新</Button>{can('data:export') && <><Button loading={exporting} onClick={() => void exportUsage()}>导出明细</Button><Button onClick={() => setShowExports(true)}>导出任务</Button></>}</Space>}>
-    <Form layout="inline" initialValues={initial} onFinish={(values: FilterValues) => { setFilters(parameters(values)); setOffset(0) }} style={{ gap: 12, marginBottom: 24 }}>
-      <Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item>
-      <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item>
+    <Form layout="inline" initialValues={initial} onFinish={(values: FilterValues) => { setFilters(parameters(values)); setOffset(0) }} style={{ marginBottom: 24 }}>
+      <Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
+      <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
       <Form.Item name="timezone" label="统计时区"><Select style={{ width: 140 }} options={zones} /></Form.Item>
       {([
         ['key_id', '接入凭据', options.data?.keys], ['environment', '环境', environments], ['model_id', '模型', options.data?.models], ['agent_id', '智能体', options.data?.agents], ['data_scope_id', '数据域', options.data?.data_scopes], ['actor_id', '操作人', options.data?.actors], ['purpose', '用途', purposes],

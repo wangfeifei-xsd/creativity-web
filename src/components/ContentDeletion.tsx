@@ -1,4 +1,5 @@
-import { Alert, Button, Modal, Space, Table } from 'antd'
+import { Alert, Button, Modal, Space } from 'antd'
+import { Table } from './Table'
 import { useEffect, useState } from 'react'
 import { send } from '../api/management'
 import { ErrorNotice, type Schema } from './Management'

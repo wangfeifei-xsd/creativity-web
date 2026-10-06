@@ -1,4 +1,5 @@
-import { App, Button, Descriptions, Input, Select, Space, Table, Tabs, Typography } from 'antd'
+import { App, Button, Descriptions, Input, Select, Space, Tabs, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { send } from '../../api/management'
@@ -38,7 +39,7 @@ function ToolList() {
   const query = useQuery<Schema<'ToolList'>>(`/admin/v1/tools?${filters}`)
   return <PageContainer title="工具管理" actions={<Space><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} /></Space>}>
-    <Space wrap style={{ marginBottom: 20 }}>
+    <Space wrap className="query-filters" style={{ marginBottom: 20 }}>
       <Input.Search aria-label="工具名称或用途" placeholder="工具名称或用途" onSearch={setSearch} allowClear />
       <Select aria-label="来源" placeholder="全部来源" allowClear options={sources} onChange={setSource} style={{ width: 150 }} />
       <Select aria-label="影响类型" placeholder="全部影响类型" allowClear options={effects} onChange={setEffect} style={{ width: 170 }} />

@@ -1,4 +1,5 @@
-import { Button, Form, Input, InputNumber, Select, Space, Table, Tag } from 'antd'
+import { Button, Form, Input, InputNumber, Select, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
@@ -25,11 +26,10 @@ export function ProvidersPage() {
       { title: '协议', dataIndex: 'name' }, { title: '适配状态', render: (_, p) => <Tag>{p.enabled ? '已实现，按模型验证' : '未启用'}</Tag> }, { title: '原因', render: (_, p) => p.reason ?? '无' },
     ]} />
     {editor && <ModelDialog title={row ? '编辑供应商' : '新增供应商'} initial={row ? { ...row, ...row.template_content } : { timeout_seconds: 60 }} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} onSave={v => send('/admin/v1/model-providers', 'POST', {
-      code: v.code, name: v.name, protocols: v.protocols, revision: row?.revision ?? null,
+      id: row?.id, name: v.name, protocols: v.protocols, revision: row?.revision ?? null,
       template_content: v.endpoint ? { protocol: v.protocol, endpoint: v.endpoint, timeout_seconds: v.timeout_seconds } : {},
     })}>
       <Form.Item name="name" label="供应商名称" rules={[{ required: true }]}><Input /></Form.Item>
-      <Form.Item name="code" label="供应商编码" rules={[{ required: true }]}><Input disabled={!!row} /></Form.Item>
       <Form.Item name="protocols" label="协议" rules={[{ required: true }]}><Select mode="multiple" options={choices} /></Form.Item>
       <Form.Item name="protocol" label="模板协议"><Select options={choices} allowClear /></Form.Item>
       <Form.Item name="endpoint" label="模板基础地址"><Input /></Form.Item>

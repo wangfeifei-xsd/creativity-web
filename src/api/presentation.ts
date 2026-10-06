@@ -2,10 +2,12 @@ export function formatTimestamp(value: string | null | undefined, timeZone = 'As
   if (!value) return '暂无时间'
   const date = new Date(value)
   if (Number.isNaN(date.valueOf())) return '时间不可用'
-  return new Intl.DateTimeFormat('zh-CN', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit',
     minute: '2-digit', second: '2-digit', hourCycle: 'h23', timeZone,
-  }).format(date)
+  }).formatToParts(date)
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(value => value.type === type)?.value
+  return `${part('year')}年${part('month')}月${part('day')}日 ${part('hour')}:${part('minute')}:${part('second')}`
 }
 
 export function formatAmount(amount: string | null | undefined, currency: string | null | undefined): string {

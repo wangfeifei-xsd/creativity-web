@@ -1,4 +1,5 @@
-import { Button, Card, Col, Form, Input, InputNumber, Modal, Row, Select, Space, Table, Tag } from 'antd'
+import { Button, Card, Col, Form, Input, InputNumber, Modal, Row, Select, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { ErrorNotice } from '../../components/Management'
 import { type Definition, type Options, parseObject, pretty } from './types'

@@ -1,4 +1,6 @@
-import { Button, Form, Input, InputNumber, Modal, Select, Space, Table, Typography } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { Button, Form, Input, InputNumber, Modal, Select, Space, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
@@ -44,7 +46,7 @@ export function PricePanel({ options }: { options?: UsageOptions }) {
         <Form.Item name="model_id" label="模型" rules={[{ required: true }]}><Select options={options?.models} /></Form.Item>
         <Form.Item name="name" label="版本名称" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="currency" label="币种" rules={[{ required: true }]}><Select options={[{ value: 'USD', label: '美元（USD）' }, { value: 'CNY', label: '人民币（CNY）' }]} /></Form.Item>
-        <Form.Item name="effective_at" label="生效时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item>
+        <Form.Item name="effective_at" label="生效时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
         <Form.Item name="source" label="价格来源" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.List name="items">{(fields, { add, remove }) => <Space orientation="vertical" style={{ width: '100%' }}>
           {fields.map(field => <Space key={field.key} align="start" wrap>

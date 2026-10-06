@@ -1,4 +1,5 @@
-import { Alert, Button, Progress, Space, Table } from 'antd'
+import { Alert, Button, Progress, Space } from 'antd'
+import { Table } from './Table'
 import { useEffect, useState } from 'react'
 import { ApiError } from '../api/client'
 import { send } from '../api/management'

@@ -1,5 +1,6 @@
 import { RunViewer } from '../../components/run-viewer/RunViewer'
-import { Alert, Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Table, Typography } from 'antd'
+import { Alert, Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { applyFormErrors } from '../../api/form-errors'

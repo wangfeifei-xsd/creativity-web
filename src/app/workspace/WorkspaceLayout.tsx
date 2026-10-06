@@ -1,5 +1,5 @@
-import { Avatar, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Select, Space, Tooltip } from 'antd'
-import { DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
+import { Avatar, Breadcrumb, Button, Card, Col, Drawer, Dropdown, Grid, Layout, Menu, Row, Select, Tooltip, Typography, theme } from 'antd'
+import { ArrowRightOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/Management'
@@ -9,17 +9,38 @@ import { features } from '../../features/registry'
 import { resolveNavigation } from '../../features/navigation'
 import { BrandMark } from '../../features/auth/BrandMark'
 import { useSession } from './context'
-import { navigationItems } from './navigation'
-import type { ReactNode } from 'react'
+import { navigationIcon, navigationItems } from './navigation'
+import type { CSSProperties, ReactNode } from 'react'
 import './workspace.css'
 
 export function WorkspaceHome() {
   const { session } = useSession()
-  return <PageContainer title="工作台"><Space wrap size="large">
-    {resolveNavigation(session.navigation, features).map(item => <Link key={item.navigationKey} to={item.path}>{item.label}</Link>)}
-    {session.navigation.length === 0 && <EmptyState message={session.workspace
+  const { token } = theme.useToken()
+  const entries = resolveNavigation(session.navigation, features)
+  return <PageContainer title="工作台">
+    {entries.length > 0 ? <nav aria-label="工作台入口" className="workspace-shortcuts" style={{
+      '--shortcut-accent': token.colorPrimary,
+      '--shortcut-icon-bg': token.colorPrimaryBg,
+      '--shortcut-text': token.colorText,
+      '--shortcut-muted': token.colorTextQuaternary,
+      '--shortcut-radius': `${token.borderRadiusLG}px`,
+    } as CSSProperties}>
+      <Row gutter={[16, 16]}>
+        {entries.map(item => <Col key={item.navigationKey} xs={12} md={8} xl={6}>
+          <Link className="workspace-shortcut" to={item.path}>
+            <Card hoverable className="workspace-shortcut-card" styles={{ body: { padding: 0, height: '100%' } }}>
+              <div className="workspace-shortcut-content">
+                <span className="workspace-shortcut-icon">{navigationIcon(item.navigationKey)}</span>
+                <Typography.Text className="workspace-shortcut-label">{item.label}</Typography.Text>
+                <ArrowRightOutlined className="workspace-shortcut-arrow" aria-hidden />
+              </div>
+            </Card>
+          </Link>
+        </Col>)}
+      </Row>
+    </nav> : <EmptyState message={session.workspace
       ? '暂无可用菜单，请联系管理员' : '尚未分配可用渠道，请联系平台管理员'} />}
-  </Space></PageContainer>
+  </PageContainer>
 }
 export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const { session, switchWorkspace, logout } = useSession()

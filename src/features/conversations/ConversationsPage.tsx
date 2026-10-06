@@ -1,4 +1,6 @@
-import { Button, Form, Input, Select, Space, Table } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { Button, Form, Input, Select, Space } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { environments, send } from '../../api/management'
@@ -24,7 +26,7 @@ function ConversationList() {
   const query = useQuery<Schema<'ConversationList'>>(`/admin/v1/conversations?${params}`)
   return <PageContainer title="会话管理" actions={<Space><Button onClick={() => { setCursors([]); query.reload() }}>刷新</Button>
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} /></Space>}>
-    <Form layout="inline" style={{ rowGap: 12, marginBottom: 20 }} onFinish={(values: Record<string, string | { value: string; label: string } | undefined>) => {
+    <Form layout="inline" style={{ marginBottom: 20 }} onFinish={(values: Record<string, string | { value: string; label: string } | undefined>) => {
       setCursors([])
       setFilters(Object.fromEntries(Object.entries(values).filter(([, v]) => v).map(([k, v]) =>
         [k, typeof v === 'object' ? v.value : k.endsWith('_at') ? new Date(v!).toISOString() : v!])))
@@ -35,8 +37,8 @@ function ConversationList() {
       <Form.Item name="agent_id" label="智能体"><Select labelInValue allowClear placeholder="全部" style={{ minWidth: 160 }}
         options={[...new Map(query.data?.items.map(row => [row.agent_id, { value: row.agent_id, label: row.agent_name }]) ?? []).values()]} /></Form.Item>
       <Form.Item name="subject" label="主体"><Input placeholder="主体名称" allowClear /></Form.Item>
-      <Form.Item name="start_at" label="开始时间"><Input type="datetime-local" /></Form.Item>
-      <Form.Item name="end_at" label="结束时间"><Input type="datetime-local" /></Form.Item>
+      <Form.Item name="start_at" label="开始时间"><DateTimeInput /></Form.Item>
+      <Form.Item name="end_at" label="结束时间"><DateTimeInput /></Form.Item>
       <Form.Item><Button htmlType="submit">筛选</Button></Form.Item>
     </Form>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <>

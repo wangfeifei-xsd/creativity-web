@@ -71,7 +71,8 @@ test('平台限额展示占用，提交修订号并保留冲突表单', async ({
   await expect(page.getByRole('cell', { name: '30 个', exact: true })).toBeVisible()
   await page.screenshot({ path: 'test-results/platform-concurrency.png', fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 })
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  // 视口变更后等待响应式布局完成，避免断点更新前的瞬时宽度导致误报。
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
 })
 
 test('无权限及错误工作区不请求平台限额', async ({ page }) => {

@@ -1,4 +1,6 @@
-import { Button, Drawer, Form, Input, Modal, Select, Space, Table, Tag, Typography, Upload } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { Button, Drawer, Form, Input, Modal, Select, Space, Tag, Typography, Upload } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'
@@ -25,7 +27,7 @@ export function Statements() {
         <Form.Item name="version" label="来源版本" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>
         <Form.Item name="connection_id" label="模型连接" rules={[{ required: true }]}><Select options={connections.data?.map(c => ({ value: c.connection_id, label: c.name }))} /></Form.Item>
         <Form.Item name="currency" label="币种" rules={[{ required: true }, { pattern: /^[A-Z]{3}$/, message: '请输入三位币种代码' }]}><Input maxLength={3} /></Form.Item>
-        <Space><Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item><Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item></Space>
+        <Space><Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item><Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item></Space>
         <Upload accept="application/json,.json" showUploadList={false} beforeUpload={file => { if (file.size > 1048576) { setError(new Error('账单文件不能超过 1 MiB')); return false } void file.text().then(text => { JSON.parse(text); form.setFieldValue('lines', text) }).catch(setError); return false }}><Button>读取 JSON 明细</Button></Upload>
         <Form.Item name="lines" label="规范明细" rules={[{ required: true }]}><Input.TextArea rows={6} /></Form.Item>
         <Typography.Text>每行包含 line_id、request_id、occurred_at 和十进制字符串 amount，最多 1000 行。</Typography.Text>

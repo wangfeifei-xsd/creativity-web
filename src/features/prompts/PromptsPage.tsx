@@ -1,4 +1,5 @@
-import { Alert, Button, Form, Input, Modal, Select, Space, Table, Upload } from 'antd'
+import { Alert, Button, Form, Input, Modal, Select, Space, Upload } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { applyFormErrors } from '../../api/form-errors'
 import { formatTimestamp } from '../../api/presentation'

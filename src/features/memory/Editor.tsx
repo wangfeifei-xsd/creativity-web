@@ -1,3 +1,4 @@
+import { DateTimeInput } from '../../components/DateTimeInput'
 import { Button, Form, Input, InputNumber, Modal, Select, Space, Switch } from 'antd'
 import { useState } from 'react'
 import { ApiError, apiClient } from '../../api/client'
@@ -58,7 +59,7 @@ export function MemoryEditor({ attributes, subjects, anchorId, memory, onClose, 
       <Form.Item key={key} name="value" label={kind === 'json' ? '结构化记忆值（JSON）' : '记忆值'} valuePropName={kind === 'boolean' ? 'checked' : 'value'} rules={[{ required: kind !== 'boolean', message: '请填写记忆值' }, ...(kind === 'json' ? [{ validator: async (_: unknown, value: unknown) => { try { JSON.parse(String(value)) } catch { throw new Error('请输入有效的 JSON') } } }] : [])]}>
         {kind === 'json' ? <Input.TextArea rows={6} /> : kind === 'tags' ? <Select mode="tags" tokenSeparators={['、', ',']} /> : kind === 'boolean' ? <Switch /> : kind === 'number' || kind === 'integer' ? <InputNumber precision={kind === 'integer' ? 0 : undefined} /> : kind === 'enum' ? <Select options={(attribute?.value_schema.enum as (string | number)[]).map(value => ({ value, label: String(value) }))} /> : <Input maxLength={Number(attribute?.value_schema.maxLength ?? 4000)} />}
       </Form.Item>
-      <Form.Item name="expires_at" label="有效截止时间" extra="未指定时使用当前记忆策略的有效期。"><Input type="datetime-local" /></Form.Item>
+      <Form.Item name="expires_at" label="有效截止时间" extra="未指定时使用当前记忆策略的有效期。"><DateTimeInput /></Form.Item>
     </Form>
   </Modal>
 }

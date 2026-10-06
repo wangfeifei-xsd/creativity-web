@@ -1,4 +1,6 @@
-import { Button, Descriptions, Drawer, Form, Input, Select, Table, Tag } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { Button, Descriptions, Drawer, Form, Input, Select, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -24,8 +26,8 @@ export function AuditPage({ channelId }: { channelId?: string }) {
       <Form.Item name="search"><Input aria-label="筛选审计" placeholder="操作或人员名称" allowClear /></Form.Item>
       <Form.Item name="request_id"><Input aria-label="请求标识" placeholder="请求标识" allowClear /></Form.Item>
       <Form.Item name="outcome"><Select aria-label="操作结果" placeholder="全部结果" allowClear style={{ width: 120 }} options={[{ value: 'SUCCEEDED', label: '已完成' }, { value: 'DENIED', label: '已拒绝' }]} /></Form.Item>
-      <Form.Item name="start_at" label="开始时间"><Input type="datetime-local" /></Form.Item>
-      <Form.Item name="end_at" label="结束时间"><Input type="datetime-local" /></Form.Item>
+      <Form.Item name="start_at" label="开始时间"><DateTimeInput /></Form.Item>
+      <Form.Item name="end_at" label="结束时间"><DateTimeInput /></Form.Item>
       <Form.Item><Button type="primary" htmlType="submit">查询</Button></Form.Item>
     </Form>
     <ErrorNotice error={query.error} />

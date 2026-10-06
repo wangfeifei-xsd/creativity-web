@@ -1,4 +1,5 @@
-import { Button, Drawer, Space, Table } from 'antd'
+import { Button, Drawer, Space } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'

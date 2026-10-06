@@ -1,4 +1,5 @@
-import { App, Button, Descriptions, Select, Space, Switch, Table, Typography } from 'antd'
+import { App, Button, Descriptions, Select, Space, Switch, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { send } from '../../api/management'
@@ -79,7 +80,7 @@ function MemoryList({ anchorId }: { anchorId?: string }) {
   </Space>}>
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       {anchorId && <Preferences anchorId={anchorId} />}
-      <Space wrap>
+      <Space wrap className="query-filters">
         {!anchorId && <Select aria-label="主体筛选" placeholder="查看主体记忆" style={{ width: 190 }} options={subjects.data?.map(s => ({ value: s.anchor_id, label: s.label }))} onChange={value => navigate(`/memories/subjects/${value}`)} />}
         <Select aria-label="记忆层级" value={layer} style={{ width: 140 }} options={[{ value: "profile", label: "人物画像" }, { value: "archive", label: "归档" }]} onChange={value => { setLayer(value); setCursors([]); setAttribute(undefined) }} />
         <Select allowClear aria-label="状态筛选" placeholder="全部状态" style={{ width: 140 }} options={states} onChange={value => { setCursors([]); setStatus(value) }} />

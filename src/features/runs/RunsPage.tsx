@@ -1,4 +1,6 @@
-import { Button, Form, Input, Select, Space, Table } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { Button, Form, Input, Select, Space } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '../../api/useQuery'
@@ -19,7 +21,7 @@ function RunList() {
   const query = useQuery<{ items: Schema<'RunSummary'>[]; next_cursor: string | null }>(`/admin/v1/runs?${params}`)
   const options = useQuery<Record<'agents' | 'keys' | 'errors', { value: string; label: string }[]>>('/admin/v1/runs/options')
   return <PageContainer title="执行中心" actions={<Button onClick={query.reload}>刷新</Button>}>
-    <Form layout="inline" style={{ marginBottom: 20, rowGap: 12 }} onFinish={(values: Record<string, string>) => {
+    <Form layout="inline" style={{ marginBottom: 20 }} onFinish={(values: Record<string, string>) => {
       setFilters(Object.fromEntries(Object.entries(values).filter(([, v]) => v).map(([k, v]) => [k, k.endsWith('_at') ? new Date(v).toISOString() : v])))
       setCursors([])
     }}>
@@ -30,8 +32,8 @@ function RunList() {
       <Form.Item label="错误类别" name="error_code"><Select allowClear style={{ width: 200 }} options={options.data?.errors} /></Form.Item>
       <Form.Item label="主体类型" name="subject_type"><Input style={{ width: 120 }} /></Form.Item>
       <Form.Item label="主体编号" name="subject_id"><Input style={{ width: 160 }} /></Form.Item>
-      <Form.Item label="开始时间" name="start_at"><Input type="datetime-local" /></Form.Item>
-      <Form.Item label="结束时间" name="end_at"><Input type="datetime-local" /></Form.Item>
+      <Form.Item label="开始时间" name="start_at"><DateTimeInput /></Form.Item>
+      <Form.Item label="结束时间" name="end_at"><DateTimeInput /></Form.Item>
       <Form.Item><Button htmlType="submit">筛选</Button></Form.Item>
     </Form>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <>

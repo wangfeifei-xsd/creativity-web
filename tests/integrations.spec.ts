@@ -101,7 +101,7 @@ test('连接列表、能力与脱敏测试使用业务名称', async ({ page }) 
   await expect(page.getByText('业务字典', { exact: true })).toBeVisible()
   await expect(page.getByText('已通过', { exact: true })).toBeVisible()
   await page.getByRole('tab', { name: '契约测试', exact: true }).click()
-  await expect(page.getByText('2026/10/02 09:00:00')).toBeVisible()
+  await expect(page.getByText('2026年10月2日 09:00:00')).toBeVisible()
   expect(errors).toEqual([])
 })
 

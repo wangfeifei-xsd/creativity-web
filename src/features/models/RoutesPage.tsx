@@ -1,4 +1,5 @@
-import { Button, Drawer, Form, Input, InputNumber, Select, Space, Switch, Table, Tag } from 'antd'
+import { Button, Drawer, Form, Input, InputNumber, Select, Space, Switch, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'

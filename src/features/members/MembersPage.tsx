@@ -1,5 +1,6 @@
 import { names, send, statuses, actionsAsOptions } from '../../api/management'
-import { Button, Select, Space, Table, Tabs, Tag } from 'antd'
+import { Button, Select, Space, Tabs, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { ResourcePicker, type ResourceEntry } from './ResourcePicker'
 import { CustomRoles } from './CustomRoles'
 import { useState } from 'react'

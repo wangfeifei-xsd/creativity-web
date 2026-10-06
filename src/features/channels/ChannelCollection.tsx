@@ -1,6 +1,7 @@
 import { names, send, statuses, environments, actionsAsOptions } from '../../api/management'
 import { DownOutlined } from '@ant-design/icons'
-import { AutoComplete, Button, Space, Table, Tag } from 'antd'
+import { AutoComplete, Button, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { formatTimestamp } from '../../api/presentation'

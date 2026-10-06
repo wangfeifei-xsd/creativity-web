@@ -18,3 +18,12 @@ html, body, #root {
 }
 
 .ant-table-wrapper { max-width: 100%; }
+
+.app-content .ant-form-inline,
+.app-content .query-filters {
+  row-gap: 16px;
+  column-gap: 16px;
+  align-items: center;
+}
+.app-content .ant-form-inline > .ant-form-item { margin-inline-end: 0; }
+.page-heading .ant-space { row-gap: 16px; }

@@ -1,4 +1,5 @@
-import { Alert, Col, Row, Table, Tree, Typography } from 'antd'
+import { Alert, Col, Row, Tree, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { fileTree } from './file-tree'
 import { useState } from 'react'
 import { useQuery } from '../../api/useQuery'

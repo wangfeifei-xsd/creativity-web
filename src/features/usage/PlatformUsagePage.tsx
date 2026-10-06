@@ -1,4 +1,6 @@
-import { App, Button, Form, Input, Pagination, Select, Space, Table, Tag } from 'antd'
+import { DateTimeInput } from '../../components/DateTimeInput'
+import { App, Button, Form, Pagination, Select, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { formatAmount, formatTimestamp } from '../../api/presentation'
@@ -51,8 +53,8 @@ export function PlatformUsagePage() {
     <Form<Values> layout="inline" style={{ marginBottom: 16 }} initialValues={initial}
       onFinish={values => { setError(undefined); setFilters({ ...values, start_at: new Date(values.start_at).toISOString(), end_at: new Date(values.end_at).toISOString() }) }}>
       <Form.Item name="channel_ids" label="渠道" rules={[{ required: true, message: '请选择统计渠道' }]}><ChannelPicker /></Form.Item>
-      <Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item>
-      <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><Input type="datetime-local" /></Form.Item>
+      <Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
+      <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
       <Form.Item name="timezone" label="报表时区" rules={[{ required: true }]}><Select style={{ width: 150 }} options={zones} /></Form.Item>
       <Form.Item><Button htmlType="submit" type="primary">查询</Button></Form.Item>
     </Form>

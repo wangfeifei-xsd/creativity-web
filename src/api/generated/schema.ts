@@ -4957,6 +4957,8 @@ export interface components {
             platform_roles?: string[];
             /** Role */
             role?: string | null;
+            /** Roles */
+            roles?: string[] | null;
         };
         /** AccountUpdate */
         AccountUpdate: {
@@ -4970,6 +4972,8 @@ export interface components {
             revision: number;
             /** Role */
             role?: string | null;
+            /** Roles */
+            roles?: string[] | null;
             /** Status */
             status?: ("ACTIVE" | "DISABLED") | null;
         };
@@ -5002,6 +5006,10 @@ export interface components {
             role: string | null;
             /** Role Name */
             role_name: string;
+            /** Role Names */
+            role_names?: string[];
+            /** Roles */
+            roles?: string[];
             /**
              * Status
              * @enum {string}
@@ -9810,7 +9818,9 @@ export interface components {
         /** ProviderInput */
         ProviderInput: {
             /** Code */
-            code: string;
+            code?: string | null;
+            /** Id */
+            id?: string | null;
             /** Name */
             name: string;
             /** Protocols */

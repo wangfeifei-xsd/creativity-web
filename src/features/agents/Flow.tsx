@@ -1,4 +1,5 @@
-import { Card, Space, Table, Tag, Typography } from 'antd'
+import { Card, Space, Tag, Typography } from 'antd'
+import { Table } from '../../components/Table'
 import { type Definition } from './types'
 
 const businessStatuses: Record<string, string> = {
@@ -17,7 +18,7 @@ export function Flow({ definition }: { definition: Definition }) {
   const conditionValue = (path: string, value: unknown) => path === 'business_status' && typeof value === 'string'
     ? businessStatuses[value] ?? '状态不可用' : JSON.stringify(value)
   return <Space orientation="vertical" style={{ width: '100%' }} size="middle">
-    <div aria-label="流程图" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div aria-label="流程图" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
       <Tag color="blue">开始：{label(definition.start_step)}</Tag>
       {definition.steps.map(step => <Card key={step.key} size="small" title={step.name} style={{ minWidth: 200, maxWidth: '100%' }}>
         <Typography.Paragraph>{({ model: '模型调用', tool: '工具调用', compute: '固定计算' })[step.kind]}</Typography.Paragraph>

@@ -1,4 +1,5 @@
-import { Button, Input, Select, Space, Table, Tag, TreeSelect } from 'antd'
+import { Button, Input, Select, Space, Tag, TreeSelect } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'

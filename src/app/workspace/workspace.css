@@ -87,6 +87,72 @@
 .workspace-drawer .ant-drawer-body { display: flex; padding: 0; overflow: hidden; }
 .workspace-drawer .workspace-navigation { width: 100%; }
 
+.workspace-shortcut {
+  display: block;
+  height: 100%;
+  border-radius: var(--shortcut-radius);
+  color: var(--shortcut-text);
+  text-decoration: none;
+}
+
+.workspace-shortcut-card.ant-card {
+  height: 100%;
+  border-radius: var(--shortcut-radius);
+  box-shadow: none;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.workspace-shortcut-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 108px;
+  height: 100%;
+  padding: 20px;
+}
+
+.workspace-shortcut-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--shortcut-icon-bg);
+  color: var(--shortcut-accent);
+  font-size: 23px;
+}
+
+.workspace-shortcut-label.ant-typography {
+  flex: 1;
+  min-width: 0;
+  color: var(--shortcut-text);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.workspace-shortcut-arrow {
+  flex-shrink: 0;
+  color: var(--shortcut-muted);
+  font-size: 14px;
+  transition: color .18s ease;
+}
+
+.workspace-shortcut:hover .workspace-shortcut-card,
+.workspace-shortcut:focus-visible .workspace-shortcut-card {
+  border-color: var(--shortcut-accent);
+  box-shadow: 0 6px 18px rgb(29 41 57 / 6%);
+  transform: translateY(-2px);
+}
+
+.workspace-shortcut:hover .workspace-shortcut-arrow,
+.workspace-shortcut:focus-visible .workspace-shortcut-arrow { color: var(--shortcut-accent); }
+.workspace-shortcut:focus-visible { outline: 2px solid var(--shortcut-accent); outline-offset: 3px; }
+
 @media (max-width: 767px) {
   .workspace-header.ant-layout-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; height: auto; min-height: 56px; padding: 8px 12px; }
   .workspace-context { grid-column: 1 / -1; grid-row: 2; max-width: 100%; border-top: 1px solid #f0f2f5; padding-top: 4px; }
@@ -95,4 +161,16 @@
   .workspace-user.ant-btn { width: 36px; height: 36px; padding: 3px; }
   .workspace-scope { max-width: none; }
   .workspace-scope { flex: 1; }
+}
+
+@media (max-width: 575px) {
+  .workspace-shortcut-content { flex-direction: column; justify-content: center; gap: 12px; min-height: 132px; padding: 20px 12px; text-align: center; }
+  .workspace-shortcut-label.ant-typography { flex: none; width: 100%; font-size: 14px; }
+  .workspace-shortcut-arrow { position: absolute; top: 14px; right: 14px; font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shortcut-card.ant-card, .workspace-shortcut-arrow { transition: none; }
+  .workspace-shortcut:hover .workspace-shortcut-card,
+  .workspace-shortcut:focus-visible .workspace-shortcut-card { transform: none; }
 }

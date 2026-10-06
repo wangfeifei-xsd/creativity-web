@@ -1,4 +1,5 @@
-import { Button, Space, Table, Tabs } from 'antd'
+import { Button, Space, Tabs } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { send } from '../../api/management'

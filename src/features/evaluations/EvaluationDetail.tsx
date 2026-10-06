@@ -1,4 +1,5 @@
-import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Table, Tabs, Tag } from 'antd'
+import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'
@@ -86,7 +87,7 @@ export function EvaluationDetail({ identifier }: { identifier: string }) {
         { key: 'review', label: '人工审阅', children: decisions.find(d => d.value === task.human_review?.decision)?.label ?? '尚未审阅' },
         { key: 'scope', label: '可复现性', children: report.data?.reproducible ? '固定数据可复现' : '外部数据变化或来源失效' },
       ]} /></> },
-      { key: 'samples', label: '样本结果', children: <><Space wrap style={{ marginBottom: 16 }}><Select aria-label="结果筛选" allowClear placeholder="全部结果" style={{ width: 150 }} onChange={setState} options={[{ value: 'PASSED', label: '通过' }, { value: 'FAILED', label: '未通过' }, { value: 'INVALID', label: '样本无效' }, { value: 'UNEXECUTED', label: '未执行' }]} /><Select aria-label="标签筛选" allowClear placeholder="全部标签" style={{ width: 180 }} onChange={setLabel} options={labels.map(v => ({ value: v, label: v }))} /></Space><Table rowKey="result_id" dataSource={rows.filter(r => (!state || r.state === state) && (!label || r.labels.includes(label)))} scroll={{ x: 750 }} columns={[
+      { key: 'samples', label: '样本结果', children: <><Space wrap className="query-filters" style={{ marginBottom: 16 }}><Select aria-label="结果筛选" allowClear placeholder="全部结果" style={{ width: 150 }} onChange={setState} options={[{ value: 'PASSED', label: '通过' }, { value: 'FAILED', label: '未通过' }, { value: 'INVALID', label: '样本无效' }, { value: 'UNEXECUTED', label: '未执行' }]} /><Select aria-label="标签筛选" allowClear placeholder="全部标签" style={{ width: 180 }} onChange={setLabel} options={labels.map(v => ({ value: v, label: v }))} /></Space><Table rowKey="result_id" dataSource={rows.filter(r => (!state || r.state === state) && (!label || r.labels.includes(label)))} scroll={{ x: 750 }} columns={[
         { title: '样本', dataIndex: 'title' }, { title: '候选', render: (_, r) => candidates.find(c => c.candidate_id === r.candidate_id)?.version_label ?? '版本不可用' }, { title: '结果', dataIndex: 'state_label' },
         { title: '失败原因', render: (_, r) => r.judgment?.violations.map(v => v.name).join('；') || r.judgment?.reason || '无' },
         { title: '确定性判定', render: (_, r) => !r.judgment ? '尚未判定' : r.judgment.human_required ? '需人工判定' : r.judgment.passed ? '通过' : '未通过' },

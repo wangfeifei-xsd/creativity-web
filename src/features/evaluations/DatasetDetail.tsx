@@ -1,4 +1,5 @@
-import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Table, Tabs, Upload } from 'antd'
+import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Upload } from 'antd'
+import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'

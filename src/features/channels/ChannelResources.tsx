@@ -1,5 +1,6 @@
 import { useDirectory } from '../../api/useDirectory'
-import { Button, Input, Select, Space, Table, Tag } from 'antd'
+import { Button, Input, Select, Space, Tag } from 'antd'
+import { Table } from '../../components/Table'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '../../api/useQuery'
@@ -15,7 +16,7 @@ export function ChannelResources({ channelId }: { channelId: string }) {
   const params = directory.parameters
   if (kind) params.set('kind', kind)
   const query = useQuery<DirectoryPage<ResourceEntry>>(`/admin/v1/channels/${channelId}/resources?${params}`)
-  return <Space orientation="vertical" style={{ width: '100%' }} size="middle"><Space wrap>
+  return <Space orientation="vertical" style={{ width: '100%' }} size="middle"><Space wrap className="query-filters">
     <Input.Search aria-label="搜索渠道资源" placeholder="资源名称" onSearch={directory.searchFor} allowClear />
     <Select aria-label="资源类型" placeholder="全部类型" allowClear style={{ width: 140 }} onChange={value => { setKind(value); directory.searchFor(directory.search) }} options={[
       { value: 'agent', label: '智能体' }, { value: 'model', label: '模型' }, { value: 'prompt', label: '提示词' },
