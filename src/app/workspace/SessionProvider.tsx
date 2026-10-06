@@ -80,7 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         tokenStore.set(null); setState({ phase: 'login' }); void message.success('密码已修改，请重新登录')
       } else {
         const response = await send<Schema<'TokenResponse'>>('profile_id' in values ? '/admin/v1/auth/external-token' : '/admin/v1/auth/login', 'POST', values)
-        tokenStore.set(response.access_token); await reload()
+        tokenStore.set(response.access_token); navigate('/', { replace: true }); await reload()
       }
     }} />
   if (state.phase !== 'ready') return null

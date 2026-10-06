@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 const image = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="320" height="160" fill="#cad6df"/><rect x="150" y="50" width="52" height="52" fill="#738b9f"/></svg>')}`
 const error = (message: string) => ({ error: { code: 'CAPTCHA_FAILED', message, fields: [] } })
 
-async function loginPage(page: Page, options: { failChallenge?: boolean; failVerification?: boolean; failLogin?: boolean; proofTtl?: number } = {}) {
+async function loginPage(page: Page, options: { failChallenge?: boolean; failVerification?: boolean; failLogin?: boolean; proofTtl?: number; path?: string } = {}) {
   const state = { challenges: 0, verifications: 0, logins: 0, authenticated: false, options }
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
@@ -31,7 +31,7 @@ async function loginPage(page: Page, options: { failChallenge?: boolean; failVer
     }
     return route.fulfill({ json: [] })
   })
-  await page.goto('#/')
+  await page.goto(options.path ?? '#/')
   await page.getByLabel('登录名', { exact: true }).fill('admin')
   await page.getByLabel('密码', { exact: true }).fill('test-password')
   return state
@@ -61,6 +61,20 @@ test('登录必须先验证，键盘调整不会提前提交，成功凭据随�
   await page.getByRole('button', { name: '登录', exact: true }).dblclick()
   await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   expect(state.logins).toBe(1)
+})
+
+test('从上一账号的管理地址重新登录后回到工作台，不请求旧页面', async ({ page }) => {
+  const accountRequests: string[] = []
+  page.on('request', request => {
+    if (new URL(request.url()).pathname.startsWith('/admin/v1/accounts')) accountRequests.push(request.url())
+  })
+  await loginPage(page, { path: '#/accounts' })
+  await verifyWithKeyboard(page)
+  await expect(page.getByText('验证已通过', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page).toHaveURL('/creativity/#/')
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  expect(accountRequests).toEqual([])
 })
 
 test('拖动失败后更换挑战，刷新和重试可恢复', async ({ page }) => {
