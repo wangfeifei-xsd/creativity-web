@@ -18,7 +18,14 @@ async function setup(page: Page) {
       '/admin/v1/models/model1': model,
       '/admin/v1/model-connections': { items: [connection], actions: [{ action_key: 'create', label: '新增连接' }] },
       '/admin/v1/model-providers': [provider], '/admin/v1/model-protocols': [{ code: 'chat_completions', name: 'Chat Completions 兼容', enabled: true, reason: null, parameters: ['max_tokens'] }],
-      '/admin/v1/model-test-cases': [{ case: 'text', name: '短文本' }, { case: 'usage', name: '用量口径' }],
+      '/admin/v1/model-test-cases': [
+        { case: 'text', name: '文本生成', capability: 'text' },
+        { case: 'tools', name: '工具调用', capability: 'tools' },
+        { case: 'schema', name: '原生结构化输出', capability: 'structured_output' },
+        { case: 'stream_cancel', name: '流式输出', capability: 'streaming' },
+        { case: 'embedding', name: '向量生成', capability: 'embedding' },
+        { case: 'usage', name: '用量口径', capability: null },
+      ],
       '/admin/v1/models/model1/price-versions': [{ id: 'price1', name: '供应商公开报价', currency: 'CNY', source: '官方报价表', effective_at: '2026-10-01T00:00:00Z', items: [{ dimension: 'input', amount: '2.50', per_units: 1000000 }] }],
     }
     return route.fulfill({ json: data[path] ?? [] })
@@ -32,6 +39,7 @@ test('模型详情展示能力证据、价格单位和不可执行的验证记�
   const tests: unknown[] = []
   await page.route('**/admin/v1/models/model1/tests', async route => {
     if (route.request().method() === 'POST') {
+      expect(route.request().postDataJSON()).toEqual({ cases: ['usage'] })
       tests.push({ id: 'test1', model_name: model.name, config_revision: 1, created_at: '2026-10-02T00:00:00Z', state: 'BLOCKED', state_label: '不可执行', reason: '调试服务暂不可用', results: [], attempt_ids: [], run_id: null, latency_ms: null })
       return route.fulfill({ status: 201, json: tests[0] })
     }
@@ -48,11 +56,27 @@ test('模型详情展示能力证据、价格单位和不可执行的验证记�
   await expect(drawer.getByText('官方报价表')).toBeVisible()
   await drawer.getByRole('tab', { name: '验证', exact: true }).click()
   await drawer.getByRole('button', { name: '能力验证', exact: true }).click()
+  const verification = page.getByRole('dialog', { name: '能力验证', exact: true })
+  await expect(verification.locator('.ant-select-selection-item')).toHaveText(['文本生成', '用量口径'])
+  await verification.getByLabel('验证项目').click()
+  const options = page.locator('.ant-select-dropdown:visible')
+  for (const name of ['模型能力', '文本生成', '工具调用', '原生结构化输出', '流式输出', '向量生成', '附加验证项', '用量口径']) {
+    await expect(options.getByText(name, { exact: true })).toBeVisible()
+  }
+  await page.screenshot({ path: '.local/model-capability-options.png', fullPage: true })
+  await options.getByText('文本生成', { exact: true }).click()
+  await options.getByText('用量口径', { exact: true }).click()
+  await verification.getByLabel('验证项目').press('Escape')
+  await verification.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(verification.getByText('请至少选择一个验证项目')).toBeVisible()
+  await verification.getByLabel('验证项目').click()
+  await options.getByText('用量口径', { exact: true }).click()
+  await verification.getByLabel('验证项目').press('Escape')
   await page.getByRole('button', { name: '保存', exact: true }).click()
   await expect(drawer.getByText('不可执行', { exact: true })).toBeVisible()
   await expect(drawer.getByText('调试服务暂不可用')).toBeVisible()
   expect(errors).toEqual([])
-  await page.screenshot({ path: '/tmp/creativity-models-detail.png', fullPage: true })
+  await page.screenshot({ path: '.local/creativity-models-detail.png', fullPage: true })
 })
 
 test('连接编辑不回显凭据，保存保留凭据引用与修订号', async ({ page }) => {

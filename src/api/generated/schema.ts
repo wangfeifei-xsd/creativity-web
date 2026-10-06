@@ -6255,6 +6255,8 @@ export interface components {
         CaseDefinition: {
             /** Cancel After Chunks */
             cancel_after_chunks?: number | null;
+            /** Capability */
+            capability?: ("text" | "tools" | "structured_output" | "streaming" | "vision" | "embedding") | null;
             /**
              * Case
              * @enum {string}

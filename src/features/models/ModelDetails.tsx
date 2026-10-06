@@ -54,7 +54,13 @@ function Tests({ modelId, onVerified }: { modelId: string; onVerified: () => voi
       { title: '执行反馈', render: (_, t) => t.reason ?? (t.run_id ? '已关联调试运行' : '未创建运行') },
     ]} />}
     {open && <ModelDialog title="能力验证" initial={{ cases: ['text', 'usage'] }} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); query.reload(); onVerified() }} onSave={values => send(`/admin/v1/models/${modelId}/tests`, 'POST', values)}>
-      <Form.Item name="cases" label="验证用例" rules={[{ required: true }]}><Select mode="multiple" options={cases.data?.map(c => ({ value: c.case, label: c.name }))} /></Form.Item>
+      {cases.error ? <ErrorState error={cases.error} onRetry={cases.reload} /> : null}
+      <Form.Item name="cases" label="验证项目" rules={[{ required: true, message: '请至少选择一个验证项目' }]}>
+        <Select mode="multiple" loading={!cases.data && !cases.error} options={[
+          { label: '模型能力', options: cases.data?.filter(c => c.capability).map(c => ({ value: c.case, label: c.name })) ?? [] },
+          { label: '附加验证项', options: cases.data?.filter(c => !c.capability).map(c => ({ value: c.case, label: c.name })) ?? [] },
+        ]} />
+      </Form.Item>
     </ModelDialog>}
   </Space>
 }
