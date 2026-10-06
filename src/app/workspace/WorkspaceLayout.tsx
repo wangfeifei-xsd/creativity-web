@@ -1,5 +1,5 @@
 import { Avatar, Breadcrumb, Button, Card, Col, Drawer, Dropdown, Grid, Layout, Menu, Row, Select, Tooltip, Typography, theme } from 'antd'
-import { ArrowRightOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
+import { ApartmentOutlined, AppstoreOutlined, ArrowRightOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/Management'
@@ -44,6 +44,7 @@ export function WorkspaceHome() {
 }
 export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const { session, switchWorkspace, logout } = useSession()
+  const { token } = theme.useToken()
   const [menuOpen, setMenuOpen] = useState(false)
   const [error, setError] = useState<unknown>()
   const screens = Grid.useBreakpoint()
@@ -95,27 +96,45 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
           {!screens.lg && <Button type="text" aria-label="打开导航菜单" icon={<MenuOutlined aria-hidden />} onClick={() => setMenuOpen(true)} />}
           <Breadcrumb aria-label="页面路径" items={breadcrumbs} />
         </div>
-        <div className="workspace-context">
-          <Select aria-label="管理模式" className="workspace-mode-select" variant="borderless"
-            value={session.workspace || !session.can_access_platform ? 'channel' : 'platform'}
-            options={[
-              ...(session.can_access_platform ? [{ value: 'platform', label: '平台管理' }] : []),
-              { value: 'channel', label: '渠道管理', disabled: channels.length === 0 },
-            ]} optionRender={option => option.value === 'channel' && channels.length === 0
-              ? <Tooltip title="暂无可用渠道，请先配置环境及成员授权">
-                <span style={{ display: 'block' }}>{option.label}</span>
-              </Tooltip> : option.label}
-            disabled={!session.can_access_platform} onChange={selectMode} />
+        <div className="workspace-context" style={{
+          '--context-bg': token.colorFillAlter,
+          '--context-border': token.colorBorderSecondary,
+          '--context-text': token.colorText,
+          '--context-muted': token.colorTextSecondary,
+          '--context-accent': token.colorPrimary,
+          '--context-accent-bg': token.colorPrimaryBg,
+          '--context-hover': token.colorBgContainer,
+          '--context-radius': `${token.borderRadius}px`,
+        } as CSSProperties}>
+          <div className="workspace-context-switches">
+            {session.can_access_platform && channels.length > 0 ? <Select aria-label="管理模式" className="workspace-context-control workspace-mode-select" variant="borderless"
+              prefix={<AppstoreOutlined aria-hidden />}
+              value={session.workspace || !session.can_access_platform ? 'channel' : 'platform'}
+              options={[
+                { value: 'platform', label: '平台管理' },
+                { value: 'channel', label: '渠道管理' },
+              ]} onChange={selectMode} /> : <Typography.Text aria-label="管理模式" className="workspace-context-control workspace-context-label workspace-mode-select">
+                <AppstoreOutlined aria-hidden /><span className="workspace-context-value">{session.workspace || !session.can_access_platform ? '渠道管理' : '平台管理'}</span>
+              </Typography.Text>}
+            {session.workspace && <>
+              {channels.length > 1 ? <Select aria-label="切换渠道" className="workspace-context-control workspace-channel-select" variant="borderless"
+                prefix={<ApartmentOutlined aria-hidden />}
+                showSearch optionFilterProp="label" value={session.workspace.channel_id} options={channels}
+                onChange={selectChannel} /> : <Typography.Text className="workspace-context-control workspace-context-label workspace-channel-select" title={session.workspace.channel_name}>
+                  <ApartmentOutlined aria-hidden /><span className="workspace-context-value">{session.workspace.channel_name}</span>
+                </Typography.Text>}
+              {environments.length > 1 ? <Select aria-label="切换环境" variant="borderless" className="workspace-context-control workspace-environment-select"
+                prefix={<CloudServerOutlined aria-hidden />}
+                value={session.workspace.environment} options={environments}
+                onChange={environment => {
+                  const target = ranges.find(option => option.environment === environment)
+                  if (target) void switchWorkspace(target).catch(setError)
+                }} /> : <Typography.Text className="workspace-context-control workspace-context-label workspace-environment-select" title={session.workspace.environment_name}>
+                  <CloudServerOutlined aria-hidden /><span className="workspace-context-value">{session.workspace.environment_name}</span>
+                </Typography.Text>}
+            </>}
+          </div>
           {session.workspace && <>
-            <Select aria-label="切换渠道" className="workspace-channel-select" variant="borderless"
-              showSearch optionFilterProp="label" value={session.workspace.channel_id} options={channels}
-              disabled={channels.length < 2} onChange={selectChannel} />
-            <Select aria-label="切换环境" variant="borderless" className="workspace-environment-select"
-              value={session.workspace.environment} options={environments} disabled={environments.length < 2}
-              onChange={environment => {
-                const target = ranges.find(option => option.environment === environment)
-                if (target) void switchWorkspace(target).catch(setError)
-              }} />
             {domains.length > 1 ? <Select aria-label="切换数据域" variant="borderless" className="workspace-domain-select"
               showSearch optionFilterProp="label" value={session.workspace.data_scope_id}
               options={domains.map(option => ({ value: option.data_scope_id, label: option.data_scope_name }))}

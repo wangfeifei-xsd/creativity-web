@@ -4987,6 +4987,17 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccessAction */
+        AccessAction: {
+            /** Action Key */
+            action_key: string;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Label */
+            label: string;
+        };
         /** AccessOptions */
         AccessOptions: {
             /** Accounts */
@@ -7914,6 +7925,8 @@ export interface components {
         GrantView: {
             /** Action Names */
             action_names: string[];
+            /** Actions */
+            actions: components["schemas"]["AccessAction"][];
             /** Allowed Actions */
             allowed_actions: string[];
             /** Data Scope Names */
@@ -8728,6 +8741,8 @@ export interface components {
         };
         /** MembershipView */
         MembershipView: {
+            /** Actions */
+            actions: components["schemas"]["AccessAction"][];
             /** Data Scope Names */
             data_scope_names: (string | null)[];
             /** Data Scopes */

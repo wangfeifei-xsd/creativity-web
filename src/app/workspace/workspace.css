@@ -65,11 +65,28 @@
 .workspace-location .ant-breadcrumb li { min-width: 0; }
 .workspace-location .ant-breadcrumb-link { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .workspace-location .ant-breadcrumb li:last-child { color: #1d2939; font-weight: 600; }
-.workspace-context { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; max-width: 45%; color: #7a8699; font-size: 12px; }
+.workspace-context { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; max-width: 55%; color: var(--context-muted); font-size: 12px; }
+.workspace-context-switches { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; max-width: 100%; min-width: 0; padding: 3px; border: 1px solid var(--context-border); border-radius: calc(var(--context-radius) + 4px); background: var(--context-bg); }
+.workspace-context-control.ant-select,
+.workspace-context-control.ant-typography { height: 30px; min-width: 0; margin: 0; padding-inline: 9px; border-radius: var(--context-radius); color: var(--context-text); font-size: 13px; }
+.workspace-context-control.ant-select { transition: background .15s ease; }
+.workspace-context-control.ant-select:hover,
+.workspace-context-control.ant-select-focused { background: var(--context-hover); }
+.workspace-context-control.ant-select:focus-within { outline: 2px solid var(--context-accent); outline-offset: 1px; }
+.workspace-context-label.ant-typography { display: flex; align-items: center; gap: 7px; }
+.workspace-context-control .anticon { flex-shrink: 0; color: var(--context-muted); font-size: 14px; }
+.workspace-context-control .ant-select-prefix { margin-inline-end: 7px; }
+.workspace-context-control .ant-select-suffix .anticon { font-size: 10px; }
+.workspace-context-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-mode-select.ant-select,
+.workspace-mode-select.ant-typography { background: var(--context-accent-bg); color: var(--context-accent); font-weight: 500; }
+.workspace-mode-select.ant-select .ant-select-selection-item { font-weight: 500; }
+.workspace-mode-select .anticon { color: var(--context-accent); }
 .workspace-scope { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspace-mode-select { min-width: 108px; }
-.workspace-channel-select { min-width: 130px; max-width: 190px; }
-.workspace-environment-select { min-width: 76px; }
+.workspace-mode-select.ant-select { min-width: 116px; }
+.workspace-channel-select { max-width: 190px; }
+.workspace-channel-select.ant-select { min-width: 125px; }
+.workspace-environment-select.ant-select { min-width: 100px; }
 .workspace-domain-select { min-width: 120px; max-width: 180px; }
 .workspace-scope { max-width: 130px; }
 .workspace-tools { display: flex; align-items: center; flex-shrink: 0; gap: 12px; }
@@ -155,7 +172,7 @@
 
 @media (max-width: 767px) {
   .workspace-header.ant-layout-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; height: auto; min-height: 56px; padding: 8px 12px; }
-  .workspace-context { grid-column: 1 / -1; grid-row: 2; max-width: 100%; border-top: 1px solid #f0f2f5; padding-top: 4px; }
+  .workspace-context { grid-column: 1 / -1; grid-row: 2; max-width: 100%; gap: 6px 10px; }
   .workspace-tools { gap: 4px; }
   .workspace-user-name, .workspace-user .anticon-down { display: none; }
   .workspace-user.ant-btn { width: 36px; height: 36px; padding: 3px; }

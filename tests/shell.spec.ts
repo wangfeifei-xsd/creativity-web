@@ -103,24 +103,23 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
   expect(platformSwitches).toBe(1)
 })
 
-test('没有授权渠道时不能切入渠道模式，单渠道直接显示并禁用渠道切换', async ({ page }) => {
+test('没有可切换项时以正常文字展示模式、渠道和环境', async ({ page }) => {
   const workspace = { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试', data_scope_id: 'scope-a', data_scope_name: '业务域甲' }
   let available = false
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
-    ...session, workspace: available ? workspace : null, workspace_options: available ? [workspace] : [],
+    ...session, can_access_platform: !available, workspace: available ? workspace : null, workspace_options: available ? [workspace] : [],
   } }))
   await page.goto('#/')
-  await page.getByLabel('管理模式', { exact: true }).click()
-  const channelMode = page.locator('.ant-select-dropdown:visible .ant-select-item-option').filter({ hasText: '渠道管理' })
-  await expect(channelMode).toHaveClass(/ant-select-item-option-disabled/)
-  await channelMode.hover()
-  await expect(page.getByRole('tooltip')).toHaveText('暂无可用渠道，请先配置环境及成员授权')
+  await expect(page.getByLabel('管理模式', { exact: true })).toHaveText('平台管理')
+  await expect(page.locator('header').getByRole('combobox')).toHaveCount(0)
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
-  await page.keyboard.press('Escape')
   available = true
   await page.reload()
   await expect(page.locator('header').getByText(workspace.channel_name, { exact: true })).toBeVisible()
-  await expect(page.getByLabel('切换渠道')).toBeDisabled()
+  await expect(page.getByLabel('管理模式', { exact: true })).toHaveText('渠道管理')
+  await expect(page.locator('header').getByText(workspace.environment_name, { exact: true })).toBeVisible()
+  await expect(page.locator('header').getByRole('combobox')).toHaveCount(0)
+  await expect(page.locator('header .ant-select-disabled, header [aria-disabled="true"]')).toHaveCount(0)
 })
 
 test('管理模式切换失败后仍显示服务端确认的原模式', async ({ page }) => {

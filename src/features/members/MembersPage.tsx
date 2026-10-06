@@ -67,7 +67,7 @@ function MemberTable({ channelId, options, onSaved }: AccessProps) {
       columns={[{ title: '成员', render: (_, row) => row.display_name ?? '名称不可用' },
         { title: '角色', render: (_, row) => names(row.role_names) }, { title: '环境', render: (_, row) => names(row.environment_names) },
         { title: '数据域', render: (_, row) => names(row.data_scope_names) }, { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> },
-        { title: '操作', render: (_, row) => <ActionButtons actions={options.actions} handlers={{ 'member:edit': () => edit(row), 'member:remove': () => remove(row) }} /> }]} />}
+        { title: '操作', render: (_, row) => <ActionButtons actions={row.actions} handlers={{ 'member:edit': () => edit(row), 'member:remove': () => remove(row) }} /> }]} />}
     {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload(); onSaved() }} />}
   </PageContainer>
 }
@@ -82,9 +82,11 @@ function GrantTable({ channelId, options, onSaved }: AccessProps) {
   return <PageContainer title="资源授权" actions={<Space><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={options.actions} handlers={{ 'grant:create': () => { setGranteeType('account'); setSelectedResource(undefined); setEditor({}) } }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="grant_id" dataSource={query.data} scroll={{ x: 900 }}
-      columns={[{ title: '授权对象', render: (_, r) => r.grantee_name ?? '名称不可用' }, { title: '资源', render: (_, r) => r.resource_name ?? '名称不可用' },
-        { title: '动作', render: (_, r) => names(r.action_names) }, { title: '环境', render: (_, r) => names(r.environment_names) },
-        { title: '数据域', render: (_, r) => names(r.data_scope_names) }, { title: '操作', render: (_, r) => <ActionButtons actions={options.actions}
+      columns={[{ title: '授权对象', width: 140, ellipsis: true, render: (_, r) => r.grantee_name ?? '名称不可用' },
+        { title: '资源', width: 170, ellipsis: true, render: (_, r) => r.resource_name ?? '名称不可用' },
+        { title: '动作', ellipsis: true, render: (_, r) => names(r.action_names) },
+        { title: '环境', width: 100, ellipsis: true, render: (_, r) => names(r.environment_names) },
+        { title: '数据域', width: 150, ellipsis: true, render: (_, r) => names(r.data_scope_names) }, { title: '操作', width: 200, render: (_, r) => <ActionButtons actions={r.actions}
           handlers={{ 'grant:edit': () => { setGranteeType(r.grantee_type); setSelectedResource(undefined); setEditor({ row: r }) }, 'grant:revoke': () => setEditor({ row: r, revoke: true }) }} /> }]} />}
     {editor && <EditorDialog key={`${row?.grant_id ?? 'new'}-${granteeType}-${editor.revoke}`} title={editor.revoke ? '撤销资源授权' : row ? '编辑资源授权' : '添加资源授权'}
       initial={row ? { ...row, resource: `${row.resource_type}|${row.resource_id}` } : { revision: null }} danger={editor.revoke}

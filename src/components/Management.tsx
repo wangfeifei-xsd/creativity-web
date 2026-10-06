@@ -1,4 +1,4 @@
-import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch, Typography } from 'antd'
+import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch, Tooltip, Typography } from 'antd'
 import { useRef, useState, type ReactNode } from 'react'
 import type { NamePath } from 'antd/es/form/interface'
 import { ApiError } from '../api/client'
@@ -17,10 +17,15 @@ export function ErrorNotice({ error }: { error: unknown }) {
   return <Alert type="error" showIcon
     title={error instanceof Error ? error.message : '操作失败，请稍后重试'} />
 }
-export function ActionButtons({ actions, handlers, disabled }: { actions: readonly Schema<'VisibleAction'>[];
+type DisplayAction = Schema<'VisibleAction'> & Partial<Pick<Schema<'AccessAction'>, 'enabled' | 'disabled_reason'>>
+export function ActionButtons({ actions, handlers, disabled }: { actions: readonly DisplayAction[];
   handlers: Record<string, (() => void) | undefined>; disabled?: boolean }) {
-  return <Space wrap>{actions.filter(a => handlers[a.action_key]).map(a =>
-    <Button key={a.action_key} disabled={disabled} onClick={handlers[a.action_key]}>{a.label}</Button>)}</Space>
+  return <Space wrap>{actions.filter(a => handlers[a.action_key]).map(a => {
+    const button = <Button key={a.action_key} disabled={disabled || a.enabled === false} onClick={handlers[a.action_key]}>{a.label}</Button>
+    return a.enabled === false && a.disabled_reason
+      ? <Tooltip key={a.action_key} title={a.disabled_reason}><span>{button}</span></Tooltip>
+      : button
+  })}</Space>
 }
 export function Fields({ fields }: { fields: Field[] }) {
   return fields.map(field => <Form.Item key={JSON.stringify(field.name)} name={field.name} label={field.label}
