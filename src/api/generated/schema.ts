@@ -5190,6 +5190,8 @@ export interface components {
             content_digest: string;
             /** Name */
             name: string;
+            /** Required Capabilities */
+            required_capabilities?: string[];
             /** Resource Id */
             resource_id: string;
             /** Resource Type */
