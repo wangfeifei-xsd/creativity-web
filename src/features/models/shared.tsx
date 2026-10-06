@@ -16,7 +16,7 @@ export function ModelDialog({ title, initial, children, onSave, onClose, onSaved
   return <Modal open title={title} onCancel={onClose} destroyOnHidden maskClosable={!busy} closable={!busy}
     footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button><Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
     <ErrorNotice error={error} />
-    <Form form={form} layout="vertical" initialValues={initial} disabled={busy} onFinish={async values => {
+    <Form form={form} layout="vertical" initialValues={initial} disabled={busy} onValuesChange={() => setError(undefined)} onFinish={async values => {
       if (submitting.current) return
       submitting.current = true; setBusy(true); setError(undefined)
       try { await onSave(values); onSaved() } catch (failure) { if (!isAbort(failure)) { setError(failure); applyFormErrors(form, failure) } }

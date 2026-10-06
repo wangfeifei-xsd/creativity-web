@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
 import { useSession } from '../../app/workspace/context'
-import { ActionButtons, type Schema } from '../../components/Management'
+import { ActionButtons, type Choice, type Schema } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { ModelDialog } from './shared'
@@ -32,7 +32,7 @@ function RouteVersions({ route }: { route: Schema<'RouteView'> }) {
   const [open, setOpen] = useState(false)
   const [release, setRelease] = useState<Schema<'ResourceVersion'>>()
   const [current, setCurrent] = useState(route.released_version_id)
-  const choices = models.data?.items.map(m => ({ value: m.id, label: `${m.provider_name ?? '供应商名称不可用'} · ${m.connection_name} · ${m.name}` }))
+  const choices = models.data?.items.map(m => ({ value: m.id, label: `${m.provider_name ?? '供应商名称不可用'} · ${m.connection_name} · ${m.name}` })) ?? []
   const modelName = (id: unknown) => models.data?.items.find(m => m.id === id)?.name ?? '名称不可用'
   return <Space orientation="vertical" style={{ width: '100%' }}><Button onClick={() => setOpen(true)}>新增版本</Button>
     {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="version_id" dataSource={query.data} columns={[
@@ -46,8 +46,7 @@ function RouteVersions({ route }: { route: Schema<'RouteView'> }) {
       return send(`/admin/v1/model-routes/${route.id}/versions`, 'POST', { ...body, parameters: jsonObject(v.parameters), retry_policy: { max_attempts, retries_per_model } })
     }}>
       <Form.Item name="label" label="版本名称" rules={[{ required: true }]}><Input /></Form.Item>
-      <Form.Item name="primary_model" label="首选模型" rules={[{ required: true }]}><Select options={choices} /></Form.Item>
-      <Form.Item name="fallback_models" label="回退模型（按选择顺序）"><Select mode="multiple" options={choices} /></Form.Item>
+      <RouteModelFields choices={choices} />
       <Form.Item name="required_capabilities" label="必需能力"><Select mode="multiple" options={capabilityOptions} /></Form.Item>
       <Form.Item name="parameters" label="路由参数（JSON）"><Input.TextArea rows={3} /></Form.Item>
       <Form.Item name="max_attempts" label="总尝试上限（次）"><InputNumber min={1} max={10} /></Form.Item>
@@ -58,4 +57,29 @@ function RouteVersions({ route }: { route: Schema<'RouteView'> }) {
       <span>发布后新的运行将使用该路由版本。</span>
     </ModelDialog>}
   </Space>
+}
+
+function RouteModelFields({ choices }: { choices: Choice[] }) {
+  const form = Form.useFormInstance()
+  const primary = Form.useWatch('primary_model', form)
+  const fallbackChoices = choices.filter(option => option.value !== primary)
+  return <>
+    <Form.Item name="primary_model" label="首选模型" rules={[{ required: true, message: '请选择首选模型' }]}>
+      <Select options={choices} onChange={value => {
+        const fallbacks: string[] = form.getFieldValue('fallback_models') ?? []
+        // 首选切换到原回退模型时，只移除该项，保留其他回退顺序。
+        form.setFieldValue('fallback_models', fallbacks.filter(id => id !== value))
+      }} />
+    </Form.Item>
+    <Form.Item name="fallback_models" label="回退模型（按选择顺序）" dependencies={['primary_model']}
+      extra="可留空；首选模型失败后，按顺序尝试其他模型。同一模型重试请设置下方重试上限。"
+      rules={[{ validator: (_, values: string[] = []) => {
+        if (values.includes(form.getFieldValue('primary_model'))) return Promise.reject(new Error('回退模型不能与首选模型相同'))
+        if (new Set(values).size !== values.length) return Promise.reject(new Error('回退模型不能重复选择'))
+        return Promise.resolve()
+      } }]}>
+      <Select mode="multiple" options={fallbackChoices} placeholder="可留空"
+        notFoundContent={primary && choices.length ? '暂无其他模型，可不设置回退' : '暂无模型'} />
+    </Form.Item>
+  </>
 }

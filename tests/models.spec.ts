@@ -132,3 +132,58 @@ test('无凭据使用权限时禁用测试连接', async ({ page }) => {
   await page.goto('#/models')
   await expect(page.getByRole('button', { name: '测试连接', exact: true })).toBeDisabled()
 })
+
+async function openRouteVersion(page: Page, routeModels = [model]) {
+  await setup(page)
+  await page.route('**/admin/v1/models', route => route.fulfill({ json: { items: routeModels, actions: [] } }))
+  await page.route('**/admin/v1/model-routes', route => route.fulfill({ json: { items: [{ id: 'route1', name: '测试路由', status_label: '启用', released_version_id: null }], actions: [] } }))
+  let saved: Record<string, unknown> | undefined
+  await page.route('**/admin/v1/model-routes/route1/versions', route => {
+    if (route.request().method() === 'POST') {
+      saved = route.request().postDataJSON()
+      return route.fulfill({ json: { version_id: 'route-version1', version_label: 'v1', content: saved } })
+    }
+    return route.fulfill({ json: [] })
+  })
+  await page.goto('#/model-routes')
+  await page.getByRole('button', { name: '版本', exact: true }).click()
+  await page.getByRole('button', { name: '新增版本', exact: true }).click()
+  await page.getByRole('dialog', { name: '新增路由版本', exact: true }).getByLabel('版本名称').fill('v1')
+  return () => saved
+}
+
+async function chooseRouteModel(page: Page, field: string, name: string) {
+  const input = page.getByRole('dialog', { name: '新增路由版本', exact: true }).getByLabel(field, { exact: true })
+  await input.click()
+  await page.locator('.ant-select-dropdown:visible').getByText(`供应商甲 · 业务模型连接 · ${name}`, { exact: true }).click()
+  if (await input.getAttribute('aria-expanded') === 'true') await input.press('Escape')
+  await expect(page.locator('.ant-select-dropdown:visible')).toHaveCount(0)
+}
+
+test('单模型路由可以不设置回退，通过重试上限重复尝试', async ({ page }) => {
+  const saved = await openRouteVersion(page)
+  const dialog = page.getByRole('dialog', { name: '新增路由版本', exact: true })
+  await chooseRouteModel(page, '首选模型', '业务模型')
+  await dialog.getByLabel('回退模型（按选择顺序）', { exact: true }).click()
+  await expect(page.getByText('暂无其他模型，可不设置回退')).toBeVisible()
+  await dialog.getByLabel('回退模型（按选择顺序）', { exact: true }).press('Escape')
+  await dialog.getByLabel('总尝试上限（次）').fill('10')
+  await dialog.getByLabel('每个模型重试上限（次）').fill('2')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  expect(saved()).toMatchObject({ primary_model: 'model1', fallback_models: [], retry_policy: { max_attempts: 10, retries_per_model: 2 } })
+})
+
+test('切换首选时移除同名回退并保留其他回退顺序', async ({ page }) => {
+  const saved = await openRouteVersion(page, [model, ...['乙', '丙', '丁'].map((name, index) => ({ ...model, id: `model${index + 2}`, name: `模型${name}` }))])
+  const dialog = page.getByRole('dialog', { name: '新增路由版本', exact: true })
+  await chooseRouteModel(page, '首选模型', '业务模型')
+  await chooseRouteModel(page, '回退模型（按选择顺序）', '模型乙')
+  await chooseRouteModel(page, '回退模型（按选择顺序）', '模型丙')
+  await chooseRouteModel(page, '回退模型（按选择顺序）', '模型丁')
+  await chooseRouteModel(page, '首选模型', '模型丙')
+  await chooseRouteModel(page, '回退模型（按选择顺序）', '业务模型')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).toBeHidden()
+  expect(saved()).toMatchObject({ primary_model: 'model3', fallback_models: ['model2', 'model4', 'model1'] })
+})
