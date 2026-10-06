@@ -14,7 +14,7 @@ export function NewEvaluation({ datasets, onClose, onSaved, promptId }: { datase
   const [agentId, setAgentId] = useState<string>()
   const agent = useQuery<Schema<'AgentDetail'>>(agentId ? `/admin/v1/agents/${agentId}` : null)
   const prompts = useQuery<Schema<'PromptVersionView'>[]>(promptId ? `/admin/v1/prompts/${promptId}/versions` : null)
-  const versions = agent.data?.versions.filter(v => !promptId || prompts.data?.some(p => p.version.version_id === v.definition.bindings.prompt_version))
+  const versions = agent.data?.versions.filter(v => !promptId || prompts.data?.some(p => p.version.version_id === v.definition.bindings.prompt_id))
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const mode = Form.useWatch('execution_mode', form)

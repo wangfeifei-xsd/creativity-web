@@ -43,7 +43,7 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
     if (busy) return
     setBusy(true); setError(undefined)
     try {
-      await send(`/admin/v1/skill-versions/${version.version_id}`, 'PATCH', {
+      await send(`/admin/v1/skills/${version.version_id}/configuration`, 'PATCH', {
         revision: version.revision, settings: { ...version.settings, ...values, tool_requirements: requirements,
           tool_bindings: Object.fromEntries(requirements.filter(r => values.tool_bindings?.[r.tool_code]).map(r => [r.tool_code, values.tool_bindings![r.tool_code]])) },
         files: Object.entries(texts).filter(([path]) => !removed.includes(path)).map(([relative_path, text]) => ({ relative_path, text })), remove_paths: removed,
@@ -58,7 +58,7 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
   }
   return <Modal open title="编辑技能包" width={980} onCancel={onClose} closable={!busy} maskClosable={!busy} style={{ top: 24 }}
     styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }} footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button>
-      <Button type="primary" loading={busy} onClick={() => form.submit()}>保存草稿</Button></Space>}>
+      <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
     <ErrorNotice error={error || tools.error || agents.error} />
     <Form form={form} layout="vertical" onFinish={save} disabled={busy} onFinishFailed={() => setActiveTab('settings')}
       initialValues={version.settings}>
@@ -86,7 +86,7 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
         { key: 'dependencies', label: '工具与模型', forceRender: true, children: <>
           <SkillToolBindings requirements={requirements} options={tools.data ?? []} />
           {requirements.map(requirement => <Button key={requirement.tool_code} onClick={() => setRequirements(current => current.filter(r => r.tool_code !== requirement.tool_code))}>移除依赖 {requirement.tool_code}</Button>)}
-          <Form.Item label="新增工具依赖"><Select value={undefined} placeholder="选择工具版本" options={(tools.data ?? []).filter(t => !requirements.some(r => r.tool_code === t.tool_code)).map(t => ({ value: t.version_id, label: `${t.name} · ${t.version_label}`, disabled: !t.available }))}
+          <Form.Item label="新增工具依赖"><Select value={undefined} placeholder="选择工具" options={(tools.data ?? []).filter(t => !requirements.some(r => r.tool_code === t.tool_code)).map(t => ({ value: t.version_id, label: t.name, disabled: !t.available }))}
             onChange={id => { const tool = tools.data?.find(t => t.version_id === id); if (!tool) return
               const { tool_code, version_label, source_type, input_schema, output_schema } = tool
               setRequirements(current => [...current, { tool_code, version_label, source_type, input_schema, output_schema }])

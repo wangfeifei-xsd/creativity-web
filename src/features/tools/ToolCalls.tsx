@@ -15,7 +15,6 @@ export function ToolCalls({ toolId }: { toolId: string }) {
   return <>
     <Table rowKey="tool_call_id" dataSource={query.data} scroll={{ x: 650 }} columns={[
       { title: '工具', render: (_, row) => <Typography.Link onClick={() => setSelected(row.tool_call_id)}>{row.tool_name ?? '名称不可用'}</Typography.Link> },
-      { title: '版本', render: (_, row) => row.version_label ?? '版本名称不可用' },
       { title: '状态', render: (_, row) => <StatusTag status={row.state} /> },
       { title: '耗时', render: (_, row) => row.latency_ms == null ? '未记录' : `${row.latency_ms} 毫秒` },
       { title: '调用时间', render: (_, row) => formatTimestamp(row.created_at) },
@@ -31,7 +30,6 @@ function CallDetail({ id, onClose }: { id: string; onClose: () => void }) {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !row ? <LoadingState /> : <>
       <Descriptions column={1} items={[
         { key: 'tool', label: '工具', children: row.tool_name ?? '名称不可用' },
-        { key: 'version', label: '版本', children: row.version_label ?? '版本名称不可用' },
         { key: 'state', label: '状态', children: row.state.label },
         { key: 'run', label: '运行标识', children: row.run_id },
         { key: 'step', label: '步骤标识', children: row.step_id },

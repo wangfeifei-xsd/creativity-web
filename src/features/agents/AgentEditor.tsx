@@ -9,8 +9,8 @@ import { type Definition, type Detail, type Options, type Version, parseObject, 
 type Values = {
   agent_code: string; name: string; description: string; owner: string; version_label: string; template: string
   input_schema: string; output_schema: string; steps: string; edges: string; start_step: string
-  prompt_version: string; model_route_version: string; embedding_route_version?: string; tool_versions: string[]; skill_versions: string[]
-  skill_loading_by_version: Record<string, Omit<NonNullable<Definition['bindings']['skill_loading']>[number], 'version_id'>>
+  prompt_id: string; model_route_id: string; embedding_route_id?: string; tool_ids: string[]; skill_ids: string[]
+  skill_loading_by_resource: Record<string, Omit<NonNullable<Definition['bindings']['skill_loading']>[number], 'version_id'>>
   deadline_seconds: number; token_limit: number; max_model_rounds: number; max_tool_calls: number
   max_iterations: number; loop_timeout_seconds: number; output_repair_attempts: number
   context_limit: number; conversation_enabled: boolean; summary_policy: 'none' | 'recent'
@@ -27,7 +27,7 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const memoryEnabled = Form.useWatch('memory_enabled', form)
-  const selectedSkills: string[] = Form.useWatch('skill_versions', form) ?? initial.bindings.skill_versions ?? []
+  const selectedSkills: string[] = Form.useWatch('skill_ids', form) ?? initial.bindings.skill_ids ?? []
   const templates = [...options.templates, ...(options.legacy_templates ?? []).filter(t => t.key === version?.definition.entrypoint)]
   function selectTemplate(key: string) {
     const next = templates.find(t => t.key === key)?.definition
@@ -35,7 +35,7 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
     setDefinition(next)
     form.setFieldsValue({ input_schema: pretty(next.input_schema), output_schema: pretty(next.output_schema), steps: pretty(next.steps), edges: pretty(next.edges), start_step: next.start_step })
   }
-  const depOptions = (kind: string) => options.dependencies.filter(d => d.resource_type === kind).map(d => ({ value: d.version_id, label: `${d.name} · ${d.version_label} · ${d.state.label}` }))
+  const depOptions = (kind: string) => options.dependencies.filter(d => d.resource_type === kind).map(d => ({ value: d.version_id, label: d.name }))
   async function save() {
     setBusy(true); setError(undefined)
     try {
@@ -44,8 +44,8 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
       if (!Array.isArray(steps) || !Array.isArray(edges)) throw new Error('步骤和流转边必须为 JSON 数组')
       const body = {
         ...definition, start_step: v.start_step, input_schema: parseObject(v.input_schema), output_schema: parseObject(v.output_schema), steps, edges,
-        bindings: { prompt_version: v.prompt_version || null, model_route_version: v.model_route_version || null, embedding_route_version: v.embedding_route_version || null, tool_versions: v.tool_versions ?? [], skill_versions: v.skill_versions ?? [],
-          skill_loading: (v.skill_versions ?? []).filter(id => v.skill_loading_by_version?.[id]).map(id => ({ ...v.skill_loading_by_version[id], version_id: id })) },
+        bindings: { prompt_id: v.prompt_id || null, model_route_id: v.model_route_id || null, embedding_route_id: v.embedding_route_id || null, tool_ids: v.tool_ids ?? [], skill_ids: v.skill_ids ?? [],
+          skill_loading: (v.skill_ids ?? []).filter(id => v.skill_loading_by_resource?.[id]).map(id => ({ ...v.skill_loading_by_resource[id], skill_id: id })) },
         limits: { deadline_seconds: v.deadline_seconds, token_limit: v.token_limit, max_model_rounds: v.max_model_rounds, max_tool_calls: v.max_tool_calls,
           max_iterations: v.max_iterations, loop_timeout_seconds: v.loop_timeout_seconds, output_repair_attempts: v.output_repair_attempts, cost_limit: v.amount ? { amount: v.amount, currency: v.currency } : null },
         context: { conversation_enabled: v.conversation_enabled, context_limit: v.context_limit, summary_policy: v.summary_policy,
@@ -65,7 +65,7 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
     <ErrorNotice error={error} />
     <Form form={form} layout="vertical" disabled={busy} initialValues={{ template: initial.entrypoint, version_label: '初始草稿', input_schema: pretty(initial.input_schema), output_schema: pretty(initial.output_schema),
       steps: pretty(initial.steps), edges: pretty(initial.edges), start_step: initial.start_step, ...initial.bindings, ...initial.limits, ...initial.context,
-      skill_loading_by_version: Object.fromEntries((initial.bindings.skill_loading ?? []).map(item => [item.version_id, item])),
+      skill_loading_by_resource: Object.fromEntries((initial.bindings.skill_loading ?? []).map(item => [item.skill_id, item])),
       amount: initial.limits.cost_limit?.amount, currency: initial.limits.cost_limit?.currency ?? 'CNY', memory_enabled: !!initial.context.memory_policy,
       memory_policy: pretty(initial.context.memory_policy ?? { allowed_types: ['PREFERENCE', 'FACT'], read_enabled: true, suggest_enabled: false, write_mode: 'DISABLED', ttl_seconds: 15552000, max_items: 100, retrieval_limit: 10, failure_mode: 'OMIT' }) }}>
       <div hidden={step !== 0}>
@@ -88,11 +88,11 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
         <Form.Item name="edges" hidden><Input /></Form.Item>
       </div>
       <div hidden={step !== 2}>
-        <Form.Item name="prompt_version" label="提示词版本"><Select allowClear showSearch optionFilterProp="label" options={depOptions('prompt')} /></Form.Item>
-        <Form.Item name="model_route_version" label="模型路由版本"><Select allowClear showSearch optionFilterProp="label" options={depOptions('model_route')} /></Form.Item>
-        <Form.Item name="embedding_route_version" label="语义检索模型路由"><Select allowClear showSearch optionFilterProp="label" options={depOptions('model_route')} /></Form.Item>
-        <Form.Item name="tool_versions" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
-        <Form.Item name="skill_versions" label="技能版本"><Select mode="multiple" optionFilterProp="label" options={depOptions('skill')} /></Form.Item>
+        <Form.Item name="prompt_id" label="提示词"><Select allowClear showSearch optionFilterProp="label" options={depOptions('prompt')} /></Form.Item>
+        <Form.Item name="model_route_id" label="模型路由"><Select allowClear showSearch optionFilterProp="label" options={depOptions('model_route')} /></Form.Item>
+        <Form.Item name="embedding_route_id" label="语义检索模型路由"><Select allowClear showSearch optionFilterProp="label" options={depOptions('model_route')} /></Form.Item>
+        <Form.Item name="tool_ids" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
+        <Form.Item name="skill_ids" label="技能"><Select mode="multiple" optionFilterProp="label" options={depOptions('skill')} /></Form.Item>
         {selectedSkills.map(id => <SkillLoadingFields key={id} versionId={id} label={depOptions('skill').find(d => d.value === id)?.label ?? '技能名称不可用'} />)}
       </div>
       <div hidden={step !== 3}>

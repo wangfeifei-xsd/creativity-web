@@ -1,4 +1,4 @@
-import { App, Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, Upload } from 'antd'
+import { Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, Upload } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -8,14 +8,15 @@ import { useQuery } from '../../api/useQuery'
 import { ActionButtons, ErrorNotice, type Schema } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
-import { StatusTag } from '../../components/StatusTag'
+import { useResourceSummaries } from '../resources/useResourceSummaries'
+import { resourceColumns } from '../resources/resourceColumns'
+import { ResourceActions } from '../resources/ResourceManagement'
 import { SkillEditor } from './SkillEditor'
 import { SkillFiles } from './SkillFiles'
 import { SkillTests } from './SkillTests'
 import { SkillToolBindings } from './SkillToolBindings'
 
 type Detail = Schema<'SkillDetail'>
-type Version = Schema<'SkillVersionView'>
 
 export function SkillsPage() {
   const { '*': path } = useParams()
@@ -26,16 +27,18 @@ function SkillList() {
   const [search, setSearch] = useState('')
   const query = useQuery<Schema<'SkillList'>>(`/admin/v1/skills?search=${encodeURIComponent(search)}`)
   const [editor, setEditor] = useState<'create' | 'import'>()
+  const summaries = useResourceSummaries('skill', query.data?.items.map(row => row.skill_id) ?? [], query.data)
   const navigate = useNavigate()
   return <PageContainer title="技能管理" actions={<Space><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setEditor('create'), import: () => setEditor('import') }} /></Space>}>
     <Input.Search aria-label="技能名称或用途" placeholder="技能名称或用途" allowClear onSearch={setSearch} style={{ maxWidth: 360, marginBottom: 16 }} />
+    <ErrorNotice error={summaries.error} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
       <Table rowKey="skill_id" dataSource={query.data.items} scroll={{ x: 650 }} columns={[
         { title: '技能名称', render: (_, row) => <Link to={`/skills/${row.skill_id}`}>{row.name}</Link> },
         { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '负责人', dataIndex: 'owner' },
         { title: '标签', render: (_, row) => row.tags.join('、') || '未设置' },
-        { title: '状态', render: (_, row) => <StatusTag status={row.status} /> },
+        ...resourceColumns<Schema<'SkillView'>>('skill', summaries.items, row => row.skill_id, row => navigate(`/skills/${row.skill_id}?edit=1`), query.reload),
       ]} />}
     {editor && <SkillCreate mode={editor} onClose={() => setEditor(undefined)} onSaved={detail => navigate(`/skills/${detail.skill.skill_id}`)} />}
   </PageContainer>
@@ -104,18 +107,18 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
 
 function SkillDetail({ skillId }: { skillId: string }) {
   const query = useQuery<Detail>(`/admin/v1/skills/${skillId}`)
-  const [selected, setSelected] = useState<string>()
-  const [editor, setEditor] = useState<'resource' | 'version' | 'new'>()
+  const [editor, setEditor] = useState<'resource' | 'version' | undefined>(() => window.location.hash.includes('edit=1') ? 'version' : undefined)
   const [validation, setValidation] = useState<Schema<'SkillValidation'>>()
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const [activeTab, setActiveTab] = useState('files')
-  const { modal } = App.useApp()
+  const navigate = useNavigate()
+  const summaries = useResourceSummaries('skill', [skillId], query.data)
   const detail = query.data
-  const summary = detail?.versions.find(v => v.version_id === selected) ?? detail?.versions.at(-1)
-  const versionQuery = useQuery<Schema<'SkillVersionView'>>(summary ? `/admin/v1/skill-versions/${summary.version_id}` : null, false, summary?.revision)
+  const summary = detail?.versions.find(v => v.version_id === skillId)
+  const versionQuery = useQuery<Schema<'SkillVersionView'>>(summary ? `/admin/v1/skills/${skillId}/configuration` : null, false, summary?.revision)
   const version = versionQuery.data?.revision === summary?.revision ? versionQuery.data : undefined
-  async function mutate(action: 'validate' | 'freeze' | 'release' | 'export') {
+  async function mutate(action: 'validate' | 'export') {
     if (!version || !detail || busy) return
     setBusy(true); setError(undefined)
     try {
@@ -128,30 +131,22 @@ function SkillDetail({ skillId }: { skillId: string }) {
         const url = URL.createObjectURL(file.blob)
         const link = document.createElement('a'); link.href = url; link.download = file.name ?? artifact.name
         link.click(); URL.revokeObjectURL(url)
-      } else if (action === 'freeze') await send(`/admin/v1/skill-versions/${version.version_id}/freeze`, 'POST', { revision: version.revision })
-      else await send(`/admin/v1/skills/${skillId}/releases`, 'POST', { version_id: version.version_id, expected_revision: detail.release_revision })
-      if (action === 'release' || action === 'freeze') query.reload()
+      }
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!detail) return <LoadingState />
   return <PageContainer title={detail.skill.name} actions={<Space wrap><Link to="/skills">返回技能列表</Link>
-    <Button onClick={query.reload}>刷新</Button><ActionButtons actions={detail.skill.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new') }} /></Space>}>
+    <Button onClick={query.reload}>刷新</Button><Button onClick={() => setEditor('resource')}>编辑信息</Button><ResourceActions kind="skill" summary={summaries.items[skillId]} onEdit={() => setEditor('version')} onChanged={() => navigate('/skills')} /></Space>}>
     <ErrorNotice error={error ?? versionQuery.error} />
     <Descriptions items={[
-      { key: 'status', label: '状态', children: <StatusTag status={detail.skill.status} /> },
+      { key: 'status', label: '状态', children: summaries.items[skillId]?.status.label ?? '加载中' },
       { key: 'owner', label: '负责人', children: detail.skill.owner },
       { key: 'description', label: '用途', children: detail.skill.description },
     ]} />
     <Space wrap style={{ marginBottom: 16 }}>
-      <Select aria-label="技能版本" style={{ minWidth: 220 }} value={summary?.version_id} onChange={value => { setSelected(value); setValidation(undefined) }}
-        options={detail.versions.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.status.label}${detail.release_version_id === v.version_id ? ' · 当前环境已发布' : ''}` }))} />
-      {version && <ActionButtons actions={version.actions} handlers={busy ? {} : {
-        edit: () => setEditor('version'), validate: () => void mutate('validate'), test: () => setActiveTab('tests'), export: () => void mutate('export'),
-        freeze: () => modal.confirm({ title: '冻结技能版本', content: '冻结后修改包内容需要新增版本。', okText: '冻结', cancelText: '取消', onOk: () => mutate('freeze') }),
-        release: () => modal.confirm({ title: '发布技能版本', content: `将“${version.version_label}”发布到当前环境。`, okText: '发布', cancelText: '取消', onOk: () => mutate('release') }),
-      }} />}
+      {version && <ActionButtons actions={version.actions} handlers={busy ? {} : { validate: () => void mutate('validate'), test: () => setActiveTab('tests'), export: () => void mutate('export') }} />}
     </Space>
     {!version && summary && (versionQuery.error ? <ErrorState error={versionQuery.error} onRetry={versionQuery.reload} /> : <LoadingState />)}
     {version && <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
@@ -169,20 +164,12 @@ function SkillDetail({ skillId }: { skillId: string }) {
       { key: 'dependencies', label: '依赖检查', children: validation ? <><Typography.Paragraph>{validation.valid ? '依赖检查通过' : '依赖检查未通过'}</Typography.Paragraph>
         {validation.issues.map((issue, index) => <Typography.Paragraph type="danger" key={index}>{issue.message}</Typography.Paragraph>)}
         <Table rowKey={(_, index) => String(index)} dataSource={validation.dependencies} columns={[
-          { title: '工具', render: (_, dep) => dep.name ?? '目标工具未绑定' }, { title: '版本', dataIndex: 'version_label' },
+          { title: '工具', render: (_, dep) => dep.name ?? '目标工具未绑定' },
           { title: '检查结果', render: (_, dep) => dep.reason ?? '可用' },
         ]} /></> : <Button onClick={() => void mutate('validate')} loading={busy}>检查当前依赖</Button> },
       { key: 'tests', label: '测试', children: <SkillTests key={`${version.version_id}:${version.revision}`} version={version} /> },
-      { key: 'versions', label: '版本与引用', children: <><Table rowKey="version_id" dataSource={detail.versions} columns={[
-        { title: '版本', dataIndex: 'version_label' }, { title: '状态', render: (_, v) => v.status.label },
-        { title: '文件数量', render: (_, v) => `${v.files.length} 个` },
-      ]} /><Table rowKey="version_id" dataSource={detail.references} columns={[
-        { title: '引用资源', render: (_, ref) => ref.resource_name ?? '名称不可用' },
-        { title: '引用版本', dataIndex: 'version_label' }, { title: '状态', render: (_, ref) => ref.status.label },
-      ]} /></> },
     ]} />}
     {editor === 'resource' && <ResourceEditor detail={detail} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
-    {editor === 'new' && version && <NewVersion skillId={skillId} version={version} onClose={() => setEditor(undefined)} onSaved={id => { setEditor(undefined); setSelected(id); query.reload() }} />}
     {editor === 'version' && version && <SkillEditor version={version} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); setValidation(undefined); query.reload() }} />}
   </PageContainer>
 }
@@ -193,7 +180,7 @@ function ResourceEditor({ detail, onClose, onSaved }: { detail: Detail; onClose:
   const [busy, setBusy] = useState(false)
   async function save(values: Record<string, unknown>) {
     setBusy(true)
-    try { await send(`/admin/v1/skills/${detail.skill.skill_id}`, 'PATCH', { ...values, revision: detail.skill.revision }); onSaved() }
+    try { await send(`/admin/v1/skills/${detail.skill.skill_id}`, 'PATCH', { ...values, status: 'ACTIVE', revision: detail.skill.revision }); onSaved() }
     catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   return <Modal open title="编辑技能" onCancel={onClose} onOk={() => form.submit()} okText="保存" cancelText="取消" confirmLoading={busy}>
@@ -202,22 +189,7 @@ function ResourceEditor({ detail, onClose, onSaved }: { detail: Detail; onClose:
       <Form.Item name="description" label="用途" rules={[{ required: true }]}><Input.TextArea /></Form.Item>
       <Form.Item name="owner" label="负责人" rules={[{ required: true }]}><Input /></Form.Item>
       <Form.Item name="tags" label="标签"><Select mode="tags" /></Form.Item>
-      <Form.Item name="status" label="状态" extra="停用后阻断新的技能加载。"><Select options={[{ value: 'ACTIVE', label: '已启用' }, { value: 'DISABLED', label: '已停用' }]} /></Form.Item>
     </Form>
   </Modal>
 }
 
-function NewVersion({ skillId, version, onClose, onSaved }: { skillId: string; version: Version; onClose: () => void; onSaved: (id: string) => void }) {
-  const [label, setLabel] = useState('')
-  const [error, setError] = useState<unknown>()
-  const [busy, setBusy] = useState(false)
-  async function save() {
-    setBusy(true)
-    try { const value = await send<Version>(`/admin/v1/skills/${skillId}/versions`, 'POST', { version_label: label, base_version_id: version.version_id }); onSaved(value.version_id) }
-    catch (failure) { setError(failure) } finally { setBusy(false) }
-  }
-  return <Modal open title="新增技能版本" onCancel={onClose} onOk={() => void save()} okText="创建" cancelText="取消" confirmLoading={busy}>
-    <ErrorNotice error={error} /><Form layout="vertical"><Form.Item label="来源版本">{version.version_label}</Form.Item>
-      <Form.Item label="版本名称" required><Input aria-label="版本名称" value={label} onChange={event => setLabel(event.target.value)} maxLength={64} /></Form.Item></Form>
-  </Modal>
-}

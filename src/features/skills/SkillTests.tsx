@@ -48,7 +48,7 @@ export function SkillTests({ version }: { version: Version }) {
       {result.discoveries.map(discovery => <Typography.Paragraph key={discovery.version_id}>{discovery.name} · {discovery.description}</Typography.Paragraph>)}
     </>}
     <Table style={{ marginTop: 20 }} rowKey="test_id" dataSource={tests.data ?? []} columns={[
-      { title: '验证时间', render: (_, test) => formatTimestamp(test.created_at) }, { title: '版本', dataIndex: 'version_label' },
+      { title: '验证时间', render: (_, test) => formatTimestamp(test.created_at) },
       { title: '证据类型', dataIndex: 'evidence_label' }, { title: '结果', render: (_, test) => test.result.complete ? '通过' : '未通过' },
       { title: '操作', render: (_, test) => <Button type="link" onClick={() => setCurrent(test)}>查看结果</Button> },
     ]} scroll={{ x: 550 }} />

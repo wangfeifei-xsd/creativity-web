@@ -57,8 +57,8 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
         cache_policy: { ttl_seconds: values.ttl, freshness_seconds: values.freshness, volatile: values.volatile },
         analysis_policy: values.analysis && tool.source_type === 'mcp' && !writing ? { rows_path: values.rowsPath.split('.').filter(Boolean), max_rows: values.maxRows } : null,
         idempotency_policy: writing ? 'source_key' : 'none', write_policy: writing && values.statusVersion ? { status_tool_version_id: values.statusVersion, max_submissions: values.submissions, max_checks: values.checks } : null }
-      await send(version ? `/admin/v1/tool-versions/${version.version.version_id}` : `/admin/v1/tools/${tool.tool_id}/versions`,
-        version ? 'PATCH' : 'POST', version ? { revision: version.revision, definition: body } : { version_label: values.label, definition: body })
+      await send(`/admin/v1/tools/${tool.tool_id}/configuration`,
+        version ? 'PATCH' : 'POST', version ? { revision: version.revision, definition: body } : { definition: body })
       onSaved()
     } catch (failure) {
       setError(failure instanceof SyntaxError ? new Error('输入或输出结构不是有效的 JSON') : failure)
@@ -73,7 +73,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
     }
     finally { setBusy(false) }
   }
-  return <Modal open width={840} title={version ? '编辑工具草稿' : '新增工具版本'} onCancel={onClose}
+  return <Modal open width={840} title="修改工具配置" onCancel={onClose}
     style={{ top: 24 }} styles={{ body: { maxHeight: '65vh', overflowY: 'auto' } }}
     closable={!busy} maskClosable={!busy} footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button>
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
@@ -90,7 +90,6 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
           volatile: definition?.cache_policy.volatile ?? false, statusVersion: definition?.write_policy?.status_tool_version_id,
           submissions: definition?.write_policy?.max_submissions ?? 1, checks: definition?.write_policy?.max_checks ?? 3,
           profile: definition?.binding.script?.profile_id, skillVersion: definition?.binding.script?.skill_version_id, scriptPath: definition?.binding.script?.path }}>
-        {!version && <Form.Item name="label" label="版本名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>}
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
           { key: 'contract', label: '契约', forceRender: true, children: <>
             <Form.Item name="input" label="输入结构" rules={[{ required: true }]}><Input.TextArea rows={12} spellCheck={false} /></Form.Item>
@@ -102,7 +101,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
             }
             {tool.source_type === 'sandbox' && <>
               <Form.Item name="profile" label="隔离环境" rules={[{ required: true }]}><Select options={execution.data?.profiles.filter(p => p.mode === 'python').map(p => ({ value: p.profile_id, label: p.name }))} /></Form.Item>
-              <Form.Item name="skillVersion" label="技能版本" rules={[{ required: true }]}><Select options={execution.data?.scripts.map(s => ({ value: s.version_id, label: `${s.name} · ${s.version_label}` }))} /></Form.Item>
+              <Form.Item name="skillVersion" label="技能" rules={[{ required: true }]}><Select options={execution.data?.scripts.map(s => ({ value: s.version_id, label: s.name }))} /></Form.Item>
               <Form.Item name="scriptPath" label="脚本文件" rules={[{ required: true }]}><Select options={execution.data?.scripts.find(s => s.version_id === skillVersion)?.paths.map(path => ({ value: path, label: path }))} /></Form.Item>
             </>}
           </> },
@@ -114,7 +113,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
           </> },
           { key: 'policy', label: '执行策略', forceRender: true, children: <>
             {tool.source_type === 'mcp' && !writing && <><Form.Item name="analysis" label="只读分析源" valuePropName="checked"><Switch /></Form.Item>{analysis && <><Form.Item name="rowsPath" label="行列表字段路径"><Input /></Form.Item><Form.Item name="maxRows" label="最大返回行数"><InputNumber min={1} max={10000} /></Form.Item></>}</>}
-            {writing && <><Form.Item name="statusVersion" label="来源状态核查工具" rules={[{ required: true }]}><Select options={execution.data?.queries.map(q => ({ value: q.version_id, label: `${q.name} · ${q.version_label}` }))} /></Form.Item>
+            {writing && <><Form.Item name="statusVersion" label="来源状态核查工具" rules={[{ required: true }]}><Select options={execution.data?.queries.map(q => ({ value: q.version_id, label: q.name }))} /></Form.Item>
               <Form.Item name="submissions" label="经确认的提交上限（次）"><InputNumber min={1} max={3} /></Form.Item><Form.Item name="checks" label="来源核查上限（次）"><InputNumber min={1} max={10} /></Form.Item></>}
             <Form.Item name="timeout" label="超时（秒）" rules={[{ required: true }]}><InputNumber min={1} max={120} /></Form.Item>
             <Form.Item name="maxSize" label="结果体积上限（字节）" rules={[{ required: true }]}><InputNumber min={256} max={2097152} /></Form.Item>

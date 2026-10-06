@@ -152,7 +152,8 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
       try { const next = await apiClient.request<Trace>(`/admin/v1/runs/${runId}/trace?after_sequence=${trace.next_sequence}`); setTrace({ ...next, items: [...trace.items, ...next.items] }) } catch (failure) { setError(failure) }
     }}>加载后续步骤</Button>}</>}
     <Collapse items={[
-      ...(detail.content_allowed ? [{ key: 'input', label: '输入与依赖版本', children: <><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(detail.input)}</pre>{detail.versions.map(v => <div key={v.version_id}>{v.name}</div>)}</> }] : []),
+      { key: 'resource-uses', label: '资源使用', children: (detail.resource_uses ?? []).map((resource, index) => <div key={index}>{String(resource.type)}：{String(resource.name)}{resource.deleted ? '（已删除）' : ''} · {formatTimestamp(String(resource.used_at))}</div>) },
+      ...(detail.content_allowed ? [{ key: 'input', label: '输入与配置快照', children: <><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(detail.input)}</pre>{detail.versions.map(v => <div key={v.version_id}>{v.name}</div>)}</> }] : []),
       ...(detail.content_allowed && detail.actual_inputs?.length ? [{ key: 'actual', label: '实际输入与加载记录', children: detail.actual_inputs.map((entry, index) => <div key={index}><Typography.Text strong>{entry.name}</Typography.Text><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(entry.value)}</pre></div>) }] : []),
       ...(detail.content_allowed && detail.evidence?.length ? [{ key: 'evidence', label: '工具证据', children: detail.evidence.map((entry, index) => <Descriptions key={index} items={[
         { key: 'title', label: '来源', children: entry.title || '名称未提供' },

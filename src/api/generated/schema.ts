@@ -2480,35 +2480,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/v1/model-routes/{route_id}/releases": {
+    "/admin/v1/model-routes/{route_id}/configuration": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /** Release */
-        post: operations["release_admin_v1_model_routes__route_id__releases_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/model-routes/{route_id}/versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Versions */
-        get: operations["versions_admin_v1_model_routes__route_id__versions_get"];
-        put?: never;
-        /** Create Version */
-        post: operations["create_version_admin_v1_model_routes__route_id__versions_post"];
+        /** Route Configuration */
+        get: operations["route_configuration_admin_v1_model_routes__route_id__configuration_get"];
+        /** Save Route Configuration */
+        put: operations["save_route_configuration_admin_v1_model_routes__route_id__configuration_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2845,23 +2828,6 @@ export interface paths {
         patch: operations["edit_draft_admin_v1_prompt_versions__version_id__patch"];
         trace?: never;
     };
-    "/admin/v1/prompt-versions/{version_id}/compare/{previous_version_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Compare */
-        get: operations["compare_admin_v1_prompt_versions__version_id__compare__previous_version_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/v1/prompt-versions/{version_id}/exports": {
         parameters: {
             query?: never;
@@ -2890,23 +2856,6 @@ export interface paths {
         put?: never;
         /** Render Preview */
         post: operations["render_preview_admin_v1_prompt_versions__version_id__render_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/prompt-versions/{version_id}/retire": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Retire */
-        post: operations["retire_admin_v1_prompt_versions__version_id__retire_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2984,6 +2933,24 @@ export interface paths {
         patch: operations["update_prompt_admin_v1_prompts__prompt_id__patch"];
         trace?: never;
     };
+    "/admin/v1/prompts/{prompt_id}/configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration */
+        get: operations["configuration_admin_v1_prompts__prompt_id__configuration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit Configuration */
+        patch: operations["edit_configuration_admin_v1_prompts__prompt_id__configuration_patch"];
+        trace?: never;
+    };
     "/admin/v1/prompts/{prompt_id}/references": {
         parameters: {
             query?: never;
@@ -3011,8 +2978,7 @@ export interface paths {
         /** Releases */
         get: operations["releases_admin_v1_prompts__prompt_id__releases_get"];
         put?: never;
-        /** Release */
-        post: operations["release_admin_v1_prompts__prompt_id__releases_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3031,24 +2997,6 @@ export interface paths {
         put?: never;
         /** Create Sample */
         post: operations["create_sample_admin_v1_prompts__prompt_id__samples_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/prompts/{prompt_id}/versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Versions */
-        get: operations["versions_admin_v1_prompts__prompt_id__versions_get"];
-        put?: never;
-        /** Create Draft */
-        post: operations["create_draft_admin_v1_prompts__prompt_id__versions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3118,6 +3066,74 @@ export interface paths {
         get: operations["statement_options_admin_v1_provider_statements_options_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/resource-management/{kind}/{identifier}/{operation}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mutate */
+        post: operations["mutate_admin_v1_resource_management__kind___identifier___operation__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/resource-management/{kind}/{identifier}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** References */
+        get: operations["references_admin_v1_resource_management__kind___identifier__references_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/resource-management/{kind}/{identifier}/uses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uses */
+        get: operations["uses_admin_v1_resource_management__kind___identifier__uses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/resource-management/{kind}/summaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Summaries */
+        post: operations["summaries_admin_v1_resource_management__kind__summaries_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3415,23 +3431,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/v1/skill-versions/{version_id}/freeze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Freeze */
-        post: operations["freeze_admin_v1_skill_versions__version_id__freeze_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/v1/skill-versions/{version_id}/tests": {
         parameters: {
             query?: never;
@@ -3503,38 +3502,22 @@ export interface paths {
         patch: operations["edit_admin_v1_skills__skill_id__patch"];
         trace?: never;
     };
-    "/admin/v1/skills/{skill_id}/releases": {
+    "/admin/v1/skills/{skill_id}/configuration": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Configuration */
+        get: operations["configuration_admin_v1_skills__skill_id__configuration_get"];
         put?: never;
-        /** Release */
-        post: operations["release_admin_v1_skills__skill_id__releases_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/skills/{skill_id}/versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Version */
-        post: operations["create_version_admin_v1_skills__skill_id__versions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        /** Edit Configuration */
+        patch: operations["edit_configuration_admin_v1_skills__skill_id__configuration_patch"];
         trace?: never;
     };
     "/admin/v1/skills/agent-options": {
@@ -3726,23 +3709,6 @@ export interface paths {
         patch: operations["edit_version_admin_v1_tool_versions__version_id__patch"];
         trace?: never;
     };
-    "/admin/v1/tool-versions/{version_id}/freeze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Freeze */
-        post: operations["freeze_admin_v1_tool_versions__version_id__freeze_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/v1/tool-versions/{version_id}/test-description": {
         parameters: {
             query?: never;
@@ -3813,7 +3779,7 @@ export interface paths {
         patch: operations["edit_admin_v1_tools__tool_id__patch"];
         trace?: never;
     };
-    "/admin/v1/tools/{tool_id}/disable": {
+    "/admin/v1/tools/{tool_id}/configuration": {
         parameters: {
             query?: never;
             header?: never;
@@ -3822,29 +3788,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Disable */
-        post: operations["disable_admin_v1_tools__tool_id__disable_post"];
+        /** Create Configuration */
+        post: operations["create_configuration_admin_v1_tools__tool_id__configuration_post"];
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/tools/{tool_id}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enable */
-        post: operations["enable_admin_v1_tools__tool_id__enable_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        /** Edit Configuration */
+        patch: operations["edit_configuration_admin_v1_tools__tool_id__configuration_patch"];
         trace?: never;
     };
     "/admin/v1/tools/{tool_id}/impact": {
@@ -3858,40 +3808,6 @@ export interface paths {
         get: operations["impact_admin_v1_tools__tool_id__impact_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/tools/{tool_id}/releases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Release */
-        post: operations["release_admin_v1_tools__tool_id__releases_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/tools/{tool_id}/versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Version */
-        post: operations["create_version_admin_v1_tools__tool_id__versions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5074,27 +4990,27 @@ export interface components {
         };
         /** AgentBindings */
         AgentBindings: {
-            /** Embedding Route Version */
-            embedding_route_version?: string | null;
-            /** Model Route Version */
-            model_route_version?: string | null;
-            /** Prompt Version */
-            prompt_version?: string | null;
+            /** Embedding Route Id */
+            embedding_route_id?: string | null;
+            /** Model Route Id */
+            model_route_id?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /**
+             * Skill Ids
+             * @default []
+             */
+            skill_ids: string[];
             /**
              * Skill Loading
              * @default []
              */
             skill_loading: components["schemas"]["AgentSkillLoading"][];
             /**
-             * Skill Versions
+             * Tool Ids
              * @default []
              */
-            skill_versions: string[];
-            /**
-             * Tool Versions
-             * @default []
-             */
-            tool_versions: string[];
+            tool_ids: string[];
         };
         /** AgentCheck */
         AgentCheck: {
@@ -5168,9 +5084,9 @@ export interface components {
         "AgentDefinition-Input": {
             /**
              * @default {
+             *       "skill_ids": [],
              *       "skill_loading": [],
-             *       "skill_versions": [],
-             *       "tool_versions": []
+             *       "tool_ids": []
              *     }
              */
             bindings: components["schemas"]["AgentBindings"];
@@ -5220,9 +5136,9 @@ export interface components {
         "AgentDefinition-Output": {
             /**
              * @default {
+             *       "skill_ids": [],
              *       "skill_loading": [],
-             *       "skill_versions": [],
-             *       "tool_versions": []
+             *       "tool_ids": []
              *     }
              */
             bindings: components["schemas"]["AgentBindings"];
@@ -5516,13 +5432,13 @@ export interface components {
              * @default []
              */
             selected_files: string[];
+            /** Skill Id */
+            skill_id: string;
             /**
              * Trigger Reason
              * @default 配置选择
              */
             trigger_reason: string;
-            /** Version Id */
-            version_id: string;
         };
         /** AgentStateInput */
         AgentStateInput: {
@@ -9396,13 +9312,6 @@ export interface components {
             /** Source */
             source: string | null;
         };
-        /** PromptCompareView */
-        PromptCompareView: {
-            /** Differences */
-            differences: components["schemas"]["PromptDifference"][];
-            /** References */
-            references: components["schemas"]["PromptReference"][];
-        };
         /** PromptContent */
         PromptContent: {
             /**
@@ -9424,23 +9333,6 @@ export interface components {
             prompt_code: string;
             /** Purpose */
             purpose: string;
-        };
-        /** PromptDifference */
-        PromptDifference: {
-            after: components["schemas"]["JsonValue"];
-            before: components["schemas"]["JsonValue"];
-            /** Breaking */
-            breaking: boolean;
-            /** Field */
-            field: string;
-            /** Label */
-            label: string;
-        };
-        /** PromptDraftCreate */
-        PromptDraftCreate: {
-            content: components["schemas"]["PromptContent"];
-            /** Version Label */
-            version_label: string;
         };
         /** PromptDraftEdit */
         PromptDraftEdit: {
@@ -9467,7 +9359,10 @@ export interface components {
              */
             format: "text" | "json";
             resource: components["schemas"]["PromptCreate"];
-            /** Version Label */
+            /**
+             * Version Label
+             * @default 当前配置
+             */
             version_label: string;
         };
         /** PromptListView */
@@ -9494,23 +9389,6 @@ export interface components {
             target_version_label: string;
             /** Version Label */
             version_label: string;
-        };
-        /** PromptReleaseRequest */
-        PromptReleaseRequest: {
-            /** Expected Mapping Revision */
-            expected_mapping_revision?: number | null;
-            /** Note */
-            note: string;
-            /**
-             * Operation
-             * @default publish
-             * @enum {string}
-             */
-            operation: "publish" | "rollback";
-            /** Revision */
-            revision: number;
-            /** Version Id */
-            version_id: string;
         };
         /** PromptReleaseView */
         PromptReleaseView: {
@@ -9566,11 +9444,6 @@ export interface components {
             masked: boolean;
             /** Sections */
             sections: components["schemas"]["RenderedSection"][];
-        };
-        /** PromptRetireRequest */
-        PromptRetireRequest: {
-            /** Revision */
-            revision: number;
         };
         /** PromptRouteOption */
         PromptRouteOption: {
@@ -9951,13 +9824,6 @@ export interface components {
             /** Usage Status */
             usage_status: string;
         };
-        /** ReleaseInput */
-        ReleaseInput: {
-            /** Expected Version Id */
-            expected_version_id?: string | null;
-            /** Version Id */
-            version_id: string;
-        };
         /** ReleasePolicy */
         ReleasePolicy: {
             /**
@@ -10064,6 +9930,18 @@ export interface components {
             /** Status Label */
             status_label: string;
         };
+        /** ResourceMutation */
+        ResourceMutation: {
+            /** Configuration Revision */
+            configuration_revision?: number | null;
+            /**
+             * Confirm Used
+             * @default false
+             */
+            confirm_used: boolean;
+            /** Revision */
+            revision: number;
+        };
         /** ResourceOption */
         ResourceOption: {
             /** Label */
@@ -10084,10 +9962,93 @@ export interface components {
             /** Resource Type */
             resource_type: string;
         };
+        /** ResourceReferencePage */
+        ResourceReferencePage: {
+            /** Items */
+            items: components["schemas"]["ResourceReferenceView"][];
+            /** Total */
+            total: number;
+        };
+        /** ResourceReferenceView */
+        ResourceReferenceView: {
+            /** Environments */
+            environments: string[];
+            /** Name */
+            name: string;
+            /** Resource Id */
+            resource_id: string;
+            /** Resource Type */
+            resource_type: string;
+            /** Resource Type Label */
+            resource_type_label: string;
+            status: components["schemas"]["DisplayStatus"];
+        };
+        /** ResourceSummaries */
+        ResourceSummaries: {
+            /** Resource Ids */
+            resource_ids: string[];
+        };
+        /** ResourceSummary */
+        ResourceSummary: {
+            /** Actions */
+            actions: components["schemas"]["AccessAction"][];
+            /** Configuration Revision */
+            configuration_revision: number | null;
+            /** Name */
+            name: string;
+            /** Reference Count */
+            reference_count: number;
+            /** Resource Id */
+            resource_id: string;
+            /** Revision */
+            revision: number;
+            status: components["schemas"]["DisplayStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Usage Count */
+            usage_count: number;
+        };
+        /** ResourceUse */
+        ResourceUse: {
+            /** Agent Name */
+            agent_name: string | null;
+            /** Caller Name */
+            caller_name: string | null;
+            /** Deleted */
+            deleted: boolean;
+            /** Environment */
+            environment: string;
+            /** Purpose */
+            purpose: string;
+            /** Resource Name */
+            resource_name: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Used At
+             * Format: date-time
+             */
+            used_at: string;
+        };
+        /** ResourceUsePage */
+        ResourceUsePage: {
+            /** Items */
+            items: components["schemas"]["ResourceUse"][];
+            /** Total */
+            total: number;
+        };
         /** ResourceVersion */
         ResourceVersion: {
             /** Channel Id */
             channel_id: string;
+            /**
+             * Configuration Revision
+             * @default null
+             */
+            configuration_revision: number | null;
             /** Content */
             content: {
                 [key: string]: components["schemas"]["JsonValue"];
@@ -10106,6 +10067,11 @@ export interface components {
             };
             /** Resource Id */
             resource_id: string;
+            /**
+             * Resource Name
+             * @default null
+             */
+            resource_name: string | null;
             /** Resource Type */
             resource_type: string;
             /**
@@ -10271,8 +10237,13 @@ export interface components {
              * @default false
              */
             hard_amount_budget: boolean;
-            /** Label */
+            /**
+             * Label
+             * @default 当前配置
+             */
             label: string;
+            /** Name */
+            name?: string | null;
             /** Parameters */
             parameters?: {
                 [key: string]: unknown;
@@ -10286,7 +10257,11 @@ export interface components {
              *     ]
              */
             required_capabilities: ("text" | "tools" | "structured_output" | "streaming" | "vision" | "embedding")[];
+            /** Resource Revision */
+            resource_revision?: number | null;
             retry_policy?: components["schemas"]["creativity_service__modules__models__schemas__RetryPolicy"];
+            /** Revision */
+            revision?: number | null;
         };
         /** RouteVersionView */
         RouteVersionView: {
@@ -10294,6 +10269,8 @@ export interface components {
             actions?: components["schemas"]["AccessAction"][];
             /** Channel Id */
             channel_id: string;
+            /** Configuration Revision */
+            configuration_revision?: number | null;
             /** Content */
             content: {
                 [key: string]: components["schemas"]["JsonValue"];
@@ -10312,6 +10289,8 @@ export interface components {
             };
             /** Resource Id */
             resource_id: string;
+            /** Resource Name */
+            resource_name?: string | null;
             /** Resource Type */
             resource_type: string;
             /**
@@ -10408,6 +10387,10 @@ export interface components {
             purpose: "production" | "debug" | "evaluation";
             /** Purpose Label */
             purpose_label: string;
+            /** Resource Uses */
+            resource_uses?: {
+                [key: string]: unknown;
+            }[];
             result: components["schemas"]["ResultEnvelope"] | null;
             /** Run Id */
             run_id: string;
@@ -10698,7 +10681,7 @@ export interface components {
             tags: string[];
             /**
              * Version Label
-             * @default 初始版本
+             * @default 当前配置
              */
             version_label: string;
         };
@@ -10750,9 +10733,9 @@ export interface components {
             revision: number;
             /**
              * Status
-             * @enum {string}
+             * @constant
              */
-            status: "ACTIVE" | "DISABLED";
+            status: "ACTIVE";
             /**
              * Tags
              * @default []
@@ -10806,7 +10789,7 @@ export interface components {
             };
             /**
              * Version Label
-             * @default 导入版本
+             * @default 当前配置
              */
             version_label: string;
         };
@@ -10899,23 +10882,6 @@ export interface components {
             version_id: string;
             /** Version Label */
             version_label: string;
-        };
-        /** SkillRelease */
-        SkillRelease: {
-            /** Expected Revision */
-            expected_revision?: number | null;
-            /**
-             * Note
-             * @default 发布技能版本
-             */
-            note: string;
-            /** Version Id */
-            version_id: string;
-        };
-        /** SkillRevision */
-        SkillRevision: {
-            /** Revision */
-            revision: number;
         };
         /** SkillSettings */
         SkillSettings: {
@@ -11040,7 +11006,10 @@ export interface components {
             tool_code: string;
             /** Version Id */
             version_id: string;
-            /** Version Label */
+            /**
+             * Version Label
+             * @default 当前配置
+             */
             version_label: string;
         };
         /** SkillToolRequirement */
@@ -11057,7 +11026,10 @@ export interface components {
             source_type?: ("mcp" | "http" | "builtin") | null;
             /** Tool Code */
             tool_code: string;
-            /** Version Label */
+            /**
+             * Version Label
+             * @default 当前配置
+             */
             version_label: string;
         };
         /** SkillValidation */
@@ -11088,13 +11060,6 @@ export interface components {
              * @enum {string}
              */
             value_type: "string" | "number" | "boolean" | "object" | "array";
-        };
-        /** SkillVersionCreate */
-        SkillVersionCreate: {
-            /** Base Version Id */
-            base_version_id: string;
-            /** Version Label */
-            version_label: string;
         };
         /** SkillVersionEdit */
         SkillVersionEdit: {
@@ -11594,18 +11559,6 @@ export interface components {
             /** Version Label */
             version_label: string;
         };
-        /** ToolRelease */
-        ToolRelease: {
-            /** Expected Revision */
-            expected_revision?: number | null;
-            /**
-             * Note
-             * @default 发布工具版本
-             */
-            note: string;
-            /** Version Id */
-            version_id: string;
-        };
         /** ToolResult */
         ToolResult: {
             /** Coverage */
@@ -11635,11 +11588,6 @@ export interface components {
             truncated: boolean;
             /** Warnings */
             warnings: string[];
-        };
-        /** ToolRevision */
-        ToolRevision: {
-            /** Revision */
-            revision: number;
         };
         /** ToolTestDescription */
         ToolTestDescription: {
@@ -11678,7 +11626,10 @@ export interface components {
         /** ToolVersionCreate */
         ToolVersionCreate: {
             definition: components["schemas"]["ToolDefinition"];
-            /** Version Label */
+            /**
+             * Version Label
+             * @default 当前配置
+             */
             version_label: string;
         };
         /** ToolVersionEdit */
@@ -36617,145 +36568,7 @@ export interface operations {
             };
         };
     };
-    release_admin_v1_model_routes__route_id__releases_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                route_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReleaseInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResourceVersion"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    versions_admin_v1_model_routes__route_id__versions_get: {
+    route_configuration_admin_v1_model_routes__route_id__configuration_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -36889,7 +36702,7 @@ export interface operations {
             };
         };
     };
-    create_version_admin_v1_model_routes__route_id__versions_post: {
+    save_route_configuration_admin_v1_model_routes__route_id__configuration_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -36905,7 +36718,7 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     /** @description 请求标识 */
                     "X-Request-ID"?: string;
@@ -40527,141 +40340,6 @@ export interface operations {
             };
         };
     };
-    compare_admin_v1_prompt_versions__version_id__compare__previous_version_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                previous_version_id: string;
-                version_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptCompareView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     export_admin_v1_prompt_versions__version_id__exports_post: {
         parameters: {
             query?: never;
@@ -40824,144 +40502,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptRenderView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    retire_admin_v1_prompt_versions__version_id__retire_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                version_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptRetireRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptVersionView"];
                 };
             };
             /** @description Bad Request */
@@ -42026,6 +41566,278 @@ export interface operations {
             };
         };
     };
+    configuration_admin_v1_prompts__prompt_id__configuration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptVersionView"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    edit_configuration_admin_v1_prompts__prompt_id__configuration_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptDraftEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptVersionView"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     references_admin_v1_prompts__prompt_id__references_get: {
         parameters: {
             query?: never;
@@ -42180,144 +41992,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptReleaseView"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    release_admin_v1_prompts__prompt_id__releases_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                prompt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptReleaseRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptReleaseView"];
                 };
             };
             /** @description Bad Request */
@@ -42592,278 +42266,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptSampleView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    versions_admin_v1_prompts__prompt_id__versions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                prompt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptVersionView"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    create_draft_admin_v1_prompts__prompt_id__versions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                prompt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptDraftCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptVersionView"];
                 };
             };
             /** @description Bad Request */
@@ -43542,6 +42944,558 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     }[];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    mutate_admin_v1_resource_management__kind___identifier___operation__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                identifier: string;
+                kind: "prompt" | "model_route" | "tool" | "skill";
+                operation: "publish" | "unpublish" | "delete";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceMutation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    references_admin_v1_resource_management__kind___identifier__references_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                identifier: string;
+                kind: "prompt" | "model_route" | "tool" | "skill";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceReferencePage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    uses_admin_v1_resource_management__kind___identifier__uses_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                identifier: string;
+                kind: "prompt" | "model_route" | "tool" | "skill";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceUsePage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    summaries_admin_v1_resource_management__kind__summaries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "prompt" | "model_route" | "tool" | "skill";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceSummaries"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceSummary"][];
                 };
             };
             /** @description Bad Request */
@@ -46253,144 +46207,6 @@ export interface operations {
             };
         };
     };
-    freeze_admin_v1_skill_versions__version_id__freeze_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                version_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SkillRevision"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SkillVersionView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     tests_admin_v1_skill_versions__version_id__tests_get: {
         parameters: {
             query?: never;
@@ -47339,7 +47155,7 @@ export interface operations {
             };
         };
     };
-    release_admin_v1_skills__skill_id__releases_post: {
+    configuration_admin_v1_skills__skill_id__configuration_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -47348,11 +47164,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SkillRelease"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -47362,7 +47174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SkillDetail"];
+                    "application/json": components["schemas"]["SkillVersionView"];
                 };
             };
             /** @description Bad Request */
@@ -47477,7 +47289,7 @@ export interface operations {
             };
         };
     };
-    create_version_admin_v1_skills__skill_id__versions_post: {
+    edit_configuration_admin_v1_skills__skill_id__configuration_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -47488,12 +47300,12 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SkillVersionCreate"];
+                "application/json": components["schemas"]["SkillVersionEdit"];
             };
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     /** @description 请求标识 */
                     "X-Request-ID"?: string;
@@ -49359,144 +49171,6 @@ export interface operations {
             };
         };
     };
-    freeze_admin_v1_tool_versions__version_id__freeze_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                version_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ToolRevision"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ToolVersionView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     test_description_admin_v1_tool_versions__version_id__test_description_get: {
         parameters: {
             query?: never;
@@ -50315,7 +49989,7 @@ export interface operations {
             };
         };
     };
-    disable_admin_v1_tools__tool_id__disable_post: {
+    create_configuration_admin_v1_tools__tool_id__configuration_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -50326,19 +50000,19 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ToolRevision"];
+                "application/json": components["schemas"]["ToolVersionCreate"];
             };
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     /** @description 请求标识 */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ToolDetail"];
+                    "application/json": components["schemas"]["ToolVersionView"];
                 };
             };
             /** @description Bad Request */
@@ -50453,7 +50127,7 @@ export interface operations {
             };
         };
     };
-    enable_admin_v1_tools__tool_id__enable_post: {
+    edit_configuration_admin_v1_tools__tool_id__configuration_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -50464,7 +50138,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ToolRevision"];
+                "application/json": components["schemas"]["ToolVersionEdit"];
             };
         };
         responses: {
@@ -50476,7 +50150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ToolDetail"];
+                    "application/json": components["schemas"]["ToolVersionView"];
                 };
             };
             /** @description Bad Request */
@@ -50611,282 +50285,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ToolImpact"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    release_admin_v1_tools__tool_id__releases_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tool_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ToolRelease"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ToolDetail"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    create_version_admin_v1_tools__tool_id__versions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tool_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ToolVersionCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ToolVersionView"];
                 };
             };
             /** @description Bad Request */

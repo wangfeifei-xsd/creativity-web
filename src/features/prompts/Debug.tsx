@@ -40,7 +40,7 @@ export function PromptDebug({ version }: { version: Version }) {
     {!!samples.error && <ErrorState error={samples.error} onRetry={samples.reload} />}
     {!!routes.error && <ErrorState error={routes.error} onRetry={routes.reload} />}
     <Form form={form} layout="vertical">
-      <Form.Item name="model_route_version" label="模型路由版本" rules={[{ required: true, message: '请选择模型路由版本' }]}><Select loading={!routes.data && !routes.error} options={routes.data?.map(route => ({ value: route.version_id, label: `${route.name ?? '名称不可用'} · ${route.version_label}` }))} /></Form.Item>
+      <Form.Item name="model_route_version" label="模型路由" rules={[{ required: true, message: '请选择模型路由' }]}><Select loading={!routes.data && !routes.error} options={routes.data?.map(route => ({ value: route.version_id, label: route.name ?? '名称不可用' }))} /></Form.Item>
       <Form.Item name="sample_id" label="固定样例" rules={[{ required: true, message: '请选择样例' }]}><Select options={samples.data?.map(sample => ({ value: sample.sample_id, label: sample.title }))} /></Form.Item>
       <Space wrap>
         {canRun && <><Button type="primary" loading={busy} onClick={() => void submit(false)}>开始调试</Button><Button loading={busy} onClick={() => void submit(true)}>保存测试快照</Button></>}
@@ -49,8 +49,7 @@ export function PromptDebug({ version }: { version: Version }) {
       </Space>
     </Form>
     {tests.error ? <ErrorState error={tests.error} onRetry={tests.reload} /> : !tests.data ? <LoadingState /> : <Table rowKey="test_id" dataSource={tests.data} columns={[
-      { title: '样例', dataIndex: 'sample_title' }, { title: '版本', dataIndex: 'version_label' },
-      { title: '草稿修订', render: (_, row) => row.draft_revision ?? '已发布版本' },
+      { title: '样例', dataIndex: 'sample_title' },
       { title: '模型路由', render: (_, row) => row.model_route_name || '名称不可用' },
       { title: '状态', render: (_, row) => <StatusTag status={row.status} /> },
       { title: '测试时间', render: (_, row) => formatTimestamp(row.created_at) },
@@ -73,7 +72,7 @@ export function PromptDebug({ version }: { version: Version }) {
     </Modal>
     <Modal title="测试快照" open={!!selected} onCancel={() => setSelected(undefined)} footer={null} width={850}>
       {selected && <Space orientation="vertical" style={{ width: '100%' }}>
-        <Descriptions items={[{ key: 'version', label: '提示词版本', children: selected.version_label }, { key: 'time', label: '测试时间', children: formatTimestamp(selected.created_at) }]} />
+        <Descriptions items={[{ key: 'time', label: '测试时间', children: formatTimestamp(selected.created_at) }]} />
         {canReveal && selected.masked && <Button onClick={async () => {
           try { setSelected(await apiClient.request(`/admin/v1/prompt-tests/${selected.test_id}?reveal=true`)) }
           catch (error) { setError(errorText(error)) }
