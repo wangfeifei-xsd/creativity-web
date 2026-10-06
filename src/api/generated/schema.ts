@@ -6420,6 +6420,19 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** ChannelConfigurationStatus */
+        ChannelConfigurationStatus: {
+            /** Completed */
+            completed: boolean;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Message */
+            message: string;
+            /** Path */
+            path: string;
+        };
         /** ChannelContextInput */
         ChannelContextInput: {
             /** Channel Id */
@@ -6469,6 +6482,8 @@ export interface components {
             /** Actions */
             actions: components["schemas"]["VisibleAction"][];
             channel: components["schemas"]["ChannelView"];
+            /** Data Scope Types */
+            data_scope_types?: components["schemas"]["NamedOption"][];
             pending_administrator?: components["schemas"]["NamedOption"] | null;
             /** Service Actions */
             service_actions: components["schemas"]["VisibleAction"][];
@@ -6522,6 +6537,8 @@ export interface components {
             channel_code: string;
             /** Channel Id */
             channel_id: string;
+            /** Configuration Status */
+            configuration_status?: components["schemas"]["ChannelConfigurationStatus"][];
             /**
              * Created At
              * Format: date-time

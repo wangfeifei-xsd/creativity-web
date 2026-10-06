@@ -24,8 +24,13 @@ const retentionFields = [
 export function ChannelDetail({ channelId }: { channelId: string }) {
   const { reload: reloadSession } = useSession()
   const query = useQuery<Schema<'ChannelPage'>>(`/admin/v1/channels/${channelId}/page`)
-  const [parameters] = useSearchParams()
-  const [tab, setTab] = useState(parameters.get('tab') ?? 'overview')
+  const [parameters, setParameters] = useSearchParams()
+  const tab = parameters.get('tab') ?? 'overview'
+  const setTab = (key: string) => setParameters(previous => {
+    const next = new URLSearchParams(previous)
+    next.set('tab', key)
+    return next
+  })
   const [editing, setEditing] = useState(false)
   const [impact, setImpact] = useState<'suspend' | 'resume' | 'archive'>()
   const [generation, setGeneration] = useState(0)

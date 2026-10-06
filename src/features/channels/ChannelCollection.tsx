@@ -1,6 +1,6 @@
 import { names, send, statuses, environments, actionsAsOptions } from '../../api/management'
 import { DownOutlined } from '@ant-design/icons'
-import { AutoComplete, Button, Space, Tag } from 'antd'
+import { AutoComplete, Button, Input, Space, Tag } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
@@ -48,15 +48,20 @@ export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'
       initial.approval_required = row ? (row.release_policy as Schema<'ReleasePolicy'>).approval_required : true
     }
     if (kind === 'data-scopes' && !row) {
-      const types = [...new Set((query.data ?? []).map(scope => scope.external_scope_type)
-        .filter((value): value is string => typeof value === 'string' && value.length > 0))]
+      const types = [...new Map([
+        ...(page.data_scope_types ?? []),
+        ...(query.data ?? []).flatMap(scope => typeof scope.external_scope_type === 'string' && scope.external_scope_type.length > 0
+          ? [{ value: scope.external_scope_type, label: typeof scope.external_scope_type_name === 'string'
+            ? `${scope.external_scope_type_name}（${scope.external_scope_type}）` : scope.external_scope_type }] : []),
+      ].map(option => [option.value, option])).values()]
       fields.push({ name: 'external_scope_type', label: '外部数据域类型', required: true,
-        help: '选择已有类型或输入源系统使用的新类型。',
-        control: <AutoComplete options={types.map(value => ({ value }))} placeholder="选择或输入类型"
+        help: '选择源系统使用的范围类型；不在列表中时可直接输入原值。',
+        control: <AutoComplete options={types} placeholder="选择工作区、组织等类型，或输入自定义类型"
           suffixIcon={<DownOutlined />} maxLength={64}
-          filterOption={(value, option) => String(option?.value).toLowerCase().includes(value.toLowerCase())} /> },
+          filterOption={(value, option) => [option?.value, option?.label].some(text => String(text ?? '').toLowerCase().includes(value.toLowerCase()))} /> },
         { name: 'external_scope_id', label: '外部数据域编号', required: true,
-          help: '填写源系统中的真实编号，须与主体委托中的编号一致。' })
+          help: '填写对应组织、工作区等在源系统中的真实编号，须与接入系统传入的编号一致。',
+          control: <Input placeholder="例如：源系统中的工作区编号" maxLength={128} /> })
       if (createOptions.data) {
         const pending = page.pending_administrator
         initial.administrator_id = pending?.value

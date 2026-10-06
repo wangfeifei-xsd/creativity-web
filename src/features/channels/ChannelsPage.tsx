@@ -1,6 +1,7 @@
 import { useDirectory } from '../../api/useDirectory'
 import { actionsAsOptions, send } from '../../api/management'
-import { Button, Modal, Space, Tag } from 'antd'
+import { Button, Modal, Space, Tag, Tooltip } from 'antd'
+import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { Table } from '../../components/Table'
 import { useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -45,10 +46,18 @@ function ChannelList() {
   return <PageContainer title="渠道管理" actions={<Space wrap><DirectoryFilters directory={directory} label="筛选渠道" statuses={[{ value: 'ACTIVE', label: '启用' }, { value: 'SUSPENDED', label: '暂停' }, { value: 'ARCHIVED', label: '归档' }]} />
     <Button onClick={query.reload}>刷新</Button><ActionButtons actions={session.actions} handlers={{ 'channel:create': () => setCreating(true) }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
-      <Table rowKey="channel_id" dataSource={query.data.items} pagination={directory.pagination(query.data.total)} scroll={{ x: 750 }} columns={[
+      <Table rowKey="channel_id" dataSource={query.data.items} pagination={directory.pagination(query.data.total)} scroll={{ x: 1050 }} columns={[
         { title: '渠道名称', render: (_, row) => <Link to={`/channels/${row.channel_id}`}>{row.name}</Link> },
         { title: '负责人', dataIndex: 'owner' },
-        { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> }, { title: '开通时间', render: (_, row) => formatTimestamp(row.created_at) },
+        { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> }, { title: '开通时间', width: 210, render: (_, row) => formatTimestamp(row.created_at) },
+        { title: '配置状态', width: 360, render: (_, row) => row.configuration_status?.length ? <Space wrap size={[4, 4]}>
+          {row.configuration_status.map(item => <Tooltip key={item.key} title={item.message}>
+            <Link to={item.path} aria-label={`${item.label}：${item.completed ? '已完成' : '未完成'}`}>
+              <Tag color={item.completed ? 'success' : 'error'} style={{ marginInlineEnd: 0 }}
+                icon={item.completed ? <CheckCircleOutlined aria-hidden /> : <CloseCircleOutlined aria-hidden />}>{item.label}</Tag>
+            </Link>
+          </Tooltip>)}
+        </Space> : '未提供' },
       ]} />}
     {creating && <CreateChannel onClose={() => setCreating(false)} onSaved={id => { setCreating(false); navigate(`/channels/${id}?tab=environments`) }} />}
   </PageContainer>

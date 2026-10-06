@@ -101,7 +101,11 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
             options={[
               ...(session.can_access_platform ? [{ value: 'platform', label: '平台管理' }] : []),
               { value: 'channel', label: '渠道管理', disabled: channels.length === 0 },
-            ]} disabled={!session.can_access_platform} onChange={selectMode} />
+            ]} optionRender={option => option.value === 'channel' && channels.length === 0
+              ? <Tooltip title="暂无可用渠道，请先配置环境、数据域及成员授权">
+                <span style={{ display: 'block' }}>{option.label}</span>
+              </Tooltip> : option.label}
+            disabled={!session.can_access_platform} onChange={selectMode} />
           {session.workspace && <>
             <Select aria-label="切换渠道" className="workspace-channel-select" variant="borderless"
               showSearch optionFilterProp="label" value={session.workspace.channel_id} options={channels}

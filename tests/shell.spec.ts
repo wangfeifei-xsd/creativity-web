@@ -111,7 +111,10 @@ test('没有授权渠道时不能切入渠道模式，单渠道直接显示并�
   } }))
   await page.goto('#/')
   await page.getByLabel('管理模式', { exact: true }).click()
-  await expect(page.locator('.ant-select-dropdown:visible .ant-select-item-option').filter({ hasText: '渠道管理' })).toHaveClass(/ant-select-item-option-disabled/)
+  const channelMode = page.locator('.ant-select-dropdown:visible .ant-select-item-option').filter({ hasText: '渠道管理' })
+  await expect(channelMode).toHaveClass(/ant-select-item-option-disabled/)
+  await channelMode.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('暂无可用渠道，请先配置环境、数据域及成员授权')
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
   await page.keyboard.press('Escape')
   available = true
