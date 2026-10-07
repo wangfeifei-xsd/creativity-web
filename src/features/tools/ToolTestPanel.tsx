@@ -56,12 +56,12 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
       <Button type="primary" htmlType="submit" loading={busy} disabled={!query.data.executable}>运行测试</Button>
     </Form>
     {result && <><RunViewer key={result.run_id} runId={result.run_id} />
-      <Descriptions title="测试结果" items={[{ key: 'state', label: '状态', children: result.state.label },
+      {result.result && <Descriptions title="测试结果" items={[{ key: 'state', label: '状态', children: result.state.label },
         { key: 'run', label: '运行标识', children: <Typography.Text copyable>{result.run_id}</Typography.Text> },
         { key: 'time', label: '观测时间', children: formatTimestamp(result.result?.observed_at) },
         { key: 'coverage', label: '结果完整性', children: ({ complete: '完整', empty: '无记录', missing: '信息缺失', partial: '部分结果' } as Record<string, string>)[String(result.result?.coverage.result_status)] ?? '未声明' },
         { key: 'verification', label: '验证来源', children: result.result?.coverage.verification === 'controlled_fixture' ? '受控测试服务' : '未标注' },
-      ]} />
+      ]} />}
       {result.result && <><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(result.result.data, null, 2)}</pre>
         {result.result.evidence_refs.map(ref => <Typography.Paragraph key={ref.evidence_id}>{ref.title ?? '来源名称不可用'} · {formatTimestamp(ref.observed_at)}</Typography.Paragraph>)}
       </>}

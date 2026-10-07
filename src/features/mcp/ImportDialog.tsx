@@ -41,7 +41,7 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
         { value: 'READ_ONLY', label: '只读', disabled: tool.annotations?.readOnlyHint !== true },
         { value: 'IDEMPOTENT_WRITE', label: '幂等写入' }, { value: 'EXTERNAL_WRITE', label: '外部写入' },
       ]} /></Form.Item>
-      <Form.Item name="required_scopes" label="必要业务权限" rules={[{ required: true }]}><Select mode="multiple"
+      <Form.Item name="required_scopes" label="必要业务权限" rules={[{ required: true }]}><Select mode="multiple" optionFilterProp="label"
         options={session.actions.map(action => ({ value: action.action_key, label: action.label }))} /></Form.Item>
       <Form.Item name="timeout_seconds" label="超时（秒）" rules={[{ required: true }]}><InputNumber min={1} max={120} /></Form.Item>
       <Form.Item name="max_result_size" label="结果上限（字节）" rules={[{ required: true }]}><InputNumber min={256} max={2097152} /></Form.Item>
