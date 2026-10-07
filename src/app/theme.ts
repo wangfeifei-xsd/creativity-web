@@ -16,14 +16,16 @@ export const theme: ThemeConfig = {
 
 export const authTheme: ThemeConfig = {
   token: {
-    colorPrimary: '#424c58',
-    colorText: '#292f37',
-    colorBorder: '#c3c9d0',
-    colorBgContainer: '#fafbfc',
-    borderRadius: 4,
-    controlHeight: 44,
+    colorPrimary: '#6964c5',
+    colorText: '#15243d',
+    colorTextSecondary: '#68778f',
+    colorBorder: '#e5e0f3',
+    colorBgContainer: '#ffffff',
+    borderRadius: 8,
+    controlHeight: 43,
   },
   components: {
-    Input: { activeShadow: '0 0 0 2px rgba(79, 94, 111, 0.1)' },
+    Button: { primaryShadow: 'none' },
+    Input: { activeShadow: '0 0 0 2px rgba(105, 100, 197, 0.1)' },
   },
 }

@@ -1,4 +1,4 @@
-import { Alert, Button, Card, ConfigProvider, Form, Input, Select, Typography } from 'antd'
+import { Alert, Button, ConfigProvider, Form, Input, Select, Typography } from 'antd'
 import { useRef, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { applyFormErrors } from '../../api/form-errors'
@@ -6,7 +6,8 @@ import type { Schema } from '../../components/Management'
 import { isAbort, useQuery } from '../../api/useQuery'
 import { authTheme } from '../../app/theme'
 import { BrandMark } from './BrandMark'
-import { AuthIcon } from './AuthIcon'
+import { AuthBackdrop } from './AuthBackdrop'
+import { AuthStory } from './AuthStory'
 import { SliderCaptcha } from './SliderCaptcha'
 import './auth.css'
 
@@ -16,6 +17,7 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
   onLogout: () => Promise<void>
 }) {
   const [form] = Form.useForm()
+  const pageRef = useRef<HTMLDivElement>(null)
   const providers = useQuery<{ profile_id: string; name: string }[]>(changePassword ? null : '/admin/v1/auth/identity-providers')
   const [external, setExternal] = useState(false)
   const [error, setError] = useState<unknown>()
@@ -35,15 +37,17 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
     }
     finally { active.current = false; setBusy(false) }
   }
-  return <ConfigProvider theme={authTheme}><div className="auth-page">
-    <span className="auth-frame-corner auth-frame-corner--top" aria-hidden="true" /><span className="auth-frame-corner auth-frame-corner--bottom" aria-hidden="true" />
-    <div className="auth-diagonal auth-diagonal--one" aria-hidden="true" /><div className="auth-diagonal auth-diagonal--two" aria-hidden="true" />
-    <header className="auth-brand"><BrandMark className="auth-brand-mark" /><span className="auth-brand-name">Creativity</span></header>
+  return <ConfigProvider theme={authTheme}><div className="auth-page" ref={pageRef}>
+    <AuthBackdrop pageRef={pageRef} />
+    <header className="auth-header">
+      <div className="auth-brand"><BrandMark className="auth-brand-mark" /><span>Creativity</span></div>
+      <span className="auth-header-note">让灵感<em>成为可用的能力。</em></span>
+    </header>
     <main className="auth-main">
-      <div className="auth-art" aria-hidden="true"><BrandMark className="auth-emblem" /></div>
-      <section className="auth-panel" aria-labelledby="auth-title"><Card className="auth-card">
+      <AuthStory />
+      <section className="auth-panel" aria-labelledby="auth-title">
       <div className="auth-title"><Typography.Title id="auth-title" level={2}>{changePassword ? '修改初始密码' : '登录'}</Typography.Title>
-        <span className="auth-title-decoration" aria-hidden="true"><i /><i /><i /></span></div>
+        <span className="auth-login-mark">WELCOME</span></div>
       {!!error && <div className="auth-error"><Alert type="error" showIcon title={error instanceof ApiError ? error.message : '操作失败，请稍后重试'} /></div>}
       {!changePassword && !!providers.data?.length && <Select className="auth-method" aria-label="登录方式" value={external ? 'external' : 'password'} disabled={busy} onChange={v => { setExternal(v === 'external'); setError(undefined); form.resetFields() }} options={[{ value: 'password', label: '平台账号' }, { value: 'external', label: '外部身份' }]} />}
       <Form form={form} layout="vertical" onFinish={submit} disabled={busy} requiredMark={false} onValuesChange={changed => {
@@ -51,9 +55,9 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
         if ('login_name' in changed) form.setFieldValue('captcha_token', undefined)
       }}>
         {!changePassword && !external && <Form.Item name="login_name" label="登录名" rules={[{ required: true, message: '请输入登录名' }]}>
-          <Input autoComplete="username" placeholder="请输入登录名" maxLength={128} prefix={<AuthIcon name="user" />} /></Form.Item>}
+          <Input autoComplete="username" placeholder="请输入登录名" maxLength={128} /></Form.Item>}
         {!external && <Form.Item name={changePassword ? 'current_password' : 'password'} label={changePassword ? '当前密码' : '密码'}
-          rules={[{ required: true, message: '请输入密码' }]}><Input.Password autoComplete="current-password" placeholder={changePassword ? '请输入当前密码' : '请输入密码'} maxLength={256} prefix={<AuthIcon name="lock" />} /></Form.Item>}
+          rules={[{ required: true, message: '请输入密码' }]}><Input.Password autoComplete="current-password" placeholder={changePassword ? '请输入当前密码' : '请输入密码'} maxLength={256} /></Form.Item>}
         {external && <><Form.Item name="profile_id" label="身份源" rules={[{ required: true }]}><Select options={providers.data?.map(p => ({ value: p.profile_id, label: p.name }))} /></Form.Item><Form.Item name="token" label="外部访问凭据" rules={[{ required: true }]}><Input.Password autoComplete="off" /></Form.Item></>}
         {changePassword && <><Form.Item name="new_password" label="新密码" extra="密码不少于 12 个字符" rules={[{ required: true, message: '请输入新密码' }]}>
           <Input.Password autoComplete="new-password" placeholder="请输入新密码" /></Form.Item>
@@ -69,6 +73,7 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
         <Button className="auth-submit" type="primary" htmlType="submit" aria-label={submitLabel} disabled={busy} loading={busy} block>{submitLabel}</Button>
       </Form>
       {changePassword && <Button className="auth-logout" disabled={busy} onClick={() => void onLogout().catch(setError)}>退出登录</Button>}
-    </Card></section></main>
+    </section></main>
+    <footer className="auth-footer"><span>让智能推荐更懂需求，让服务发布更有保障。</span><span>CONNECT / COMPOSE / DELIVER</span></footer>
   </div></ConfigProvider>
 }

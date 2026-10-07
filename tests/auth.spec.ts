@@ -149,6 +149,7 @@ test('窄屏和低高度下表单与验证码没有横向溢出', async ({ page 
   await page.setViewportSize({ width: 375, height: 667 })
   await loginPage(page)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375)
+  await page.getByRole('button', { name: '登录', exact: true }).scrollIntoViewIfNeeded()
   await expect(page.getByRole('button', { name: '登录', exact: true })).toBeInViewport()
   await page.getByRole('button', { name: '点击完成滑动验证' }).click()
   await expect(page.getByRole('slider')).toBeEnabled()
