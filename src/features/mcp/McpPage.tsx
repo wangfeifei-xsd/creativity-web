@@ -46,17 +46,16 @@ function ConnectionEditor({ connection, onClose, onSaved }: { connection?: Schem
   return <EditorDialog title={connection ? '编辑连接' : '新增连接'} onClose={onClose} onSaved={onSaved}
     initial={{ name: connection?.name, endpoint: connection?.endpoint, transport: 'streamable_http',
       connect_seconds: connection?.timeouts.connect_seconds ?? 10, operation_seconds: connection?.timeouts.operation_seconds ?? 30,
-      interval_seconds: connection?.health_policy.interval_seconds ?? 300, failure_threshold: connection?.health_policy.failure_threshold ?? 3 }}
+      failure_threshold: connection?.health_policy.failure_threshold ?? 3 }}
     fields={[
       { name: 'name', label: '连接名称', required: true }, { name: 'endpoint', label: '服务地址', required: true },
       { name: 'connect_seconds', label: '连接超时（秒）', kind: 'number', min: 1, max: 30, required: true },
       { name: 'operation_seconds', label: '操作超时（秒）', kind: 'number', min: 1, max: 120, required: true },
-      { name: 'interval_seconds', label: '检查间隔（秒）', kind: 'number', min: 30, max: 86400, required: true },
       { name: 'failure_threshold', label: '连续失败阈值（次）', kind: 'number', min: 1, max: 10, required: true },
     ]} onSave={values => send(connection ? `${base}/${connection.connection_id}` : base, connection ? 'PATCH' : 'POST', {
       ...(connection ? { revision: connection.revision } : {}), name: values.name, endpoint: values.endpoint, transport,
       timeouts: { connect_seconds: values.connect_seconds, operation_seconds: values.operation_seconds },
-      health_policy: { interval_seconds: values.interval_seconds, failure_threshold: values.failure_threshold },
+      health_policy: { interval_seconds: connection?.health_policy.interval_seconds ?? 300, failure_threshold: values.failure_threshold },
     })}>
     <Select aria-label="连接方式" style={{ width: '100%' }} value={transport} onChange={setTransport} options={[
       { value: 'streamable_http', label: 'Streamable HTTP' }, { value: 'stdio', label: '隔离 stdio' },
@@ -116,7 +115,7 @@ function McpDetail({ id }: { id: string }) {
         { key: 'transport', label: '连接方式', children: connection.transport_label },
         { key: 'endpoint', label: '服务地址', children: <Typography.Text style={{ overflowWrap: 'anywhere' }}>{connection.endpoint}</Typography.Text> },
         { key: 'timeout', label: '操作超时', children: `${connection.timeouts.operation_seconds} 秒` },
-        { key: 'interval', label: '检查间隔', children: `${connection.health_policy.interval_seconds} 秒` },
+        { key: 'testMode', label: '测试方式', children: '手动测试' },
         { key: 'threshold', label: '连续失败阈值', children: `${connection.health_policy.failure_threshold} 次` },
       ]} /> },
       { key: 'auth', label: '鉴权', children: connection.transport === 'oauth' ? <OAuthPanel connectionId={id} /> : <Descriptions items={[
