@@ -132,7 +132,7 @@ test('导入预览后显式绑定本渠道工具，契约失败保留选择', as
   await page.getByRole('button', { name: '导入技能包', exact: true }).click()
   await page.getByLabel('技能编码').fill('archive_answer')
   await page.getByLabel('负责人').fill('配置人员')
-  await page.locator('input[type=file]').setInputFiles('../creativity-service/examples/skills/packages/archive-answer.zip')
+  await page.locator('input[type=file]').setInputFiles('tests/fixtures/archive-answer.zip')
   const choice = page.getByLabel('工具依赖：archive.find-notes')
   await expect(choice).toBeVisible()
   await expect(page.getByText('本地档案工具', { exact: true })).toHaveCount(0)

@@ -28,7 +28,7 @@ export const registration: FeatureRegistration = {
 
 渠道详情中的成员页与独立 `/members`、`/resource-grants` 共用 `MembersPage` 和 IAM 原始接口。接口与验证记录见服务端 `docs/development.md#workspace`。
 
-18 的 `/integrations` 页面已登记，连接/能力/契约测试及委托密钥操作均调用服务端管理接口；服务端新增 `integration:manage` 菜单能力，身份委托页使用服务端 `key:manage` 操作入口。签名密钥只保留在一次性页面状态中，工作区切换会清除。配置与验收见 [业务接入交接](../../creativity-service/docs/integration.md#integrations)。
+`/integrations` 页面管理当前主体复核、运行与事件及独立委托密钥，固定业务 HTTP 连接、能力与契约测试入口已移除。主体复核和运行事件使用 `integration:manage`，身份委托页使用 `key:manage` 操作入口。签名密钥只保留在一次性页面状态中，工作区切换会清除。配置与验收见 [业务接入交接](../../creativity-service/docs/integration.md#integrations)。
 
 ## 会话页面
 
