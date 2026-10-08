@@ -1926,6 +1926,23 @@ export interface paths {
         patch: operations["edit_admin_v1_mcp_connections__connection_id__patch"];
         trace?: never;
     };
+    "/admin/v1/mcp-connections/{connection_id}/authentication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Configure Authentication */
+        post: operations["configure_authentication_admin_v1_mcp_connections__connection_id__authentication_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/mcp-connections/{connection_id}/credentials": {
         parameters: {
             query?: never;
@@ -8167,6 +8184,30 @@ export interface components {
              */
             password: string;
         };
+        /** McpAuthentication */
+        McpAuthentication: {
+            /** App Id */
+            app_id?: string | null;
+            /**
+             * Mode
+             * @default bearer
+             * @enum {string}
+             */
+            mode: "bearer" | "client_credentials";
+            /** Token Endpoint */
+            token_endpoint?: string | null;
+        };
+        /** McpAuthenticationInput */
+        McpAuthenticationInput: {
+            /** App Id */
+            app_id: string;
+            /** App Secret */
+            app_secret?: string | null;
+            /** Revision */
+            revision: number;
+            /** Token Endpoint */
+            token_endpoint: string;
+        };
         /** McpCheck */
         McpCheck: {
             /** Capabilities */
@@ -8202,6 +8243,12 @@ export interface components {
         McpConnection: {
             /** Actions */
             actions: components["schemas"]["VisibleAction"][];
+            /**
+             * @default {
+             *       "mode": "bearer"
+             *     }
+             */
+            authentication: components["schemas"]["McpAuthentication"];
             /** Configuration Revision */
             configuration_revision: number;
             /** Connection Id */
@@ -30744,6 +30791,144 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["McpEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpConnection"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    configure_authentication_admin_v1_mcp_connections__connection_id__authentication_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["McpAuthenticationInput"];
             };
         };
         responses: {

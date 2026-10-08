@@ -1,4 +1,4 @@
-import { App, Button, Descriptions, Input, Select, Space, Tabs, Tag, Typography } from 'antd'
+import { Alert, App, Button, Descriptions, Flex, Input, Select, Space, Tabs, Tag, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -103,8 +103,9 @@ function McpDetail({ id }: { id: string }) {
       edit: () => setEditor('connection'), credential: () => setEditor('credential'), test: () => void act('test'),
       discover: () => void act('discover'), enable: () => void act('enable'), disable: () => void disable(),
     }} /></Space>}>
-    <ErrorNotice error={error} />
-    {feedback && <Typography.Paragraph type={feedback.error_category ? 'danger' : undefined}>{feedback.error_message ?? '连接测试通过'}</Typography.Paragraph>}
+    <Flex vertical gap={24}>
+    {error != null && <ErrorNotice error={error} />}
+    {feedback && <Alert showIcon type={feedback.error_category ? 'error' : 'success'} title={feedback.error_message ?? '连接测试通过'} />}
     <Descriptions items={[
       { key: 'status', label: '启用状态', children: <StatusTag status={connection.status} /> },
       { key: 'health', label: '健康状态', children: <StatusTag status={connection.health} /> },
@@ -118,10 +119,19 @@ function McpDetail({ id }: { id: string }) {
         { key: 'testMode', label: '测试方式', children: '手动测试' },
         { key: 'threshold', label: '连续失败阈值', children: `${connection.health_policy.failure_threshold} 次` },
       ]} /> },
-      { key: 'auth', label: '鉴权', children: connection.transport === 'oauth' ? <OAuthPanel connectionId={id} /> : <Descriptions items={[
-        { key: 'token', label: '服务凭据', children: connection.credential_mask ?? '未配置' },
-        { key: 'subject', label: '主体授权', children: <Link to="/integrations">配置当前主体复核</Link> },
-      ]} /> },
+      { key: 'auth', label: '鉴权', children: connection.transport === 'oauth' ? <OAuthPanel connectionId={id} /> : <Flex vertical gap={16}>
+        <Descriptions column={1} items={[
+          { key: 'mode', label: '鉴权方式', children: connection.authentication?.mode === 'client_credentials' ? '服务间鉴权' : 'Bearer Token' },
+          ...(connection.authentication?.mode === 'client_credentials' ? [
+            { key: 'endpoint', label: '鉴权地址', children: <Typography.Text style={{ overflowWrap: 'anywhere' }}>{connection.authentication.token_endpoint}</Typography.Text> },
+            { key: 'app', label: '应用标识（appId）', children: connection.authentication.app_id },
+            { key: 'secret', label: '应用密钥（appSecret）', children: connection.credential_mask ?? '未配置' },
+            { key: 'renewal', label: '令牌维护', children: '自动获取，到期前重新获取' },
+          ] : [{ key: 'token', label: '服务凭据', children: connection.credential_mask ?? '未配置' }]),
+          { key: 'subject', label: '主体授权', children: <Link to="/integrations">配置当前主体复核</Link> },
+        ]} />
+        {connection.actions.some(action => action.action_key === 'credential') && <div><Button onClick={() => setEditor('credential')}>配置鉴权</Button></div>}
+      </Flex> },
       { key: 'test', label: '连接测试', children: <Table rowKey="check_id" scroll={{ x: 700 }} dataSource={detail.checks} expandable={{ expandedRowRender: row => <>{json(row.server_info)}{json(row.capabilities)}</> }} columns={[
         { title: '检查时间', render: (_, row) => formatTimestamp(row.checked_at) }, { title: '协商协议', render: (_, row) => row.negotiated_version ?? '未完成协商' },
         { title: '健康状态', render: (_, row) => <StatusTag status={row.health} /> },
@@ -153,10 +163,33 @@ function McpDetail({ id }: { id: string }) {
         ]} />}</> },
       { key: 'calls', label: '运行记录', children: <Space orientation="vertical">{detail.imports.map(item => <Link key={item.import_id} to={`/tools/${item.local_tool_id}`}>查看“{item.name}”的调用记录</Link>)}</Space> },
     ]} />
+    </Flex>
     {editor === 'connection' && <ConnectionEditor connection={connection} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
-    {editor === 'credential' && <EditorDialog title="更新服务凭据" fields={[{ name: 'token', label: '服务令牌', kind: 'password', required: true }]}
-      onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }}
-      onSave={values => send(`${base}/${id}/credentials`, 'POST', { revision: connection.revision, token: values.token })} />}
+    {editor === 'credential' && <AuthenticationEditor connection={connection}
+      onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
     {importing && snapshot && <ImportDialog id={id} snapshot={snapshot} tool={importing} targets={detail.imports} onClose={() => setImporting(undefined)} onSaved={() => { setImporting(undefined); query.reload() }} />}
   </PageContainer>
+}
+
+function AuthenticationEditor({ connection, onClose, onSaved }: { connection: Schema<'McpConnection'>; onClose: () => void; onSaved: () => void }) {
+  const [mode, setMode] = useState(connection.authentication?.mode === 'client_credentials' || !connection.credential_mask ? 'client_credentials' : 'bearer')
+  const application = connection.authentication?.mode === 'client_credentials'
+  return <EditorDialog key={mode} title="配置鉴权" onClose={onClose} onSaved={onSaved}
+    initial={{ token_endpoint: connection.authentication?.token_endpoint, app_id: connection.authentication?.app_id }}
+    fields={mode === 'client_credentials' ? [
+      { name: 'token_endpoint', label: '鉴权地址', required: true },
+      { name: 'app_id', label: '应用标识（appId）', required: true },
+      { name: 'app_secret', label: '应用密钥（appSecret）', kind: 'password', required: !application,
+        help: application ? '留空保留原密钥；更换应用时须重新填写。' : undefined },
+    ] : [{ name: 'token', label: '服务令牌', kind: 'password', required: true }]}
+    onSave={values => send(`${base}/${connection.connection_id}/${mode === 'client_credentials' ? 'authentication' : 'credentials'}`, 'POST', {
+      revision: connection.revision,
+      ...(mode === 'client_credentials' ? { token_endpoint: values.token_endpoint, app_id: values.app_id,
+        ...(values.app_secret ? { app_secret: values.app_secret } : {}) } : { token: values.token }),
+    })}>
+    <Select aria-label="鉴权方式" style={{ width: '100%' }} value={mode} onChange={setMode} options={[
+      { value: 'client_credentials', label: '服务间鉴权（appId / appSecret）', disabled: connection.transport !== 'streamable_http' },
+      { value: 'bearer', label: 'Bearer Token' },
+    ]} />
+  </EditorDialog>
 }
