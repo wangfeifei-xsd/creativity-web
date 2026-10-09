@@ -1,4 +1,4 @@
-import { Alert, Button, Grid, Select, Tabs, Tooltip, Typography, theme } from 'antd'
+import { Alert, Button, Card, Grid, Select, Tabs, Tooltip, Typography, theme } from 'antd'
 import { ArrowRightOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import { useState, type CSSProperties } from 'react'
@@ -39,12 +39,14 @@ export function WorkspaceGuide({ entries, hasWorkspace }: {
     '--guide-accent': token.colorPrimary,
     '--guide-accent-bg': token.colorPrimaryBg,
   } as CSSProperties}>
-    <Typography.Title id="workspace-guide-title" level={4}>配置指引</Typography.Title>
-    {!hasWorkspace && <Alert type="info" showIcon title="请先在顶部切换到已授权的渠道与环境，再按指引配置。" />}
-    {screens.md ? <Tabs activeKey={activeKey} onChange={setActiveKey} items={items} /> : <>
-      <Select aria-label="指引类型" className="workspace-guide-select" value={activeKey} onChange={setActiveKey}
-        options={workspaceGuides.map(guide => ({ value: guide.key, label: guide.label }))} />
-      {items.find(item => item.key === activeKey)?.children}
-    </>}
+    <Card className="workspace-guide-panel">
+      <Typography.Title id="workspace-guide-title" level={4}>配置指引</Typography.Title>
+      {!hasWorkspace && <Alert type="info" showIcon title="请先在顶部切换到已授权的渠道与环境，再按指引配置。" />}
+      {screens.md ? <Tabs activeKey={activeKey} onChange={setActiveKey} items={items} /> : <>
+        <Select aria-label="指引类型" className="workspace-guide-select" value={activeKey} onChange={setActiveKey}
+          options={workspaceGuides.map(guide => ({ value: guide.key, label: guide.label }))} />
+        {items.find(item => item.key === activeKey)?.children}
+      </>}
+    </Card>
   </section>
 }

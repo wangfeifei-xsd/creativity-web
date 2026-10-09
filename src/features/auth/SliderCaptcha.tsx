@@ -81,7 +81,7 @@ export function SliderCaptcha({ value, onChange, loginName, beforeOpen, disabled
   return <>
     <Button id={id} className={`captcha-trigger${value ? ' captcha-trigger--verified' : ''}`} disabled={disabled}
       onClick={() => void show()} aria-label={value ? '验证已通过，点击重新验证' : '点击完成滑动验证'}>
-      <AuthIcon name={value ? 'check' : 'shield'} /><span>{value ? '验证已通过' : notice || '点击完成滑动验证'}</span><AuthIcon name={value ? 'check' : 'arrow'} />
+      <AuthIcon name="shield" /><span>{value ? '验证已通过' : notice || '点击完成滑动验证'}</span><AuthIcon name={value ? 'check' : 'arrow'} />
     </Button>
     <Modal className="captcha-modal" title="滑动验证" open={open} onCancel={close} footer={null} width={384} centered destroyOnHidden mask={{ closable: busy !== 'verifying' }}>
       <p className="captcha-instruction">拖动滑块，使拼图与缺口重合</p>

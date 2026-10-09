@@ -1,7 +1,20 @@
 import { useId } from 'react'
 
-export function BrandMark({ className }: { className?: string }) {
+export function BrandMark({ className, variant = 'metal' }: { className?: string; variant?: 'metal' | 'flat' }) {
   const id = useId()
+  if (variant === 'flat') return <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id={`${id}-blue`} x1="5" y1="13" x2="37" y2="36" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#36bfff" /><stop offset=".45" stopColor="#2866ff" /><stop offset="1" stopColor="#4bcff2" />
+      </linearGradient>
+      <linearGradient id={`${id}-cyan`} x1="13" y1="43" x2="40" y2="30" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#2fb9f1" /><stop offset="1" stopColor="#75e5f4" />
+      </linearGradient>
+    </defs>
+    <path d="M41.34 10.46A22 22 0 1 0 41.34 37.54L32.67 30.77A11 11 0 1 1 32.67 17.23Z" fill={`url(#${id}-blue)`} />
+    <path d="M35 4.95A22 22 0 0 1 41.34 10.46L32.67 17.23A11 11 0 0 0 29.5 14.47Z" fill="#63d8f3" />
+    <path d="M12.34 42.66A22 22 0 0 0 41.34 37.54L32.67 30.77A11 11 0 0 1 18.17 33.33Z" fill={`url(#${id}-cyan)`} />
+  </svg>
   return <svg className={className} viewBox="0 0 460 460" fill="none" aria-hidden="true">
     <defs>
       <linearGradient id={`${id}-metal`} x1="92" y1="76" x2="342" y2="377" gradientUnits="userSpaceOnUse">

@@ -10,8 +10,10 @@ export function AuthBackdrop({ pageRef }: { pageRef: RefObject<HTMLDivElement | 
     if (!page || !canvas || !context) return
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const accent = getComputedStyle(page).getPropertyValue('--auth-accent').trim()
-    let width = 0, height = 0, pointerX = .38, pointerY = .35, inside = false, frame = 0
+    const style = getComputedStyle(page)
+    const accent = style.getPropertyValue('--auth-motion-accent').trim()
+    const dotColor = style.getPropertyValue('--auth-dot').trim()
+    let width = 0, height = 0, pointerX = .52, pointerY = .47, inside = false, frame = 0
 
     function draw() {
       frame = 0
@@ -19,31 +21,26 @@ export function AuthBackdrop({ pageRef }: { pageRef: RefObject<HTMLDivElement | 
       const active = inside && !reducedMotion.matches
       page.style.setProperty('--px', `${pointerX * 100}%`)
       page.style.setProperty('--py', `${pointerY * 100}%`)
-      page.style.setProperty('--mx', `${active ? (pointerX - .5) * 22 : 0}px`)
-      page.style.setProperty('--my', `${active ? (pointerY - .5) * 18 : 0}px`)
       context.clearRect(0, 0, width, height)
-      context.fillStyle = accent
-      context.strokeStyle = accent
-      context.lineWidth = .7
-      for (let x = 18; x < width; x += 47) {
-        for (let y = 13; y < height; y += 47) {
+      const cornerWidth = Math.min(320, width * .22)
+      const cornerHeight = Math.min(280, height * .32)
+      for (let x = 26; x < width; x += 32) {
+        for (let y = 32; y < height; y += 32) {
           const dx = x - pointerX * width, dy = y - pointerY * height
           const distance = Math.hypot(dx, dy)
           const near = active ? Math.max(0, 1 - distance / 210) : 0
           const force = near * near * 17 * .65
-          context.globalAlpha = .08 + near * .43
+          // 静态点阵集中在右上与左下，鼠标经过时才显现其余区域的点阵。
+          const topRight = Math.max(0, 1 - (width - x) / cornerWidth) * Math.max(0, 1 - y / cornerHeight)
+          const bottomLeft = Math.max(0, 1 - x / cornerWidth) * Math.max(0, 1 - (height - y) / cornerHeight)
+          const opacity = Math.max(topRight, bottomLeft) * .5 + near * .36
+          if (opacity < .005) continue
+          context.fillStyle = near > 0 ? accent : dotColor
+          context.globalAlpha = opacity
           context.beginPath()
-          context.arc(x + (distance ? dx / distance * force : 0), y + (distance ? dy / distance * force : 0), near ? 1.1 + near * 1.3 : .9, 0, Math.PI * 2)
+          context.arc(x + (distance ? dx / distance * force : 0), y + (distance ? dy / distance * force : 0), near ? 1.1 + near * 1.3 : 1.2, 0, Math.PI * 2)
           context.fill()
         }
-      }
-      context.globalAlpha = .13
-      for (let line = 0; line < 4; line++) {
-        const offset = line * 100 + (active ? pointerX * 26 : 0)
-        context.beginPath()
-        context.moveTo(width * .6 + offset, -20)
-        context.lineTo(width * .1 + offset, height + 20)
-        context.stroke()
       }
       context.globalAlpha = 1
     }
@@ -54,8 +51,8 @@ export function AuthBackdrop({ pageRef }: { pageRef: RefObject<HTMLDivElement | 
     }
     function reset() {
       inside = false
-      pointerX = .38
-      pointerY = .35
+      pointerX = .52
+      pointerY = .47
       schedule()
     }
     function move(event: PointerEvent) {
@@ -91,6 +88,12 @@ export function AuthBackdrop({ pageRef }: { pageRef: RefObject<HTMLDivElement | 
   }, [pageRef])
 
   return <div className="auth-backdrop" aria-hidden="true">
-    <div className="auth-grid" /><div className="auth-halo" /><canvas ref={canvasRef} />
+    <svg className="auth-waves" viewBox="0 0 1744 904" preserveAspectRatio="none" fill="none">
+      <path className="auth-wave-surface" d="M-80 270C65 640 447 814 1170 930H-80Z" />
+      <path className="auth-wave-edge" d="M-80 270C65 640 447 814 1170 930" />
+      <path className="auth-wave-line" d="M-80 560C149 661 408 770 710 930" />
+      <path className="auth-wave-light" d="M-70 612C50 741 205 819 408 930" />
+    </svg>
+    <div className="auth-halo" /><canvas ref={canvasRef} />
   </div>
 }

@@ -22,12 +22,19 @@ export function WorkspaceHome() {
   const [expanded, setExpanded] = useState(false)
   const collapsedCount = (screens.xl ? 4 : screens.md ? 3 : 2) * 2
   const visibleEntries = expanded ? entries : entries.slice(0, collapsedCount)
-  return <PageContainer title="工作台">
+  const iconColors: Record<string, [string, string]> = {
+    'model-routes': [token.purple6, token.purple1],
+    skills: [token.purple6, token.purple1],
+    agents: [token.cyan7, token.cyan1],
+    runs: [token.cyan7, token.cyan1],
+    tools: [token.orange6, token.orange1],
+  }
+  return <div className="workspace-home"><PageContainer title="工作台">
     {entries.length > 0 ? <nav aria-label="工作台入口" className="workspace-shortcuts" style={{
       '--shortcut-accent': token.colorPrimary,
       '--shortcut-icon-bg': token.colorPrimaryBg,
       '--shortcut-text': token.colorText,
-      '--shortcut-muted': token.colorTextQuaternary,
+      '--shortcut-muted': token.colorTextTertiary,
       '--shortcut-radius': `${token.borderRadiusLG}px`,
     } as CSSProperties}>
       <Row id="workspace-shortcut-grid" gutter={[16, 16]}>
@@ -35,7 +42,9 @@ export function WorkspaceHome() {
           <Link className="workspace-shortcut" to={item.path}>
             <Card hoverable className="workspace-shortcut-card" styles={{ body: { padding: 0, height: '100%' } }}>
               <div className="workspace-shortcut-content">
-                <span className="workspace-shortcut-icon">{navigationIcon(item.navigationKey)}</span>
+                <span className="workspace-shortcut-icon" style={iconColors[item.navigationKey] && {
+                  color: iconColors[item.navigationKey][0], background: iconColors[item.navigationKey][1],
+                }}>{navigationIcon(item.navigationKey)}</span>
                 <Typography.Text className="workspace-shortcut-label">{item.label}</Typography.Text>
                 <ArrowRightOutlined className="workspace-shortcut-arrow" aria-hidden />
               </div>
@@ -51,8 +60,7 @@ export function WorkspaceHome() {
       </div>}
     </nav> : <EmptyState message={session.workspace
       ? '暂无可用菜单，请联系管理员' : '尚未分配可用渠道，请联系平台管理员'} />}
-    <WorkspaceGuide entries={entries} hasWorkspace={!!session.workspace} />
-  </PageContainer>
+  </PageContainer><WorkspaceGuide entries={entries} hasWorkspace={!!session.workspace} /></div>
 }
 export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const { session, switchWorkspace, logout } = useSession()
@@ -92,17 +100,25 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   ] : [{ title: location.pathname === '/' ? '工作台' : <Link to="/">工作台</Link> }]
   const selectPage = (path: string) => { navigate(path); setMenuOpen(false) }
   const brand = <Link className="workspace-brand" to="/" aria-label="Creativity 工作台" onClick={() => setMenuOpen(false)}>
-    <span className="workspace-brand-icon"><BrandMark /></span><span>Creativity</span>
+    <span className="workspace-brand-icon"><BrandMark variant="flat" /></span><span>Creativity</span>
   </Link>
-  const menu = <nav aria-label="主导航" className="workspace-navigation"><Menu theme="dark" mode="inline"
+  const menu = <nav aria-label="主导航" className="workspace-navigation"><Menu theme="light" mode="inline"
     className="workspace-menu" selectedKeys={current ? [current.path] : location.pathname === '/' ? ['/'] : []}
     onClick={({ key }) => selectPage(key)} items={[
       { key: '/', label: '工作台', icon: <HomeOutlined aria-hidden /> },
       ...navigationItems(entries),
     ]} /></nav>
-  return <Layout className="workspace-layout">
-    {screens.lg && <Layout.Sider width={232} className="workspace-sidebar" theme="dark">{brand}{menu}</Layout.Sider>}
-    {!screens.lg && <Drawer classNames={{ section: 'workspace-drawer' }} title={brand} placement="left" size={256} open={menuOpen}
+  const workspaceStyle = {
+    '--workspace-bg': token.colorBgContainer,
+    '--workspace-border': token.colorBorderSecondary,
+    '--workspace-text': token.colorText,
+    '--workspace-muted': token.colorTextSecondary,
+    '--workspace-subtle': token.colorTextTertiary,
+    '--workspace-primary': token.colorPrimary,
+  } as CSSProperties
+  return <Layout className="workspace-layout" style={workspaceStyle}>
+    {screens.lg && <Layout.Sider width={232} className="workspace-sidebar" theme="light">{brand}{menu}</Layout.Sider>}
+    {!screens.lg && <Drawer rootStyle={workspaceStyle} classNames={{ section: 'workspace-drawer' }} title={brand} placement="left" size={256} open={menuOpen}
       onClose={() => setMenuOpen(false)} destroyOnHidden>{menu}</Drawer>}
     <Layout className="workspace-main">
       <Layout.Header className="workspace-header">
@@ -111,7 +127,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
           <Breadcrumb aria-label="页面路径" items={breadcrumbs} />
         </div>
         <div className="workspace-context" style={{
-          '--context-bg': token.colorFillAlter,
+          '--context-bg': token.colorBgLayout,
           '--context-border': token.colorBorderSecondary,
           '--context-text': token.colorText,
           '--context-muted': token.colorTextSecondary,
@@ -158,7 +174,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
             if (key === 'logout') void logout().catch(setError)
           } }}>
             <Button className="workspace-user" aria-label="用户菜单">
-              <Avatar size={28} icon={<UserOutlined aria-hidden />} /><span className="workspace-user-name">{session.user.display_name}</span><DownOutlined aria-hidden />
+              <Avatar size={32} icon={<UserOutlined aria-hidden />} /><span className="workspace-user-name">{session.user.display_name}</span><DownOutlined aria-hidden />
             </Button>
           </Dropdown>
         </div>
