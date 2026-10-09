@@ -24,6 +24,7 @@ async function setup(page: Page) {
         { case: 'schema', name: '原生结构化输出', capability: 'structured_output' },
         { case: 'stream_cancel', name: '流式输出', capability: 'streaming' },
         { case: 'embedding', name: '向量生成', capability: 'embedding' },
+        { case: 'vision', name: '视觉理解', capability: 'vision' },
         { case: 'usage', name: '用量口径', capability: null },
       ],
       '/admin/v1/models/model1/price-versions': [{ id: 'price1', name: '供应商公开报价', currency: 'CNY', source: '官方报价表', effective_at: '2026-10-01T00:00:00Z', items: [{ dimension: 'input', amount: '2.50', per_units: 1000000 }] }],
@@ -60,7 +61,7 @@ test('模型详情展示能力证据、价格单位和不可执行的验证记�
   await expect(verification.locator('.ant-select-selection-item')).toHaveText(['文本生成', '用量口径'])
   await verification.getByLabel('验证项目').click()
   const options = page.locator('.ant-select-dropdown:visible')
-  for (const name of ['模型能力', '文本生成', '工具调用', '原生结构化输出', '流式输出', '向量生成', '附加验证项', '用量口径']) {
+  for (const name of ['模型能力', '文本生成', '工具调用', '原生结构化输出', '流式输出', '向量生成', '视觉理解', '附加验证项', '用量口径']) {
     await expect(options.getByText(name, { exact: true })).toBeVisible()
   }
   await page.screenshot({ path: '.local/model-capability-options.png', fullPage: true })
@@ -77,6 +78,47 @@ test('模型详情展示能力证据、价格单位和不可执行的验证记�
   await expect(drawer.getByText('调试服务暂不可用')).toBeVisible()
   expect(errors).toEqual([])
   await page.screenshot({ path: '.local/creativity-models-detail.png', fullPage: true })
+})
+
+test('单独验证视觉理解后更新能力状态并保留已有文本能力', async ({ page }) => {
+  await setup(page)
+  let verified = false
+  const checks: unknown[] = []
+  await page.route('**/admin/v1/models/model1', route => route.fulfill({ json: {
+    ...model,
+    capabilities: [
+      { capability: 'text', name: '文本生成', state: 'SUPPORTED', label: '已支持', verified_at: '2026-10-08T00:00:00Z', reason: null },
+      { capability: 'vision', name: '视觉理解', state: verified ? 'SUPPORTED' : 'UNVERIFIED', label: verified ? '已支持' : '未验证', verified_at: verified ? '2026-10-09T00:00:00Z' : null, reason: verified ? null : '当前配置尚未通过真实验证' },
+    ],
+  } }))
+  await page.route('**/admin/v1/models/model1/tests', route => {
+    if (route.request().method() === 'POST') {
+      expect(route.request().postDataJSON()).toEqual({ cases: ['vision'] })
+      verified = true
+      checks.push({ id: 'vision-test', created_at: '2026-10-09T00:00:00Z', config_revision: 1, state: 'PASSED', state_label: '验证通过', latency_ms: 100, run_id: null, results: [{ case: 'vision', passed: true, reason: null, attempt_ids: ['attempt1'] }] })
+      return route.fulfill({ status: 201, json: checks[0] })
+    }
+    return route.fulfill({ json: checks })
+  })
+  await page.goto('#/models')
+  await page.getByRole('button', { name: '业务模型', exact: true }).click()
+  const drawer = page.getByRole('dialog')
+  await drawer.getByRole('tab', { name: '验证', exact: true }).click()
+  await drawer.getByRole('button', { name: '能力验证', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '能力验证', exact: true })
+  await expect(dialog.locator('.ant-select-selection-item')).toHaveText(['文本生成', '用量口径'])
+  await dialog.getByLabel('验证项目').click()
+  const options = page.locator('.ant-select-dropdown:visible')
+  for (const name of ['文本生成', '用量口径', '视觉理解']) {
+    await options.getByText(name, { exact: true }).click()
+  }
+  await dialog.getByLabel('验证项目').press('Escape')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(drawer.getByText('验证通过', { exact: true })).toBeVisible()
+  await drawer.getByRole('tab', { name: '能力', exact: true }).click()
+  await expect(drawer.getByRole('row').filter({ hasText: '视觉理解' }).getByText('已支持')).toBeVisible()
+  await expect(drawer.getByRole('row').filter({ hasText: '文本生成' }).getByText('已支持')).toBeVisible()
+  await expect(drawer.getByText('暂不支持验证')).toHaveCount(0)
 })
 
 test('工作台指引直达供应商连接，编辑保留未填写的密钥', async ({ page }) => {

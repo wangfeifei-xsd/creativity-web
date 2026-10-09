@@ -6095,9 +6095,17 @@ export interface components {
              * Case
              * @enum {string}
              */
-            case: "text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding";
+            case: "text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision";
+            /** Images */
+            images?: string[];
             /** Name */
             name: string;
+            /**
+             * Output Mode
+             * @default native
+             * @enum {string}
+             */
+            output_mode: "native" | "prompt";
             /** Output Schema */
             output_schema?: {
                 [key: string]: unknown;
@@ -6159,7 +6167,7 @@ export interface components {
              * Case
              * @enum {string}
              */
-            case: "text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding";
+            case: "text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision";
             /** Passed */
             passed: boolean;
             /** Reason */
@@ -10968,14 +10976,14 @@ export interface components {
              *       "usage"
              *     ]
              */
-            cases: ("text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding")[];
+            cases: ("text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision")[];
         };
         /** TestView */
         TestView: {
             /** Attempt Ids */
             attempt_ids: string[];
             /** Cases */
-            cases: ("text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding")[];
+            cases: ("text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision")[];
             /** Config Digest */
             config_digest: string;
             /** Config Revision */
