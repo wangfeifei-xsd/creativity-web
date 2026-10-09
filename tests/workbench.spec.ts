@@ -30,9 +30,10 @@ for (const [width, columns] of [[1391, 4], [820, 3], [375, 2], [320, 2]]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('#/')
     const shortcuts = page.getByRole('navigation', { name: '工作台入口' })
-    await expect(shortcuts.getByRole('link')).toHaveCount(navigation.length)
-    await expect(shortcuts.locator('.workspace-shortcut-icon')).toHaveCount(navigation.length)
-    expect(await shortcuts.getByRole('link').allTextContents()).toEqual(navigation.map(item => item.label))
+    const visible = navigation.slice(0, columns * 2)
+    await expect(shortcuts.getByRole('link')).toHaveCount(visible.length)
+    await expect(shortcuts.locator('.workspace-shortcut-icon')).toHaveCount(visible.length)
+    expect(await shortcuts.getByRole('link').allTextContents()).toEqual(visible.map(item => item.label))
     const boxes = await shortcuts.getByRole('link').evaluateAll(links =>
       links.map(link => { const { x, y, width, height } = link.getBoundingClientRect(); return { x, y, width, height } }))
     expect(boxes.filter(box => box.y === boxes[0].y)).toHaveLength(columns)
@@ -42,6 +43,14 @@ for (const [width, columns] of [[1391, 4], [820, 3], [375, 2], [320, 2]]) {
       expect(box.x + box.width).toBeLessThanOrEqual(width)
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    if (navigation.length > visible.length) {
+      const expand = shortcuts.getByRole('button', { name: /展开全部快捷入口/ })
+      await expect(expand).toHaveAttribute('aria-expanded', 'false')
+      await expand.click()
+      await expect(shortcuts.getByRole('link')).toHaveCount(navigation.length)
+      await shortcuts.getByRole('button', { name: '收起快捷入口' }).click()
+      await expect(shortcuts.getByRole('link')).toHaveCount(visible.length)
+    }
   })
 }
 
@@ -78,6 +87,9 @@ test('仅展示服务端返回的已登记入口，名称较长时换行且保�
   await expect(shortcuts.getByRole('link', { name: label, exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: '账号管理', exact: true })).toHaveCount(0)
   await expect(page.getByText('未登记入口', { exact: true })).toHaveCount(0)
+  const guide = page.getByRole('region', { name: '配置指引' })
+  await expect(guide.getByRole('link')).toHaveCount(0)
+  await expect(guide.getByRole('button', { name: '打开供应商连接' }).first()).toBeDisabled()
   const text = shortcuts.locator('.workspace-shortcut-label')
   expect(await text.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
   expect(await text.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(21)

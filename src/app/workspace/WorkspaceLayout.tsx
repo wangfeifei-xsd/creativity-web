@@ -1,5 +1,5 @@
 import { Avatar, Breadcrumb, Button, Card, Col, Drawer, Dropdown, Grid, Layout, Menu, Row, Select, Tooltip, Typography, theme } from 'antd'
-import { ApartmentOutlined, AppstoreOutlined, ArrowRightOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
+import { ApartmentOutlined, AppstoreOutlined, ArrowRightOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UpOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/Management'
@@ -10,6 +10,7 @@ import { resolveNavigation } from '../../features/navigation'
 import { BrandMark } from '../../features/auth/BrandMark'
 import { useSession } from './context'
 import { navigationIcon, navigationItems } from './navigation'
+import { WorkspaceGuide } from './WorkspaceGuide'
 import type { CSSProperties, ReactNode } from 'react'
 import './workspace.css'
 
@@ -17,6 +18,10 @@ export function WorkspaceHome() {
   const { session } = useSession()
   const { token } = theme.useToken()
   const entries = resolveNavigation(session.navigation, features)
+  const screens = Grid.useBreakpoint()
+  const [expanded, setExpanded] = useState(false)
+  const collapsedCount = (screens.xl ? 4 : screens.md ? 3 : 2) * 2
+  const visibleEntries = expanded ? entries : entries.slice(0, collapsedCount)
   return <PageContainer title="工作台">
     {entries.length > 0 ? <nav aria-label="工作台入口" className="workspace-shortcuts" style={{
       '--shortcut-accent': token.colorPrimary,
@@ -25,8 +30,8 @@ export function WorkspaceHome() {
       '--shortcut-muted': token.colorTextQuaternary,
       '--shortcut-radius': `${token.borderRadiusLG}px`,
     } as CSSProperties}>
-      <Row gutter={[16, 16]}>
-        {entries.map(item => <Col key={item.navigationKey} xs={12} md={8} xl={6}>
+      <Row id="workspace-shortcut-grid" gutter={[16, 16]}>
+        {visibleEntries.map(item => <Col key={item.navigationKey} xs={12} md={8} xl={6}>
           <Link className="workspace-shortcut" to={item.path}>
             <Card hoverable className="workspace-shortcut-card" styles={{ body: { padding: 0, height: '100%' } }}>
               <div className="workspace-shortcut-content">
@@ -38,8 +43,15 @@ export function WorkspaceHome() {
           </Link>
         </Col>)}
       </Row>
+      {entries.length > collapsedCount && <div className="workspace-shortcut-toggle">
+        <Button type="text" aria-expanded={expanded} aria-controls="workspace-shortcut-grid"
+          icon={expanded ? <UpOutlined /> : <DownOutlined />} onClick={() => setExpanded(value => !value)}>
+          {expanded ? '收起快捷入口' : `展开全部快捷入口（${entries.length}）`}
+        </Button>
+      </div>}
     </nav> : <EmptyState message={session.workspace
       ? '暂无可用菜单，请联系管理员' : '尚未分配可用渠道，请联系平台管理员'} />}
+    <WorkspaceGuide entries={entries} hasWorkspace={!!session.workspace} />
   </PageContainer>
 }
 export function WorkspaceLayout({ children }: { children: ReactNode }) {

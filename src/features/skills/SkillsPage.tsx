@@ -145,7 +145,7 @@ function SkillDetail({ skillId }: { skillId: string }) {
       { key: 'owner', label: '负责人', children: detail.skill.owner },
       { key: 'description', label: '用途', children: detail.skill.description },
     ]} />
-    <Space wrap style={{ marginBottom: 16 }}>
+    <Space wrap style={{ marginBlock: 16 }}>
       {version && <ActionButtons actions={version.actions} handlers={busy ? {} : { validate: () => void mutate('validate'), test: () => setActiveTab('tests'), export: () => void mutate('export') }} />}
     </Space>
     {!version && summary && (versionQuery.error ? <ErrorState error={versionQuery.error} onRetry={versionQuery.reload} /> : <LoadingState />)}
@@ -156,7 +156,7 @@ function SkillDetail({ skillId }: { skillId: string }) {
         { key: 'priority', label: '加载优先级', children: version.settings.priority },
         { key: 'budget', label: '上下文上限', children: `${version.settings.context_budget} 字节` },
         { key: 'changes', label: '变更说明', children: version.settings.change_note || '未填写' },
-      ]} /><Typography.Title level={5}>入口元数据</Typography.Title><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(version.metadata, null, 2)}</pre></> },
+      ]} /><Typography.Title level={5} style={{ marginTop: 24 }}>入口元数据</Typography.Title><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(version.metadata, null, 2)}</pre></> },
       { key: 'preview', label: '加载预览', children: <Tabs items={[
         { key: 'discovery', label: '发现阶段', children: <pre style={{ whiteSpace: 'pre-wrap' }}>{version.discovery_preview}</pre> },
         { key: 'instructions', label: '完整指令', children: <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{version.instruction_preview}</pre> },
@@ -192,4 +192,3 @@ function ResourceEditor({ detail, onClose, onSaved }: { detail: Detail; onClose:
     </Form>
   </Modal>
 }
-

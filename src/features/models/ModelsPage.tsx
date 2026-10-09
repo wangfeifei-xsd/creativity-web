@@ -1,7 +1,7 @@
 import { Button, Descriptions, Drawer, Form, Input, InputNumber, Select, Space, Tabs, Tag } from 'antd'
 import { Table } from '../../components/Table'
 import { useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { send, statuses } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -17,10 +17,17 @@ type Model = Schema<'ModelView'>
 type Connection = Schema<'ConnectionView'>
 export function ModelsPage() {
   const modelId = useParams()['*']?.split('/')[0]
+  const [searchParams, setSearchParams] = useSearchParams()
   if (modelId) return <PageContainer title="模型详情" actions={<Link to="/models">返回模型列表</Link>}>
     <ModelDetails key={modelId} modelId={modelId} />
   </PageContainer>
-  return <Tabs destroyOnHidden items={[{ key: 'models', label: '模型', children: <Models /> },
+  return <Tabs destroyOnHidden activeKey={searchParams.get('tab') === 'connections' ? 'connections' : 'models'}
+    onChange={tab => setSearchParams(previous => {
+      const next = new URLSearchParams(previous)
+      if (tab === 'connections') next.set('tab', tab)
+      else next.delete('tab')
+      return next
+    })} items={[{ key: 'models', label: '模型', children: <Models /> },
     { key: 'connections', label: '供应商连接', children: <Connections /> }]} />
 }
 function Models() {
@@ -96,7 +103,7 @@ function Connections() {
         <Form.Item name="protocol" label="协议" rules={[{ required: true }]}><Select options={protocols.data?.map(p => ({ value: p.code, label: `${p.name}${p.enabled ? '' : '（未启用）'}` }))} /></Form.Item>
         <Form.Item name="endpoint" label="基础地址" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="allowed_networks" label="允许的 IP 范围" extra="留空仅允许公网；内网模型或代理请填写 CIDR，每行一个。"><Input.TextArea rows={2} placeholder="例如：10.20.0.0/16" /></Form.Item>
-        <Form.Item name="secret" label={row ? '新凭据（留空保留原凭据）' : '凭据'} rules={row ? [] : [{ required: true }]}><Input.Password autoComplete="new-password" /></Form.Item>
+        <Form.Item name="secret" label="API Key" extra={row ? '留空保留原密钥，填写后替换。' : undefined} rules={row ? [] : [{ required: true }]}><Input.Password autoComplete="new-password" /></Form.Item>
         <Form.Item name="timeout_seconds" label="超时（秒）"><InputNumber min={1} max={600} /></Form.Item>
         <Form.Item name="status" label="状态"><Select options={statuses} /></Form.Item>
       </>}</ModelDialog>}

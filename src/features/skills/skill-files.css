@@ -1,0 +1,20 @@
+.skill-files-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.skill-files-tree { min-width: 0; max-height: 540px; overflow: auto; }
+.skill-files-tree .ant-tree-node-content-wrapper { min-width: 0; overflow: hidden; }
+.skill-files-tree .ant-tree-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-files-content { min-width: 0; }
+.skill-files-heading { margin-bottom: 16px; }
+.skill-files-preview { max-height: 480px; overflow: auto; }
+.skill-files-content > .ant-alert { margin-bottom: 16px; }
+.skill-files-source { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 767px) {
+  .skill-files-layout { grid-template-columns: minmax(0, 1fr); }
+  .skill-files-tree { max-height: 180px; }
+}

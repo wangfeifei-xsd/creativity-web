@@ -79,18 +79,21 @@ test('模型详情展示能力证据、价格单位和不可执行的验证记�
   await page.screenshot({ path: '.local/creativity-models-detail.png', fullPage: true })
 })
 
-test('连接编辑不回显凭据，保存保留凭据引用与修订号', async ({ page }) => {
+test('工作台指引直达供应商连接，编辑保留未填写的密钥', async ({ page }) => {
   await setup(page)
   let saved: unknown
   await page.route('**/admin/v1/model-connections/connection1', route => {
     saved = route.request().postDataJSON()
     return route.fulfill({ json: connection })
   })
-  await page.goto('#/models')
-  await page.getByRole('tab', { name: '供应商连接', exact: true }).click()
+  await page.goto('#/')
+  await page.getByRole('region', { name: '配置指引' }).getByRole('link', { name: '打开供应商连接' }).first().click()
+  await expect(page).toHaveURL('/creativity/#/models?tab=connections')
+  await page.reload()
+  await expect(page.getByRole('tab', { name: '供应商连接', exact: true })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog.getByLabel('新凭据（留空保留原凭据）')).toHaveValue('')
+  await expect(dialog.getByLabel('API Key', { exact: true })).toHaveValue('')
   await dialog.getByLabel('连接名称').fill('修改后的连接')
   await dialog.getByLabel('允许的 IP 范围').fill('10.20.0.0/16\n2001:2::59/128')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
@@ -235,7 +238,8 @@ test('路由发布权限不足时显示禁用原因', async ({ page }) => {
   const reason = '缺少发布权限'
   await openRoutePublish(page, reason)
   await expect(page.getByRole('button', { name: '发布', exact: true })).toBeDisabled()
-  await expect(page.getByText(reason, { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '发布', exact: true }).hover()
+  await expect(page.getByRole('tooltip', { name: reason, exact: true })).toBeVisible()
 })
 
 test('路由从列表直接发布，发布后展示下架', async ({ page }) => {

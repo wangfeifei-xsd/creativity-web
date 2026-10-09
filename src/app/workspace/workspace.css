@@ -170,7 +170,22 @@
 .workspace-shortcut:focus-visible .workspace-shortcut-arrow { color: var(--shortcut-accent); }
 .workspace-shortcut:focus-visible { outline: 2px solid var(--shortcut-accent); outline-offset: 3px; }
 
+.workspace-shortcut-toggle { display: flex; justify-content: center; margin-top: 12px; }
+.workspace-guide { min-width: 0; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--guide-border); }
+.workspace-guide .ant-tabs { min-width: 0; }
+.workspace-guide-select { width: 100%; margin-top: 16px; }
+.workspace-guide-steps { margin: 0; padding: 0; list-style: none; }
+.workspace-guide-step { display: flex; align-items: flex-start; gap: 16px; padding: 20px 0; }
+.workspace-guide-step + .workspace-guide-step { border-top: 1px solid var(--guide-border); }
+.workspace-guide-number { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--guide-accent-bg); color: var(--guide-accent); font-weight: 600; }
+.workspace-guide-copy { flex: 1; min-width: 0; }
+.workspace-guide-copy .ant-typography-secondary { margin: 6px 0 0; line-height: 1.8; overflow-wrap: anywhere; }
+.workspace-guide-action { flex-shrink: 0; padding-top: 3px; }
+.workspace-guide-action a { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; }
+
 @media (max-width: 767px) {
+  .workspace-guide-step { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px 12px; }
+  .workspace-guide-action { grid-column: 2; padding-top: 0; }
   .workspace-header.ant-layout-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; height: auto; min-height: 56px; padding: 8px 12px; }
   .workspace-context { grid-column: 1 / -1; grid-row: 2; max-width: 100%; gap: 6px 10px; }
   .workspace-tools { gap: 4px; }
