@@ -109,6 +109,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
         { key: 'subject', label: '主体要求', children: definition.subject_requirements?.required ? '需要受信业务主体' : '使用当前身份' },
       ]} /> },
       { key: 'policy', label: '执行策略', children: <Descriptions column={2} items={[
+        { key: 'writeMode', label: '写入授权', children: definition.effect_type === 'READ_ONLY' ? '只读' : definition.write_policy?.authorization_mode === 'preauthorized' ? '预授权自动执行' : '逐次确认' },
         { key: 'timeout', label: '超时', children: `${definition.timeout_seconds} 秒` },
         { key: 'size', label: '结果上限', children: `${definition.max_result_size} 字节` },
         { key: 'attempts', label: '最多尝试', children: `${definition.retry_policy?.max_attempts} 次` },

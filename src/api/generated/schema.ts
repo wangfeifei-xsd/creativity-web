@@ -11637,6 +11637,31 @@ export interface components {
         /** WritePolicy */
         WritePolicy: {
             /**
+             * Allowed Agent Codes
+             * @default []
+             */
+            allowed_agent_codes: string[];
+            /**
+             * Allowed Principal Ids
+             * @default []
+             */
+            allowed_principal_ids: string[];
+            /** Argument Constraints */
+            argument_constraints?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Authorization Mode
+             * @default per_call
+             * @enum {string}
+             */
+            authorization_mode: "per_call" | "preauthorized";
+            /**
+             * Check Delay Ms
+             * @default 1000
+             */
+            check_delay_ms: number;
+            /**
              * Max Checks
              * @default 3
              */

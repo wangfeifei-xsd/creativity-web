@@ -11,7 +11,7 @@ import { toolPermissionLabel } from './permissionLabel'
 type Version = Schema<'ToolVersionView'>
 type Values = { label: string; input: string; output: string; adapter: string; required: boolean;
   types: string[]; scopes: string[]; timeout: number; maxSize: number; attempts: number;
-  delay: number; ttl: number; freshness: number; volatile: boolean; statusVersion?: string; submissions: number; checks: number; profile?: string; skillVersion?: string; scriptPath?: string; analysis: boolean; rowsPath: string; maxRows: number }
+  delay: number; ttl: number; freshness: number; volatile: boolean; statusVersion?: string; submissions: number; checks: number; authorizationMode: 'per_call' | 'preauthorized'; allowedAgents: string[]; allowedPrincipals: string[]; constraints: string; checkDelay: number; profile?: string; skillVersion?: string; scriptPath?: string; analysis: boolean; rowsPath: string; maxRows: number }
 type ExecutionOptions = { profiles: { profile_id: string; name: string; digest: string; mode: string }[]; scripts: { version_id: string; name: string; version_label: string; paths: string[] }[]; queries: { version_id: string; name: string; version_label: string }[] }
 const stringify = (value: unknown) => JSON.stringify(value, null, 2)
 const initialInput = { type: 'object', properties: { values: { type: 'array', title: '数值列表',
@@ -32,6 +32,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
   const skillVersion = Form.useWatch('skillVersion', form)
   const adapter = Form.useWatch('adapter', form)
   const analysis = Form.useWatch('analysis', form)
+  const authorizationMode = Form.useWatch('authorizationMode', form)
   const writing = (bindings.data?.find(b => b.binding.adapter_key === adapter)?.effect_type ?? definition?.effect_type ?? 'READ_ONLY') !== 'READ_ONLY'
   const workspace = session.workspace
   const available = bindings.data?.filter(b => b.source_type === tool.source_type) ?? []
@@ -56,7 +57,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
         retry_policy: { max_attempts: values.attempts, delay_ms: values.delay },
         cache_policy: { ttl_seconds: values.ttl, freshness_seconds: values.freshness, volatile: values.volatile },
         analysis_policy: values.analysis && tool.source_type === 'mcp' && !writing ? { rows_path: values.rowsPath.split('.').filter(Boolean), max_rows: values.maxRows } : null,
-        idempotency_policy: writing ? 'source_key' : 'none', write_policy: writing && values.statusVersion ? { status_tool_version_id: values.statusVersion, max_submissions: values.submissions, max_checks: values.checks } : null }
+        idempotency_policy: writing ? 'source_key' : 'none', write_policy: writing && values.statusVersion ? { status_tool_version_id: values.statusVersion, max_submissions: values.submissions, max_checks: values.checks, authorization_mode: values.authorizationMode, allowed_agent_codes: values.allowedAgents ?? [], allowed_principal_ids: values.allowedPrincipals ?? [], argument_constraints: values.authorizationMode === 'preauthorized' ? JSON.parse(values.constraints) : null, check_delay_ms: values.checkDelay } : null }
       await send(`/admin/v1/tools/${tool.tool_id}/configuration`,
         version ? 'PATCH' : 'POST', version ? { revision: version.revision, definition: body } : { definition: body })
       onSaved()
@@ -88,6 +89,7 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
           ttl: definition?.cache_policy.ttl_seconds ?? 0, freshness: definition?.cache_policy.freshness_seconds ?? 60,
           analysis: !!definition?.analysis_policy, rowsPath: definition?.analysis_policy?.rows_path.join('.') ?? 'rows', maxRows: definition?.analysis_policy?.max_rows ?? 1000,
           volatile: definition?.cache_policy.volatile ?? false, statusVersion: definition?.write_policy?.status_tool_version_id,
+          authorizationMode: definition?.write_policy?.authorization_mode ?? 'per_call', allowedAgents: definition?.write_policy?.allowed_agent_codes ?? [], allowedPrincipals: definition?.write_policy?.allowed_principal_ids ?? [], constraints: stringify(definition?.write_policy?.argument_constraints ?? definition?.input_schema ?? initialInput), checkDelay: definition?.write_policy?.check_delay_ms ?? 1000,
           submissions: definition?.write_policy?.max_submissions ?? 1, checks: definition?.write_policy?.max_checks ?? 3,
           profile: definition?.binding.script?.profile_id, skillVersion: definition?.binding.script?.skill_version_id, scriptPath: definition?.binding.script?.path }}>
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
@@ -114,7 +116,14 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
           { key: 'policy', label: '执行策略', forceRender: true, children: <>
             {tool.source_type === 'mcp' && !writing && <><Form.Item name="analysis" label="只读分析源" valuePropName="checked"><Switch /></Form.Item>{analysis && <><Form.Item name="rowsPath" label="行列表字段路径"><Input /></Form.Item><Form.Item name="maxRows" label="最大返回行数"><InputNumber min={1} max={10000} /></Form.Item></>}</>}
             {writing && <><Form.Item name="statusVersion" label="来源状态核查工具" rules={[{ required: true }]}><Select options={execution.data?.queries.map(q => ({ value: q.version_id, label: q.name }))} /></Form.Item>
-              <Form.Item name="submissions" label="经确认的提交上限（次）"><InputNumber min={1} max={3} /></Form.Item><Form.Item name="checks" label="来源核查上限（次）"><InputNumber min={1} max={10} /></Form.Item></>}
+              <Form.Item name="authorizationMode" label="写入授权方式" rules={[{ required: true }]}><Select options={[{ value: 'per_call', label: '逐次确认' }, { value: 'preauthorized', label: '预授权自动执行', disabled: (bindings.data?.find(b => b.binding.adapter_key === adapter)?.effect_type ?? definition?.effect_type) !== 'IDEMPOTENT_WRITE' }]} /></Form.Item>
+              {authorizationMode === 'preauthorized' && <>
+                <Form.Item name="allowedAgents" label="允许的 Agent 编码" rules={[{ required: true }]}><Select mode="tags" /></Form.Item>
+                <Form.Item name="allowedPrincipals" label="允许的执行身份标识" rules={[{ required: true }]}><Select mode="tags" /></Form.Item>
+                <Form.Item name="constraints" label="自动执行参数边界（JSON Schema）" rules={[{ required: true }]}><Input.TextArea rows={7} spellCheck={false} /></Form.Item>
+                <Form.Item name="checkDelay" label="自动核查间隔（毫秒）"><InputNumber min={0} max={5000} /></Form.Item>
+              </>}
+              <Form.Item name="submissions" label="提交上限（次）"><InputNumber min={1} max={3} /></Form.Item><Form.Item name="checks" label="来源核查上限（次）"><InputNumber min={1} max={10} /></Form.Item></>}
             <Form.Item name="timeout" label="超时（秒）" rules={[{ required: true }]}><InputNumber min={1} max={120} /></Form.Item>
             <Form.Item name="maxSize" label="结果体积上限（字节）" rules={[{ required: true }]}><InputNumber min={256} max={2097152} /></Form.Item>
             <Form.Item name="attempts" label="最多尝试次数" rules={[{ required: true }]}><InputNumber min={1} max={3} /></Form.Item>

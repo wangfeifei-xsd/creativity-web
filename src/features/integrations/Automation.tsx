@@ -31,12 +31,12 @@ function Schedules() {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number }>()
   const mode = Form.useWatch('mode', form)
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => setOpen(true)}>新增计划</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => setOpen(true)}>新增计划</Button><Button onClick={() => { setError(undefined); query.reload() }}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' },
       { title: '周期', render: (_, r) => r.spec.interval_seconds ? `每 ${r.spec.interval_seconds} 秒` : `每日 ${r.spec.daily_at}` },
       { title: '时区', render: (_, r) => r.spec.timezone }, { title: '下次运行', render: (_, r) => formatTimestamp(r.next_at) },
-      { title: '操作', render: (_, r) => <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/schedules/${r.id}`, 'PATCH', { revision: r.revision, active: r.state !== 'ACTIVE' }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>{r.state === 'ACTIVE' ? '暂停' : '启用'}</Button> },
+      { title: '操作', render: (_, r) => <Button disabled={busy} onClick={async () => { setBusy(true); setError(undefined); try { await send(`/admin/v1/schedules/${r.id}`, 'PATCH', { revision: r.revision, active: r.state !== 'ACTIVE' }); query.reload() } catch (e) { setError(e); query.reload() } finally { setBusy(false) } }}>{r.state === 'ACTIVE' ? '暂停' : '启用'}</Button> },
     ]} />
     <Modal open={open} title="新增定时计划" onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>
       <ErrorNotice error={error} />

@@ -5,6 +5,7 @@ import { ErrorNotice } from '../../components/Management'
 import { SchemaFields } from '../../components/schema-fields/SchemaFields'
 import { schemaRules } from '../../components/schema-fields/schema'
 import { type Definition, type Options, parseObject, pretty } from './types'
+import { parseFlowJson } from './flow-json'
 
 type Step = Definition['steps'][number]
 type Edge = Definition['edges'][number]
@@ -16,6 +17,8 @@ export function FlowEditor({ value, options, onChange }: { value: Definition; op
   const [editing, setEditing] = useState<Step | 'new'>()
   const [edge, setEdge] = useState<number | 'new'>()
   const [error, setError] = useState<unknown>()
+  const [jsonDraft, setJsonDraft] = useState<string>()
+  const [jsonError, setJsonError] = useState<unknown>()
   const names = value.steps.map(step => ({ value: step.key, label: step.name }))
   const label = (key: string) => key === 'END' ? '结束' : names.find(item => item.value === key)?.label ?? '步骤不可用'
   function move(from: string, to: string) {
@@ -29,7 +32,8 @@ export function FlowEditor({ value, options, onChange }: { value: Definition; op
     <ErrorNotice error={error} />
     <Space wrap><span>起始步骤</span><Select aria-label="起始步骤" value={value.start_step} options={names} style={{ minWidth: 200 }} onChange={start_step => onChange({ ...value, start_step })} />
       <Button onClick={() => { setError(undefined); setEditing('new') }} disabled={value.steps.length >= 64}>新增步骤</Button>
-      <Button onClick={() => setEdge('new')} disabled={value.edges.length >= 256}>新增连线</Button></Space>
+      <Button onClick={() => setEdge('new')} disabled={value.edges.length >= 256}>新增连线</Button>
+      <Button onClick={() => { setJsonError(undefined); setJsonDraft(pretty({ start_step: value.start_step, steps: value.steps, edges: value.edges })) }}>高级 JSON</Button></Space>
     <Row gutter={[12, 12]} aria-label="流程编辑画布">
       {value.steps.map((step, index) => <Col key={step.key} xs={24} md={12}>
         <Card size="small" title={<Space>{step.key === value.start_step && <Tag color="blue">起点</Tag>}{step.name}</Space>}
@@ -59,6 +63,13 @@ export function FlowEditor({ value, options, onChange }: { value: Definition; op
     {edge !== undefined && <EdgeEditor key={edge} edge={edge === 'new' ? undefined : value.edges[edge]} names={names} onClose={() => setEdge(undefined)} onSave={item => {
       onChange({ ...value, edges: edge === 'new' ? [...value.edges, item] : value.edges.map((old, index) => index === edge ? item : old) }); setEdge(undefined)
     }} />}
+    <Modal open={jsonDraft !== undefined} title="流程 JSON" width={800} okText="应用到草稿" cancelText="取消" onCancel={() => setJsonDraft(undefined)} onOk={() => {
+      try { onChange({ ...value, ...parseFlowJson(jsonDraft ?? '') }); setJsonDraft(undefined) }
+      catch (failure) { setJsonError(failure) }
+    }}>
+      <ErrorNotice error={jsonError} />
+      <Input.TextArea aria-label="流程 JSON" rows={18} spellCheck={false} value={jsonDraft} onChange={event => setJsonDraft(event.target.value)} />
+    </Modal>
   </Space>
 }
 
