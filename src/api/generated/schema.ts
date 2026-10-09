@@ -6401,8 +6401,6 @@ export interface components {
         };
         /** ConnectionInput */
         ConnectionInput: {
-            /** Allowed Networks */
-            allowed_networks?: string[];
             /** Credential Ref */
             credential_ref: string;
             /** Endpoint */
@@ -6461,8 +6459,6 @@ export interface components {
         ConnectionView: {
             /** Actions */
             actions?: components["schemas"]["VisibleAction"][];
-            /** Allowed Networks */
-            allowed_networks?: string[];
             /** Credential Ref */
             credential_ref: string;
             /** Current Version Id */

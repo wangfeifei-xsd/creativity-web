@@ -89,11 +89,11 @@ function Connections() {
       { title: '检查时间', render: (_, r) => formatTimestamp(r.health_checked_at) },
       { title: '操作', render: (_, r) => <Space><ActionButtons actions={r.actions ?? []} handlers={{ edit: () => setEditor({ connection: r }) }} /><Button onClick={() => setHistory(r)}>历史</Button></Space> },
     ]} />}
-    {editor && <ModelDialog title={row ? '编辑连接' : '新增连接'} initial={row ? { name: row.name, provider_id: row.provider_id, protocol: row.protocol, endpoint: row.endpoint, allowed_networks: row.allowed_networks?.join('\n') ?? '', timeout_seconds: row.timeout_seconds, status: row.status } : { timeout_seconds: 60, status: 'ACTIVE' }}
+    {editor && <ModelDialog title={row ? '编辑连接' : '新增连接'} initial={row ? { name: row.name, provider_id: row.provider_id, protocol: row.protocol, endpoint: row.endpoint, timeout_seconds: row.timeout_seconds, status: row.status } : { timeout_seconds: 60, status: 'ACTIVE' }}
       onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} onSave={async values => {
-        const { secret, allowed_networks, ...body } = values
+        const { secret, ...body } = values
         const credential = secret ? await send<Schema<'CredentialView'>>('/admin/v1/model-credentials', 'POST', { secret }) : null
-        return send(row ? `/admin/v1/model-connections/${row.id}` : '/admin/v1/model-connections', row ? 'PATCH' : 'POST', { ...body, allowed_networks: String(allowed_networks ?? '').split(/\r?\n/).map(value => value.trim()).filter(Boolean), credential_ref: credential?.credential_ref ?? row?.credential_ref, revision: row?.revision ?? null })
+        return send(row ? `/admin/v1/model-connections/${row.id}` : '/admin/v1/model-connections', row ? 'PATCH' : 'POST', { ...body, credential_ref: credential?.credential_ref ?? row?.credential_ref, revision: row?.revision ?? null })
       }}>{form => <>
         <Form.Item name="name" label="连接名称" rules={[{ required: true }]}><Input /></Form.Item>
         <Form.Item name="provider_id" label="供应商" rules={[{ required: true }]}><Select options={providers.data?.map(p => ({ value: p.id, label: p.name }))} onChange={id => {
@@ -102,13 +102,12 @@ function Connections() {
         }} /></Form.Item>
         <Form.Item name="protocol" label="协议" rules={[{ required: true }]}><Select options={protocols.data?.map(p => ({ value: p.code, label: `${p.name}${p.enabled ? '' : '（未启用）'}` }))} /></Form.Item>
         <Form.Item name="endpoint" label="基础地址" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="allowed_networks" label="允许的 IP 范围" extra="留空仅允许公网；内网模型或代理请填写 CIDR，每行一个。"><Input.TextArea rows={2} placeholder="例如：10.20.0.0/16" /></Form.Item>
         <Form.Item name="secret" label="API Key" extra={row ? '留空保留原密钥，填写后替换。' : undefined} rules={row ? [] : [{ required: true }]}><Input.Password autoComplete="new-password" /></Form.Item>
         <Form.Item name="timeout_seconds" label="超时（秒）"><InputNumber min={1} max={600} /></Form.Item>
         <Form.Item name="status" label="状态"><Select options={statuses} /></Form.Item>
       </>}</ModelDialog>}
     {history && <Drawer open title={`${history.name} · 历史`} onClose={() => setHistory(undefined)} width={760} destroyOnHidden>
-      <Descriptions items={[{ key: 'address', label: '当前地址', children: history.endpoint }, { key: 'protocol', label: '协议', children: history.protocol_name }, { key: 'networks', label: '允许的 IP 范围', children: history.allowed_networks?.length ? history.allowed_networks.join('、') : '仅公网' }]} />
+      <Descriptions items={[{ key: 'address', label: '当前地址', children: history.endpoint }, { key: 'protocol', label: '协议', children: history.protocol_name }]} />
       <VersionHistory path={`/admin/v1/model-connections/${history.id}/versions`} />
     </Drawer>}
   </PageContainer>

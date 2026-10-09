@@ -29,8 +29,8 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
   {
     key: 'initialization', label: '初始化配置修改', steps: [
       {
-        title: '核对供应商地址与允许的 IP 范围',
-        description: '在供应商连接中点击“编辑”，核对基础地址。允许的 IP 范围留空时仅访问公网；使用内网模型或代理时，填写实际使用的 CIDR 网段，每行一个。',
+        title: '核对供应商地址',
+        description: '在供应商连接中点击“编辑”，核对供应商提供的 HTTPS 基础地址。',
         action: connections,
       },
       {
@@ -45,7 +45,7 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
       },
       {
         title: '重新验证当前环境',
-        description: '先在模型列表执行“测试连接”，再按需进行“能力验证”。归档中的历史成功记录不代表当前环境可用；地址、协议或 IP 范围变更后，需要重新验证所需能力。',
+        description: '先在模型列表执行“测试连接”，再按需进行“能力验证”。归档中的历史成功记录不代表当前环境可用；地址或协议变更后，需要重新验证所需能力。',
         action: models,
       },
       {
@@ -59,7 +59,7 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
     key: 'models', label: '模型配置', steps: [
       {
         title: '创建供应商连接',
-        description: '选择供应商和协议，填写 HTTPS 基础地址、API Key、超时及允许的 IP 范围。同一连接可以供多个模型使用。',
+        description: '选择供应商和协议，填写 HTTPS 基础地址、API Key 和超时。同一连接可以供多个模型使用。',
         action: connections,
       },
       {
@@ -69,7 +69,7 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
       },
       {
         title: '测试连接',
-        description: '在模型列表点击“测试连接”，检查网络和密钥。连接失败时按反馈修正地址、IP 范围或 API Key，然后重新测试。',
+        description: '在模型列表点击“测试连接”，检查网络和密钥。连接失败时按反馈修正地址或 API Key，然后重新测试。',
         action: models,
       },
       {

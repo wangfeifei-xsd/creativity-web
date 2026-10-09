@@ -95,11 +95,12 @@ test('工作台指引直达供应商连接，编辑保留未填写的密钥', as
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByLabel('API Key', { exact: true })).toHaveValue('')
   await dialog.getByLabel('连接名称').fill('修改后的连接')
-  await dialog.getByLabel('允许的 IP 范围').fill('10.20.0.0/16\n2001:2::59/128')
+  await expect(dialog.getByLabel('允许的 IP 范围')).toHaveCount(0)
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).toBeHidden()
-  expect(saved).toMatchObject({ name: '修改后的连接', allowed_networks: ['10.20.0.0/16', '2001:2::59/128'], credential_ref: 'secret-reference', revision: 1 })
+  expect(saved).toMatchObject({ name: '修改后的连接', credential_ref: 'secret-reference', revision: 1 })
   expect(saved).not.toHaveProperty('secret')
+  expect(saved).not.toHaveProperty('allowed_networks')
 })
 
 test('不支持的参数反馈保留输入，并阻止重复提交', async ({ page }) => {
