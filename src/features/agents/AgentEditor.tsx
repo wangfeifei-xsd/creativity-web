@@ -12,6 +12,7 @@ import { FlowEditor, type FlowEditorHandle } from './FlowEditor'
 import { type Definition, type Detail, type Options, type Version, parseObject, pretty, workflowNames } from './types'
 
 type Values = {
+  instructions: string
   agent_code: string; name: string; description: string; owner: string; version_label: string; template: string
   input_schema: string; output_schema: string; steps: string; edges: string; start_step: string
   prompt_id: string; model_route_id: string; embedding_route_id?: string; tool_ids: string[]; skill_ids: string[]
@@ -22,7 +23,7 @@ type Values = {
   memory_enabled: boolean; memory_policy: string; amount?: string; currency: string
 }
 const stepFields: (keyof Values)[][] = [
-  ['agent_code', 'name', 'description', 'owner', 'version_label', 'template'],
+  ['agent_code', 'name', 'description', 'owner', 'version_label', 'template', 'instructions'],
   ['input_schema', 'output_schema'],
   ['steps', 'edges', 'start_step'],
   ['prompt_id', 'model_route_id', 'embedding_route_id', 'tool_ids', 'skill_ids', 'skill_loading_by_resource'],
@@ -111,7 +112,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
       const steps: unknown = JSON.parse(v.steps), edges: unknown = JSON.parse(v.edges)
       if (!Array.isArray(steps) || !Array.isArray(edges)) throw new Error('步骤和流转边必须为 JSON 数组')
       const body = {
-        ...currentDefinition, start_step: v.start_step, input_schema: parseObject(v.input_schema), output_schema: parseObject(v.output_schema), steps, edges,
+        ...currentDefinition, instructions: v.instructions ?? '', start_step: v.start_step, input_schema: parseObject(v.input_schema), output_schema: parseObject(v.output_schema), steps, edges,
         bindings: { prompt_id: v.prompt_id || null, model_route_id: v.model_route_id || null, embedding_route_id: v.embedding_route_id || null, tool_ids: v.tool_ids ?? [], skill_ids: v.skill_ids ?? [],
           skill_loading: (v.skill_ids ?? []).filter(id => v.skill_loading_by_resource?.[id]).map(id => ({ ...v.skill_loading_by_resource[id], skill_id: id })) },
         limits: { deadline_seconds: v.deadline_seconds, token_limit: v.token_limit, max_model_rounds: v.max_model_rounds, max_tool_calls: v.max_tool_calls,
@@ -154,7 +155,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
     {version ? <Tabs className="agent-editor-tabs" activeKey={String(step)} onChange={key => void changeSection(Number(key))} items={titles.map((label, index) => ({ key: String(index), label, disabled: busy }))} /> :
       <Steps size="small" current={step} items={titles.map(title => ({ title }))} style={{ marginBottom: 24 }} />}
     {error != null && <div style={{ marginBottom: 16 }}><ErrorNotice error={error} /></div>}
-    <Form form={form} layout="vertical" disabled={busy} onValuesChange={() => setDirty(true)} initialValues={{ template: initial.entrypoint, version_label: '初始草稿', input_schema: pretty(initial.input_schema), output_schema: pretty(initial.output_schema),
+    <Form form={form} layout="vertical" disabled={busy} onValuesChange={() => setDirty(true)} initialValues={{ instructions: initial.instructions ?? '', template: initial.entrypoint, version_label: '初始草稿', input_schema: pretty(initial.input_schema), output_schema: pretty(initial.output_schema),
       steps: pretty(initial.steps), edges: pretty(initial.edges), start_step: initial.start_step, ...initial.bindings, ...initial.limits, ...initial.context,
       skill_loading_by_resource: Object.fromEntries((initial.bindings.skill_loading ?? []).map(item => [item.skill_id, item])),
       amount: initial.limits.cost_limit?.amount, currency: initial.limits.cost_limit?.currency ?? 'CNY', memory_enabled: !!initial.context.memory_policy,
@@ -167,6 +168,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
           <Form.Item name="version_label" label="草稿名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item></>}
         <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key,
           label: t.name === workflowNames[t.workflow_type] ? t.name : `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
+        <Form.Item name="instructions" label="任务指令"><Input.TextArea rows={6} maxLength={32000} /></Form.Item>
       </div>
       <div hidden={step !== 1}>
         <Form.Item name="input_schema" label="输入结构" rules={schemaRules}><SchemaFields label="输入结构" disabled={busy} /></Form.Item>

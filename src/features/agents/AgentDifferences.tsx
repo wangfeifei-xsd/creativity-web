@@ -21,10 +21,11 @@ function fieldLabel(schema: Record<string, unknown> | undefined, path: string): 
   const field = isObject(schema?.properties) ? schema.properties[path] : undefined
   return isObject(field) && typeof field.title === 'string' ? field.title : path || '完整内容'
 }
-function DifferenceValue({ field, value, definition, options }: { field: string; value: unknown; definition?: Definition; options?: Options }) {
+export function DifferenceValue({ field, value, definition, options }: { field: string; value: unknown; definition?: Definition; options?: Options }) {
   const resourceName = (id: unknown) => options?.dependencies.find(item => item.version_id === id || item.resource_id === id)?.name ?? '资源名称不可用'
   const stepName = (id: string | null | undefined) => id === 'END' ? '结束' : definition?.steps.find(step => step.key === id)?.name ?? '步骤名称不可用'
   if (value == null) return <Typography.Text type="secondary">尚未发布</Typography.Text>
+  if (field === 'instructions') return <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{String(value) || '未设置'}</Typography.Paragraph>
   if (field === 'workflow_type') return <>{workflowNames[value as keyof typeof workflowNames] ?? '类型不可用'}</>
   if (field === 'entrypoint') return <>{[...options?.templates ?? [], ...options?.legacy_templates ?? []].find(item => item.key === value)?.name ?? '入口名称不可用'}</>
   if (field === 'start_step') return <>{stepName(String(value))}</>

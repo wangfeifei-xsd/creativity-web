@@ -96,7 +96,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const breadcrumbs = current ? [
     ...current.ancestors.map(parent => ({ title: parent.label })),
     { title: isDetail ? <Link to={current.path}>{current.label}</Link> : current.label },
-    ...(isDetail ? [{ title: '详情' }] : []),
+    ...(isDetail ? [{ title: location.pathname === '/agents/assistance' ? new URLSearchParams(location.search).has('agent') ? '智能修改' : '智能创建' : '详情' }] : []),
   ] : [{ title: location.pathname === '/' ? '工作台' : <Link to="/">工作台</Link> }]
   const selectPage = (path: string) => { navigate(path); setMenuOpen(false) }
   const brand = <Link className="workspace-brand" to="/" aria-label="Creativity 工作台" onClick={() => setMenuOpen(false)}>

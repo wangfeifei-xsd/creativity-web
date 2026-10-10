@@ -1,4 +1,4 @@
-import { Descriptions, Empty, Space, Tabs, Typography } from 'antd'
+import { Collapse, Descriptions, Empty, Space, Tabs, Typography } from 'antd'
 import { useState } from 'react'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
 import { FlowGraph } from './FlowGraph'
@@ -7,15 +7,13 @@ import { displayValue, fieldName, stepKinds } from './flow-fields'
 import { type Definition, type Options } from './types'
 import './agents.css'
 
-export function Flow({ definition, options }: { definition: Definition; options?: Options }) {
+export function Flow({ definition, options, compact = false }: { definition: Definition; options?: Options; compact?: boolean }) {
   const [selected, setSelected] = useState(definition.start_step)
   const [tab, setTab] = useState('branches')
   const step = definition.steps.find(item => item.key === selected) ?? definition.steps.find(item => item.key === definition.start_step)
   const label = (key?: string | null) => key === 'END' ? '结束' : definition.steps.find(item => item.key === key)?.name ?? '步骤不可用'
   const dependency = step?.dependency ?? (step?.kind === 'model' ? definition.bindings.model_route_id : null)
-  return <div className="agent-flow-workspace">
-    <FlowGraph definition={definition} selected={step?.key} onSelect={setSelected} onEdge={index => { setSelected(definition.edges[index].source); setTab('branches') }} />
-    <aside className="agent-flow-inspector" aria-label="步骤详情">{step ? <>
+  const inspector = <aside className="agent-flow-inspector" aria-label="步骤详情">{step ? <>
       <Typography.Title level={5}>{step.name}</Typography.Title>
       <Typography.Text type="secondary">{stepKinds[step.kind]} · {step.timeout_seconds} 秒</Typography.Text>
       <Tabs size="small" activeKey={tab} onChange={setTab} items={[
@@ -36,5 +34,8 @@ export function Flow({ definition, options }: { definition: Definition; options?
         { key: 'output', label: '输出结构', children: <SchemaView value={step.output_schema} label="步骤输出结构" compact /> },
       ]} />
     </> : <Empty description="请选择步骤" />}</aside>
+  return <div className={`agent-flow-workspace${compact ? ' is-compact' : ''}`}>
+    <FlowGraph definition={definition} selected={step?.key} onSelect={setSelected} onEdge={index => { setSelected(definition.edges[index].source); setTab('branches') }} />
+    {compact ? <Collapse size="small" items={[{ key: 'step', label: `步骤配置 · ${step?.name ?? '请选择步骤'}`, children: inspector }]} /> : inspector}
   </div>
 }

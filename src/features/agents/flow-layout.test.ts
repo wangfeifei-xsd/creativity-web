@@ -5,7 +5,7 @@ import type { Definition } from './types'
 
 function flow(): Definition {
   return {
-    workflow_type: 'stateful', entrypoint: 'stateful.v1', input_schema: {}, output_schema: {},
+    instructions: '', workflow_type: 'stateful', entrypoint: 'stateful.v1', input_schema: {}, output_schema: {},
     bindings: { skill_ids: [], tool_ids: [], skill_loading: [] },
     context: { conversation_enabled: false, context_limit: 8000, summary_policy: 'none' },
     limits: { deadline_seconds: 60, token_limit: 16000, max_model_rounds: 1, max_tool_calls: 10, max_iterations: 10, loop_timeout_seconds: 60, output_repair_attempts: 0 },

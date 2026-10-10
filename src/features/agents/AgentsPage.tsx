@@ -1,4 +1,5 @@
 import { Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, theme } from 'antd'
+import { ThunderboltOutlined } from '@ant-design/icons'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -10,6 +11,7 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { StatusTag } from '../../components/StatusTag'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
+import { AgentAssistance } from './AgentAssistance'
 import { AgentEditor } from './AgentEditor'
 import { AgentDifferences } from './AgentDifferences'
 import { Debug } from './Debug'
@@ -20,6 +22,8 @@ import './agents.css'
 
 export function AgentsPage() {
   const { '*': path } = useParams()
+  const [params] = useSearchParams()
+  if (path === 'assistance') return <AgentAssistance key={params.toString()} agentId={params.get('agent') ?? undefined} versionId={params.get('version') ?? undefined} />
   return path ? <AgentDetail key={path} agentId={path} /> : <AgentList />
 }
 
@@ -29,14 +33,19 @@ function AgentList() {
   const [creating, setCreating] = useState(false)
   const options = useQuery<Options>(creating ? '/admin/v1/agents/options' : null)
   const navigate = useNavigate()
-  return <PageContainer title="智能体" actions={<Space><Button onClick={query.reload}>刷新</Button>
-    <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} /></Space>}>
+  const canAssist = query.data?.actions.some(action => action.action_key === 'assist')
+  return <PageContainer title="智能体" actions={<Space wrap><Button onClick={query.reload}>刷新</Button>
+    <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} />
+    {canAssist && <Button type="primary" icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate('/agents/assistance')}>智能创建</Button>}</Space>}>
     <ErrorNotice error={options.error} />
     <Input.Search aria-label="智能体名称或用途" placeholder="智能体名称或用途" onSearch={setSearch} allowClear style={{ maxWidth: 360, marginBottom: 16 }} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="agent_id" dataSource={query.data.items} columns={[
-      { title: '智能体名称', render: (_, row) => <Link to={`/agents/${row.agent_id}`}>{row.name}</Link> },
+      { title: '智能体名称', render: (_, row) => row.builtin ? <Link to="/agents/assistance">{row.name}</Link> : <Link to={`/agents/${row.agent_id}`}>{row.name}</Link> },
       { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '负责人', dataIndex: 'owner' },
       { title: '状态', render: (_, row) => <StatusTag status={row.status} /> },
+      ...(canAssist ? [{ title: '操作', width: 120, render: (_: unknown, row: Schema<'AgentList'>['items'][number]) => row.builtin
+        ? <Button type="link" onClick={() => navigate('/agents/assistance')}>开始创建</Button>
+        : row.actions.some(action => action.action_key === 'edit') && <Button type="link" onClick={() => navigate(`/agents/assistance?agent=${encodeURIComponent(row.agent_id)}`)}>智能修改</Button> }] : []),
     ]} />}
     {creating && !options.data && <Modal open title="新增智能体" footer={null} onCancel={() => setCreating(false)}>{options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />}</Modal>}
     {creating && options.data && <AgentEditor options={options.data} onClose={() => setCreating(false)} onSaved={detail => { if (detail) navigate(`/agents/${detail.agent.agent_id}`) }} />}
@@ -47,6 +56,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const { token } = theme.useToken()
   const query = useQuery<Detail>(`/admin/v1/agents/${agentId}`)
   const options = useQuery<Options>('/admin/v1/agents/options')
+  const navigate = useNavigate()
   const [selected, setSelected] = useState<string>()
   const [searchParams, setSearchParams] = useSearchParams()
   const [initialFocus, setInitialFocus] = useState<FlowIssue>()
@@ -81,6 +91,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
     initialFocus={initialFocus} onClose={closeVersionEditor} onSaved={saved} />
   const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id }) }
   return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={query.reload}>刷新</Button>
+    {detail.agent.actions.some(action => action.action_key === 'edit') && <Button icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate(`/agents/assistance?${new URLSearchParams({ agent: agentId, ...(version ? { version: version.version_id } : {}) })}`)}>智能修改</Button>}
     <ActionButtons actions={detail.agent.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
       offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>
     <ErrorNotice error={error ?? options.error} />
@@ -98,6 +109,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
     </div>
     {definition && version && <Tabs className="agent-detail-tabs" activeKey={tab} onChange={setTab} items={[
       { key: 'base', label: '基本信息', children: <Descriptions items={[
+        { key: 'instructions', label: '任务指令', span: 3, children: <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{definition.instructions || '未设置'}</Typography.Paragraph> },
         { key: 'flow', label: '流程类型', children: workflowNames[definition.workflow_type] },
         { key: 'code', label: '接入调用编码', children: <Typography.Text copyable>{detail.agent.agent_code}</Typography.Text> },
         { key: 'rev', label: '修订号', children: version.revision },

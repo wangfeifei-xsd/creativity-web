@@ -36,6 +36,180 @@ async function fixture(page: Page) {
   })
 }
 
+const assistedProposal = { agent_code: 'business_task', name: '咨询摘要助手', description: '整理咨询要点', owner: '客服团队', version_label: '智能协助草稿',
+  definition: { ...definition, instructions: '总结咨询问题并列出待办事项。' } }
+async function assistanceFixture(page: Page) {
+  await fixture(page)
+  await page.route('**/admin/v1/agents?*', route => route.fulfill({ json: { items: [agent, { ...agent, agent_id: 'builtin_agent_builder', builtin: true, name: '智能体配置助手', actions: [], status: { value: 'BUILTIN', label: '内置 · 只读' } }], actions: [action('create', '新增智能体'), action('assist', '智能协助')] } }))
+}
+
+test('智能协助追问后生成方案，确认保存前没有创建资源', async ({ page }) => {
+  await page.setViewportSize({ width: 1536, height: 1024 })
+  await assistanceFixture(page)
+  let submissions = 0, saved = 0
+  await page.route('**/admin/v1/agents/assistance', async route => {
+    submissions++
+    const body = route.request().postDataJSON()
+    expect(body.idempotency_key).toBeTruthy()
+    expect(body.model_route_id).toBe('route_version')
+    expect(body.previous_run_id).toBe(submissions === 1 ? null : 'assist_1')
+    await route.fulfill({ status: 202, json: { run_id: `assist_${submissions}` } })
+  })
+  await page.route('**/admin/v1/agents/assistance/runs/*', async route => {
+    const first = route.request().url().endsWith('assist_1')
+    await route.fulfill({ json: { run_id: first ? 'assist_1' : 'assist_2', state: 'SUCCEEDED', state_label: '已完成',
+      reply: { message: first ? '需要输出哪些信息？' : '已生成咨询摘要流程，可继续调整。', proposal: first ? null : assistedProposal }, base_definition: null } })
+  })
+  await page.route('**/admin/v1/agents/assistance/runs/assist_2/apply', async route => {
+    saved++
+    expect(route.request().postData()).toBeNull()
+    await route.fulfill({ json: { agent_id: 'agent_a', version_id: 'draft_a' } })
+  })
+  await page.goto('#/agents')
+  await expect(page.getByText('内置 · 只读', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '智能创建', exact: true }).click()
+  const dialog = page.getByRole('region', { name: '智能协助工作区', exact: true })
+  await dialog.getByLabel('创建或修改需求').fill('创建一个咨询摘要助手')
+  await dialog.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(dialog.getByText('需要输出哪些信息？')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '创建并保存草稿' })).toHaveCount(0)
+  await dialog.getByLabel('创建或修改需求').fill('输出问题、关键信息和待办事项')
+  await dialog.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
+  expect(saved).toBe(0)
+  const conversationBox = await dialog.getByRole('region', { name: '智能协助对话', exact: true }).boundingBox()
+  const previewBox = await dialog.getByRole('region', { name: '候选智能体方案', exact: true }).boundingBox()
+  expect(conversationBox!.x + conversationBox!.width).toBeLessThan(previewBox!.x)
+  await expect(dialog.getByRole('button', { name: '创建并保存草稿' })).toBeInViewport()
+  await page.screenshot({ path: '.local/agent-assistance-create.png', fullPage: true })
+  await dialog.getByRole('button', { name: '创建并保存草稿' }).click()
+  await expect(page).toHaveURL(/agents\/agent_a\?edit=draft_a/)
+  expect(saved).toBe(1)
+})
+
+test('智能协助修改有变更预览，冲突保留方案与对话', async ({ page }) => {
+  await assistanceFixture(page)
+  await page.route('**/admin/v1/agents/assistance', async route => {
+    expect(route.request().postDataJSON()).toMatchObject({ agent_id: 'agent_a', base_version_id: 'draft_a' })
+    await route.fulfill({ status: 202, json: { run_id: 'assist_edit' } })
+  })
+  await page.route('**/admin/v1/agents/assistance/runs/assist_edit', route => route.fulfill({ json: { run_id: 'assist_edit', state: 'SUCCEEDED', state_label: '已完成',
+    reply: { message: '补充任务指令，保留原流程。', proposal: assistedProposal }, base_definition: definition } }))
+  await page.route('**/admin/v1/agents/assistance/runs/assist_edit/apply', route => route.fulfill({ status: 409,
+    json: { error: { code: 'REVISION_CONFLICT', message: '智能体已被修改，请开始新对话生成方案；本次方案仍保留', fields: [] } } }))
+  await page.goto('#/agents/agent_a')
+  await page.getByRole('button', { name: '智能修改', exact: true }).click()
+  const dialog = page.getByRole('region', { name: '智能协助工作区', exact: true })
+  await dialog.getByLabel('创建或修改需求').fill('补充总结咨询问题的指令')
+  await dialog.getByRole('button', { name: '发送', exact: true }).click()
+  await dialog.getByRole('tab', { name: '变更对照' }).click()
+  await expect(dialog.getByText('修改前', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('总结咨询问题并列出待办事项。', { exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: '保存为新草稿' }).click()
+  await expect(dialog.getByText('智能体已被修改，请开始新对话生成方案；本次方案仍保留')).toBeVisible()
+  await expect(dialog.getByText('补充任务指令，保留原流程。')).toBeVisible()
+  await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
+  await page.screenshot({ path: '.local/agent-assistance-conflict.png', fullPage: true })
+})
+
+test('智能协助查询失败可恢复，不重复生成；窄屏预览不溢出', async ({ page }) => {
+  await assistanceFixture(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  let posts = 0, reads = 0
+  await page.route('**/admin/v1/agents/assistance', async route => { posts++; await route.fulfill({ status: 202, json: { run_id: 'assist_retry' } }) })
+  await page.route('**/admin/v1/agents/assistance/runs/assist_retry', async route => {
+    reads++
+    if (reads === 1) { await route.fulfill({ status: 503, json: { error: { message: '查询暂不可用', fields: [] } } }); return }
+    await route.fulfill({ json: { run_id: 'assist_retry', state: 'SUCCEEDED', state_label: '已完成', reply: { message: '已生成方案', proposal: assistedProposal } } })
+  })
+  await page.goto('#/agents')
+  await page.getByRole('button', { name: '智能创建', exact: true }).click()
+  const dialog = page.getByRole('region', { name: '智能协助工作区', exact: true })
+  await dialog.getByLabel('创建或修改需求').fill('创建一个咨询摘要助手')
+  await dialog.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(dialog.getByText('查询暂不可用')).toBeVisible()
+  await dialog.getByRole('button', { name: '重新获取结果' }).click()
+  await expect(dialog.getByText('已生成方案')).toBeVisible()
+  expect(posts).toBe(1)
+  await dialog.getByRole('button', { name: '查看生成的方案' }).click()
+  await expect(dialog.getByRole('radio', { name: /方案预览/ })).toBeChecked()
+  await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '创建并保存草稿' })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: '.local/agent-assistance-mobile.png', fullPage: true })
+})
+
+test('没有可用模型时智能协助保留输入并禁止发送', async ({ page }) => {
+  await assistanceFixture(page)
+  await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, dependencies: [] } }))
+  await page.goto('#/agents')
+  await page.getByRole('button', { name: '智能创建', exact: true }).click()
+  const dialog = page.getByRole('region', { name: '智能协助工作区', exact: true })
+  await dialog.getByLabel('创建或修改需求').fill('帮我创建一个智能体')
+  await expect(dialog.getByText('暂无可用模型，请先发布并授权支持文本生成的模型路由')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '发送', exact: true })).toBeDisabled()
+})
+
+test('智能创建使用独立入口，示例只填入需求，返回前保留未保存内容', async ({ page }) => {
+  await assistanceFixture(page)
+  await page.goto('#/agents')
+  await page.getByRole('button', { name: '智能创建', exact: true }).click()
+  await expect(page).toHaveURL(/agents\/assistance$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: '智能创建', exact: true })).toBeVisible()
+  await expect(page.getByText('增加补充信息分支', { exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('创建或修改需求')).toHaveValue('')
+  await page.screenshot({ path: '.local/agent-assistance-empty.png', fullPage: true })
+  await page.getByRole('button', { name: '客户咨询摘要' }).click()
+  await expect(page.getByLabel('创建或修改需求')).toBeFocused()
+  await expect(page.getByLabel('创建或修改需求')).toHaveValue(/创建一个客户咨询摘要助手/)
+  await page.getByRole('button', { name: '返回智能体列表' }).click()
+  await page.getByRole('button', { name: '继续编辑', exact: true }).click()
+  await expect(page.getByLabel('创建或修改需求')).toHaveValue(/创建一个客户咨询摘要助手/)
+  await page.getByRole('button', { name: '新对话', exact: true }).click()
+  await page.getByRole('button', { name: '开始新对话', exact: true }).click()
+  await expect(page.getByLabel('创建或修改需求')).toHaveValue('')
+})
+
+test('列表智能修改带入对象与草稿，直达刷新仍保留修改上下文', async ({ page }) => {
+  await assistanceFixture(page)
+  await page.goto('#/agents')
+  await page.getByRole('button', { name: '智能修改', exact: true }).click()
+  await expect(page).toHaveURL(/agents\/assistance\?agent=agent_a/)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: '智能修改', exact: true })).toBeVisible()
+  await expect(page.locator('.agent-assistance-target')).toContainText('业务助手')
+  await expect(page.locator('.agent-assistance-target')).toContainText('初始草稿')
+  await expect(page.getByLabel('创建或修改需求')).toHaveValue('')
+  await expect(page.getByRole('region', { name: '方案预览', exact: true })).toContainText('生成业务结果')
+  await page.getByRole('button', { name: '增加补充信息分支' }).click()
+  await expect(page.getByLabel('创建或修改需求')).toHaveValue(/增加补充信息的分支/)
+  await page.goto('#/agents/assistance?agent=agent_a&version=missing')
+  await expect(page.getByText('当前智能体或版本不可修改，请返回列表重新选择')).toBeVisible()
+  await expect(page.getByRole('button', { name: '发送', exact: true })).toHaveCount(0)
+})
+
+test('继续生成时保留上一版方案且禁止误保存', async ({ page }) => {
+  await assistanceFixture(page)
+  let submissions = 0
+  await page.route('**/admin/v1/agents/assistance', async route => {
+    submissions++
+    await route.fulfill({ status: 202, json: { run_id: `preview_${submissions}` } })
+  })
+  await page.route('**/admin/v1/agents/assistance/runs/*', route => route.fulfill({ json: route.request().url().endsWith('preview_1')
+    ? { run_id: 'preview_1', state: 'SUCCEEDED', state_label: '已完成', reply: { message: '方案已经生成', proposal: assistedProposal } }
+    : { run_id: 'preview_2', state: 'RUNNING', state_label: '处理中' } }))
+  await page.goto('#/agents/assistance')
+  await page.getByLabel('创建或修改需求').fill('创建咨询摘要助手')
+  await page.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(page.getByRole('button', { name: '创建并保存草稿' })).toBeEnabled()
+  await page.getByLabel('创建或修改需求').fill('再增加回复建议')
+  await page.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(page.getByRole('region', { name: '候选智能体方案' })).toContainText('咨询摘要助手')
+  await expect(page.getByRole('button', { name: '创建并保存草稿' })).toBeDisabled()
+  await expect(page.getByText('等待最新方案', { exact: true })).toBeVisible()
+})
+
 test('列表仅在打开新增窗口后读取依赖选项', async ({ page }) => {
   await fixture(page)
   let calls = 0
