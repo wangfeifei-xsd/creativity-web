@@ -4,6 +4,15 @@ import { applyFormErrors } from './form-errors'
 import { TokenStore } from './session'
 
 describe('请求状态与错误处理', () => {
+  it('接受后台任务已受理的 null 响应，但拒绝无法解析的成功响应', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response('null', { status: 202 }))
+      .mockResolvedValueOnce(new Response('<html>代理页面</html>', { status: 200 }))
+    const client = createApiClient(fetcher)
+    await expect(client.request('/admin/v1/memory-consolidations/task/retry', { method: 'POST' })).resolves.toBeNull()
+    await expect(client.request('/admin/v1/memories')).rejects.toMatchObject({ message: '服务响应格式不正确' })
+  })
+
   it.each([401, 403, 503])('按服务端 %s 响应处理登录状态', async (status) => {
     const tokens = new TokenStore()
     tokens.set('opaque-token')

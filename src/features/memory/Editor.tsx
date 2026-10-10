@@ -30,7 +30,7 @@ export function MemoryEditor({ attributes, subjects, anchorId, memory, onClose, 
   const kind = valueKind(attribute)
   const initial = { anchor_id: anchorId, key: memory?.key ?? first?.key,
     value: memory ? kind === 'json' ? JSON.stringify(memory.value, null, 2) : memory.value : undefined,
-    expires_at: memory?.expires_at ? localTime(memory.expires_at) : undefined }
+    expires_at: memory?.expires_at ?? undefined }
   async function save(values: Values) {
     setBusy(true); setError(undefined)
     try {
@@ -62,9 +62,4 @@ export function MemoryEditor({ attributes, subjects, anchorId, memory, onClose, 
       <Form.Item name="expires_at" label="有效截止时间" extra="未指定时使用当前记忆策略的有效期。"><DateTimeInput /></Form.Item>
     </Form>
   </Modal>
-}
-
-function localTime(value: string) {
-  const date = new Date(value)
-  return new Date(date.valueOf() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }

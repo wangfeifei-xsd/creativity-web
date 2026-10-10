@@ -102,7 +102,8 @@ export function AgentEditor({ options, version, onClose, onSaved }: {
           <Form.Item name="description" label="用途" rules={[{ required: true }]}><Input.TextArea rows={2} /></Form.Item>
           <Form.Item name="owner" label="负责人" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
           <Form.Item name="version_label" label="草稿名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item></>}
-        <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key, label: `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
+        <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key,
+          label: t.name === workflowNames[t.workflow_type] ? t.name : `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
       </div>
       <div hidden={step !== 1}>
         <FlowEditor value={definition} options={options} onChange={next => {

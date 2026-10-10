@@ -16,6 +16,8 @@ export function Consolidations({ anchorId, onClose }: { anchorId?: string; onClo
     <ErrorNotice error={error} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} scroll={{ x: 740 }} columns={[
       { title: '来源会话', dataIndex: 'conversation_name' }, { title: '状态', dataIndex: 'state_label' },
+      { title: '处理次数', render: (_, row) => `${row.attempt} 次` },
+      { title: '原因', render: (_, row) => row.message ?? '无' },
       { title: '生成记忆', render: (_, row) => `${row.generated_count} 条` },
       { title: '更新时间', render: (_, row) => formatTimestamp(row.updated_at) },
       { title: '操作', render: (_, row) => <Space>{row.generation_run_id && <Link to={`/runs/${row.generation_run_id}`}>查看运行</Link>}{row.can_retry && <Button disabled={busy} onClick={async () => {

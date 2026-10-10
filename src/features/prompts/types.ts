@@ -1,5 +1,6 @@
 import type { components } from '../../api/generated/schema'
 import { apiClient } from '../../api/client'
+import { isFormValidationError } from '../../api/form-errors'
 
 export type Schema<K extends keyof components['schemas']> = components['schemas'][K]
 export type Content = Schema<'PromptContent'>
@@ -29,6 +30,7 @@ export function send<T>(path: `/admin/v1/${string}`, body: unknown, method = 'PO
   return apiClient.request<T>(path, { method, body: JSON.stringify(body) })
 }
 export function errorText(error: unknown) {
+  if (isFormValidationError(error)) return ''
   return error instanceof Error ? error.message : '操作失败，请重试'
 }
 export function jsonDisplay(value: unknown): string {

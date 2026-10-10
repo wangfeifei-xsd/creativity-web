@@ -1,6 +1,12 @@
 import type { FormInstance } from 'antd'
 import { ApiError } from './client'
 
+export function isFormValidationError(error: unknown): boolean {
+  // antd 已在字段旁展示校验结果，无需再提示一次操作失败。
+  return typeof error === 'object' && error !== null && 'errorFields' in error
+    && Array.isArray(error.errorFields) && error.errorFields.length > 0
+}
+
 export function applyFormErrors(form: Pick<FormInstance, 'setFields'>, error: unknown,
   mapPath: (path: (string | number)[]) => (string | number)[] = path => path): boolean {
   if (!(error instanceof ApiError)) return false

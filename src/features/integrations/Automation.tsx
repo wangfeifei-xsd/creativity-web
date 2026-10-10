@@ -28,7 +28,7 @@ function Schedules() {
   const { session } = useSession()
   const canRun = session.actions.some(action => action.action_key === 'run:create')
   const query = useQuery<Schedule[]>('/admin/v1/schedules')
-  const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents')
+  const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents?published_only=true')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number }>()
   const mode = Form.useWatch('mode', form)

@@ -84,9 +84,10 @@ export function createApiClient(
   async function request<T>(path: ApiPath, init: RequestInit = {}): Promise<T> {
     const scope = tokens.snapshot()
     const response = await send(path, init, 'application/json')
-    const body: unknown = response.status === 204 ? undefined : await response.json().catch(() => null)
+    const invalidJson = Symbol('invalidJson')
+    const body: unknown = response.status === 204 ? undefined : await response.json().catch(() => invalidJson)
     tokens.assertCurrent(scope.generation)
-    if (body === null) throw new ApiError('服务响应格式不正确', response.status, response.headers.get('X-Request-ID'))
+    if (body === invalidJson) throw new ApiError('服务响应格式不正确', response.status, response.headers.get('X-Request-ID'))
     return body as T
   }
 

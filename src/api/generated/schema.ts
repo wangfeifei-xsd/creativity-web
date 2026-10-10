@@ -13323,6 +13323,7 @@ export interface operations {
     list_agents_admin_v1_agents_get: {
         parameters: {
             query?: {
+                published_only?: boolean;
                 search?: string | null;
             };
             header?: never;

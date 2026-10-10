@@ -1,11 +1,11 @@
 import { Typography, theme } from 'antd'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import Markdown from 'react-markdown'
 import remarkFrontmatter from 'remark-frontmatter'
 import remarkGfm from 'remark-gfm'
 import './markdown-content.css'
 
-export function MarkdownContent({ text }: { text: string }) {
+export function MarkdownContent({ text, renderLink }: { text: string; renderLink?: (href: string | undefined, children: ReactNode) => ReactNode }) {
   const { token } = theme.useToken()
   return <Typography className="markdown-content" style={{
     '--markdown-border': token.colorBorderSecondary,
@@ -13,7 +13,7 @@ export function MarkdownContent({ text }: { text: string }) {
     '--markdown-link': token.colorLink,
   } as CSSProperties}>
     <Markdown remarkPlugins={[remarkGfm, remarkFrontmatter]} skipHtml components={{
-      a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,
+      a: ({ href, children }) => renderLink ? renderLink(href, children) : <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,
       img: ({ src, alt, title }) => <img src={src} alt={alt ?? ''} title={title} loading="lazy" referrerPolicy="no-referrer" />,
     }}>{text}</Markdown>
   </Typography>

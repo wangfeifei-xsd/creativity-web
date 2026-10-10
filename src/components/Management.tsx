@@ -2,7 +2,7 @@ import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch, 
 import { useRef, useState, type ReactNode } from 'react'
 import type { NamePath } from 'antd/es/form/interface'
 import { ApiError } from '../api/client'
-import { applyFormErrors } from '../api/form-errors'
+import { applyFormErrors, isFormValidationError } from '../api/form-errors'
 import { isAbort } from '../api/useQuery'
 import type { components } from '../api/generated/schema'
 import { DateTimeInput } from './DateTimeInput'
@@ -13,7 +13,7 @@ export type Choice = { value: string; label: string }
 export type Field = { name: NamePath; label: string; kind?: 'password' | 'number' | 'select' | 'multiple' | 'datetime' | 'switch';
   required?: boolean; options?: Choice[]; disabled?: boolean; min?: number; max?: number; help?: string; control?: ReactNode }
 export function ErrorNotice({ error }: { error: unknown }) {
-  if (!error) return null
+  if (!error || isFormValidationError(error)) return null
   return <Alert type="error" showIcon
     title={error instanceof Error ? error.message : '操作失败，请稍后重试'} />
 }

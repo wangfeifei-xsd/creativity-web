@@ -64,8 +64,11 @@ function AgentDetail({ agentId }: { agentId: string }) {
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!detail) return <LoadingState />
   const definition = version?.definition
-  const depIds = definition ? [definition.bindings.prompt_id, definition.bindings.model_route_id, ...definition.bindings.tool_ids, ...definition.bindings.skill_ids].filter((id): id is string => !!id) : []
-  const dependencies = depIds.map(id => options.data?.dependencies.find(d => d.version_id === id) ?? { version_id: id, name: '依赖名称不可用', version_label: '版本不可用', resource_type: '' })
+  const depIds = definition ? [...new Set([definition.bindings.prompt_id, definition.bindings.model_route_id, definition.bindings.embedding_route_id,
+    ...definition.bindings.tool_ids, ...definition.bindings.skill_ids, ...definition.steps.map(step => step.dependency)].filter((id): id is string => !!id))] : []
+  // 校验可能在解析依赖前失败，仍保留已保存的依赖，方便定位和修改。
+  const dependencies = depIds.map(id => validation?.dependencies.find(d => d.version_id === id) ?? options.data?.dependencies.find(d => d.version_id === id)
+    ?? { version_id: id, name: '依赖名称不可用', version_label: '版本不可用', resource_type: '' })
   return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={detail.agent.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
       offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>
@@ -94,7 +97,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
       ]} /> },
       { key: 'flow', label: '流程', children: <Flow definition={definition} /> },
       { key: 'dependencies', label: '模型、提示词与工具技能', children: <Space orientation="vertical" style={{ width: '100%' }}>
-        <Table rowKey="version_id" pagination={false} dataSource={validation?.dependencies ?? dependencies} columns={[
+        <Table rowKey="version_id" pagination={false} dataSource={dependencies} columns={[
           { title: '类型', render: (_, d) => dependencyNames[d.resource_type] ?? '资源不可用' }, { title: '资源', dataIndex: 'name' },
         ]} />
         {validation && <Table rowKey="key" pagination={false} dataSource={validation.checks} columns={[

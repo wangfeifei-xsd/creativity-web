@@ -14,6 +14,7 @@ export function DelegationKeys() {
   const [issued, setIssued] = useState<Schema<'DelegationKeyIssued'>>()
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!query.data) return <LoadingState />
+  const rotated = new Set(query.data.map(row => row.rotated_from))
   return <Space orientation="vertical" style={{ width: '100%' }} size="middle">
     <Space><Button disabled={!options.data} onClick={() => setEdit({ kind: 'create' })}>创建委托密钥</Button><Button onClick={() => { query.reload(); options.reload() }}>刷新</Button></Space>
     {options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : null}
@@ -22,8 +23,8 @@ export function DelegationKeys() {
       { title: '受众', dataIndex: 'audience' }, { title: '状态', dataIndex: 'status_name' },
       { title: '到期时间', render: (_, row) => formatTimestamp(row.expires_at) },
       { title: '委托有效期', render: (_, row) => `${row.max_ttl_seconds} 秒` },
-      { title: '操作', render: (_, row) => <Space><Button onClick={() => setEdit({ kind: 'rotate', row })}>轮换</Button>
-        <Button danger onClick={() => setEdit({ kind: 'revoke', row })}>吊销</Button></Space> },
+      { title: '操作', render: (_, row) => <Space><Button disabled={row.status !== 'ACTIVE' || rotated.has(row.kid) || new Date(row.expires_at) <= new Date()} onClick={() => setEdit({ kind: 'rotate', row })}>轮换</Button>
+        <Button danger disabled={row.status === 'REVOKED'} onClick={() => setEdit({ kind: 'revoke', row })}>吊销</Button></Space> },
     ]} />
     {edit && <EditorDialog title={{ create: '创建委托密钥', rotate: '轮换委托密钥', revoke: '吊销委托密钥' }[edit.kind]}
       danger={edit.kind === 'revoke'} initial={{ max_ttl_seconds: 300, clock_skew_seconds: 30, overlap_seconds: 330, revision: edit.row?.revision }}

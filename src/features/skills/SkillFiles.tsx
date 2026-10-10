@@ -27,7 +27,15 @@ export function SkillFiles({ version }: { version: Schema<'SkillVersionView'> })
       {query.data.unavailable_reason && <Alert type="warning" title={query.data.unavailable_reason} />}
       <div className="skill-files-preview">
         {query.data.text != null && markdown && mode === 'formatted'
-          ? <MarkdownContent text={query.data.text} />
+          ? <MarkdownContent text={query.data.text} renderLink={(href, children) => {
+            if (!href) return children
+            try {
+              const target = new URL(href, `https://skill.invalid/${selected}`)
+              const path = decodeURIComponent(target.pathname.slice(1))
+              if (target.origin !== 'https://skill.invalid' || !version.files.some(file => file.relative_path === path)) return children
+              return <a href={`#${path}`} onClick={event => { event.preventDefault(); setSelected(path) }}>{children}</a>
+            } catch { return children }
+          }} />
           : <pre className="skill-files-source">{query.data.text ?? '此文件不能作为文本预览'}</pre>}
       </div>
     </>}</div>

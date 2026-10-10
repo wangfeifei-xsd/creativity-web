@@ -136,11 +136,11 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
       <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{partial || storedPartial?.text}</pre> }]} />}
     {usage && <Descriptions title="用量" items={[
       { key: 'count', label: '模型调用', children: usage.attempt_count == null ? '未提供' : `${usage.attempt_count} 次` },
-      { key: 'input', label: '输入', children: usage.input_tokens == null ? '待核实' : `${usage.input_tokens} Token` },
-      { key: 'output', label: '输出', children: usage.output_tokens == null ? '待核实' : `${usage.output_tokens} Token` },
+      { key: 'input', label: '输入', children: usage.input_tokens == null ? usage.complete && usage.attempt_count === 0 ? '未调用模型' : '待核实' : `${usage.input_tokens} Token` },
+      { key: 'output', label: '输出', children: usage.output_tokens == null ? usage.complete && usage.attempt_count === 0 ? '未调用模型' : '待核实' : `${usage.output_tokens} Token` },
       { key: 'complete', label: '完整性', children: usage.complete ? '已核实' : '待核实' },
       { key: 'price', label: '未定价调用', children: usage.unpriced_count == null ? '未提供' : `${usage.unpriced_count} 次` },
-      { key: 'amount', label: '费用', children: Object.entries((usage.amounts ?? {}) as Record<string, { reported_amount: string | null; complete: boolean }>).map(([currency, value]) => `${value.reported_amount ?? '待核实'} ${currency}${value.complete ? '' : '（未完整）'}`).join('；') || '未定价' },
+      { key: 'amount', label: '费用', children: Object.entries((usage.amounts ?? {}) as Record<string, { reported_amount: string | null; complete: boolean }>).map(([currency, value]) => `${value.reported_amount ?? '待核实'} ${currency}${value.complete ? '' : '（未完整）'}`).join('；') || (usage.complete && usage.attempt_count === 0 ? '无模型费用' : '未定价') },
     ]} />}
     {result?.artifacts.map(artifact => <Button key={artifact.artifact_id} onClick={async () => {
       try { await download(artifact.download_path) } catch (failure) { setError(failure) }
