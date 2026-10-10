@@ -13,8 +13,12 @@ export function NewEvaluation({ datasets, onClose, onSaved, promptId }: { datase
   const evaluations = useQuery<Schema<'EvaluationList'>>('/admin/v1/evaluations')
   const [agentId, setAgentId] = useState<string>()
   const agent = useQuery<Schema<'AgentDetail'>>(agentId ? `/admin/v1/agents/${agentId}` : null)
-  const prompts = useQuery<Schema<'PromptVersionView'>[]>(promptId ? `/admin/v1/prompts/${promptId}/versions` : null)
-  const versions = agent.data?.versions.filter(v => !promptId || prompts.data?.some(p => p.version.version_id === v.definition.bindings.prompt_id))
+  const prompts = useQuery<Schema<'PromptListView'>>(promptId ? '/admin/v1/prompts' : null)
+  const promptNames = new Map(prompts.data?.items.map(prompt => [prompt.prompt_id, prompt.name]))
+  const versions = agent.data?.versions.filter(v => !promptId || promptNames.has(v.definition.bindings.prompt_id ?? ''))
+  const versionLabel = (version: Schema<'AgentVersionView'>) => promptId
+    ? `${version.version_label} · ${promptNames.get(version.definition.bindings.prompt_id ?? '') ?? '提示词名称不可用'}`
+    : version.version_label
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const mode = Form.useWatch('execution_mode', form)
@@ -22,7 +26,7 @@ export function NewEvaluation({ datasets, onClose, onSaved, promptId }: { datase
   const candidateIds = Form.useWatch('candidates', form) as string[] | undefined
   const baselineOptions = baselineId
     ? (evaluations.data?.items.find(e => e.evaluation_id === baselineId)?.candidates as { version_id: string; version_label: string }[] | undefined)?.map(c => ({ value: c.version_id, label: c.version_label }))
-    : versions?.filter(v => candidateIds?.includes(v.version_id)).map(v => ({ value: v.version_id, label: v.version_label }))
+    : versions?.filter(v => candidateIds?.includes(v.version_id)).map(v => ({ value: v.version_id, label: versionLabel(v) }))
   async function create(values: Record<string, unknown>) {
     setBusy(true); setError(undefined)
     try {
@@ -38,7 +42,7 @@ export function NewEvaluation({ datasets, onClose, onSaved, promptId }: { datase
       <Form.Item label="样本集"><Select value={datasetId} onChange={value => { setDatasetId(value); form.setFieldValue('dataset_version_id', undefined) }} options={datasets.map(d => ({ value: d.dataset_id, label: d.name }))} /></Form.Item>
       <Form.Item name="dataset_version_id" label="样本与标签版本" rules={[{ required: true }]}><Select options={dataset.data?.versions?.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.cases.length} 条` }))} /></Form.Item>
       <Form.Item label="智能体"><Select value={agentId} onChange={value => { setAgentId(value); form.setFieldsValue({ candidates: [], baseline: undefined }) }} options={agents.data?.items.map(a => ({ value: a.agent_id, label: a.name }))} /></Form.Item>
-      <Form.Item name="candidates" label="候选版本" rules={[{ required: true, type: 'array', min: promptId ? 2 : 1, message: promptId ? '至少选择两个候选版本' : '请选择候选版本' }]}><Select mode="multiple" options={versions?.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.status.label}` }))} /></Form.Item>
+      <Form.Item name="candidates" label={promptId ? '候选智能体版本' : '候选版本'} extra={promptId ? '选择绑定不同提示词资源的智能体版本，至少一个须绑定当前提示词；其他流程、模型和策略须一致。' : undefined} rules={[{ required: true, type: 'array', min: promptId ? 2 : 1, message: promptId ? '至少选择两个候选智能体版本' : '请选择候选版本' }]}><Select mode="multiple" options={versions?.map(v => ({ value: v.version_id, label: `${versionLabel(v)} · ${v.status.label}` }))} /></Form.Item>
       <Form.Item hidden={!!promptId} name="baseline_evaluation_id" label="历史基线报告"><Select allowClear onChange={() => form.setFieldValue('baseline', undefined)} options={evaluations.data?.items.filter(e => e.state.value === 'COMPLETED').map(e => ({ value: e.evaluation_id, label: `${e.name} · ${e.dataset_version_label}` }))} /></Form.Item>
       <Form.Item name="baseline" label={baselineId ? '历史基线版本' : '同批基线版本'} rules={[{ required: !!baselineId || !!promptId }]}><Select allowClear options={baselineOptions} /></Form.Item>
       <Form.Item hidden={!!promptId} name="execution_mode" label="执行模式"><Select options={[{ value: 'fixture', label: '固定数据评测' }, { value: 'live_readonly', label: '实时只读评测' }]} /></Form.Item>

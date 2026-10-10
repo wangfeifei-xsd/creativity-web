@@ -20,12 +20,13 @@ export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: (
   const configuration = useQuery<Version>(`/admin/v1/prompts/${promptId}/configuration`)
   const summaries = useResourceSummaries('prompt', [promptId], configuration.data)
   const [editingInfo, setEditingInfo] = useState(false)
+  const [activeTab, setActiveTab] = useState('edit')
   const refresh = () => { resource.reload(); configuration.reload() }
   return <PageContainer title={resource.data?.name ?? '提示词详情'} actions={<Space><Button onClick={onBack}>返回列表</Button><Button onClick={refresh}>刷新</Button>
     <ResourceActions kind="prompt" summary={summaries.items[promptId]} onEdit={() => setEditingInfo(true)} onChanged={onBack} /></Space>}>
     {resource.error || configuration.error ? <ErrorState error={resource.error || configuration.error} onRetry={refresh} /> : !resource.data || !configuration.data ? <LoadingState /> : <>
       <Descriptions items={[{ key: 'purpose', label: '用途', children: resource.data.purpose }]} />
-      <Workbench key={configuration.data.revision} current={configuration.data} prompt={resource.data} onChanged={refresh} />
+      <Workbench key={configuration.data.revision} current={configuration.data} prompt={resource.data} onChanged={refresh} activeTab={activeTab} onTabChange={setActiveTab} />
     </>}
     {editingInfo && resource.data && <EditorDialog title="编辑提示词信息" initial={{ name: resource.data.name, purpose: resource.data.purpose, revision: resource.data.revision }}
       fields={[{ name: 'name', label: '名称', required: true }, { name: 'purpose', label: '用途', required: true }]}
@@ -34,8 +35,8 @@ export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: (
       onSave={values => send(`/admin/v1/prompts/${promptId}`, values, 'PATCH')} />}
   </PageContainer>
 }
-function Workbench({ current, prompt, onChanged }: {
-  current: Version; prompt: Prompt; onChanged: () => void
+function Workbench({ current, prompt, onChanged, activeTab, onTabChange }: {
+  current: Version; prompt: Prompt; onChanged: () => void; activeTab: string; onTabChange: (key: string) => void
 }) {
   const { message } = App.useApp()
   const [form] = Form.useForm<EditorValues>()
@@ -79,7 +80,7 @@ function Workbench({ current, prompt, onChanged }: {
       ]} /><Button onClick={onChanged}>载入最新内容</Button>
     </>} />}
     <Form component={false} form={form} initialValues={editorValues(contentOf(current))} layout="vertical">
-      <Tabs items={[
+      <Tabs activeKey={activeTab} onChange={onTabChange} items={[
         { key: 'edit', label: '编辑', forceRender: true, children: <Space orientation="vertical" style={{ width: '100%' }}>{controls}<TemplateFields editable={editable} /></Space> },
         { key: 'variables', label: '变量', forceRender: true, children: <Space orientation="vertical" style={{ width: '100%' }}>{controls}<VariableFields editable={editable} /></Space> },
         { key: 'preview', label: '预览', children: <PromptPreview version={current} /> },

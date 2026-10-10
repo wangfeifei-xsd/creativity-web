@@ -7,7 +7,7 @@ const session = { user: { user_id: 'admin_a', display_name: '管理员', login_n
 const connection = { connection_id: 'mcp_a', name: '目录服务', endpoint: 'https://example.com/mcp', transport: 'streamable_http', transport_label: 'Streamable HTTP',
   revision: 3, configuration_revision: 1, credential_mask: '••••••••', timeouts: { connect_seconds: 10, operation_seconds: 30 }, health_policy: { interval_seconds: 300, failure_threshold: 3 },
   status: { value: 'DISABLED', label: '未启用', tone: 'default' }, health: { value: 'HEALTHY', label: '正常', tone: 'success' }, last_check_at: '2026-10-02T08:00:00Z',
-  actions: [action('edit', '编辑'), action('credential', '更新凭据'), action('test', '连接测试'), action('discover', '发现工具'), action('enable', '启用'), action('import', '导入草稿')] }
+  actions: [action('edit', '编辑'), action('credential', '更新凭据'), action('test', '连接测试'), action('discover', '发现工具'), action('enable', '启用'), action('import', '导入工具')] }
 const remote = { name: 'raw_lookup_123', title: '目录查询', description: '查询授权目录', annotations: { readOnlyHint: true }, input_schema: { type: 'object', properties: { query: { type: 'string' } } },
   output_schema: { type: 'object', properties: { value: { type: 'string' } }, additionalProperties: false }, schema_hash: 'a'.repeat(64) }
 const snapshot = { discovery_id: 'discovery_a', connection_revision: 1, negotiated_version: '2025-11-25', tools: [remote], discovered_at: '2026-10-02T08:00:00Z' }
@@ -68,7 +68,7 @@ test('工具导入要求本地权限与执行策略，只提交草稿请求', as
   await page.goto('#/mcp-connections/mcp_a')
   await page.getByRole('tab', { name: '远程工具' }).click()
   await expect(page.getByText('未导入', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '导入草稿' }).click()
+  await page.getByRole('button', { name: '导入工具' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('负责人').fill('业务负责人')
   await dialog.getByLabel('实际影响').click()
@@ -76,7 +76,7 @@ test('工具导入要求本地权限与执行策略，只提交草稿请求', as
   await dialog.getByLabel('必要业务权限').click()
   await page.getByText('执行能力', { exact: true }).click()
   await dialog.getByLabel('本地显示名称').click()
-  await dialog.getByRole('button', { name: '导入草稿' }).click()
+  await dialog.getByRole('button', { name: '导入工具' }).click()
   await expect(dialog).not.toBeVisible()
   expect(imported?.required_scopes).toEqual(['run:create'])
   expect(imported?.effect_type).toBe('READ_ONLY')
@@ -106,6 +106,6 @@ test('身份复核工具只能进入复核配置，不向模型导入', async ({
   await page.goto('#/mcp-connections/mcp_a')
   await page.getByRole('tab', { name: '远程工具' }).click()
   await expect(page.getByText('当前主体权限', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: '导入草稿', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '导入工具', exact: true })).toHaveCount(0)
   await expect(page.getByRole('link', { name: '配置主体复核', exact: true })).toBeVisible()
 })

@@ -70,7 +70,7 @@ export function PromptDebug({ version }: { version: Version }) {
         <Form.Item name="constraints" label="输出约束（每行一项）"><Input.TextArea rows={3} /></Form.Item>
       </Form>
     </Modal>
-    <Modal title="测试快照" open={!!selected} onCancel={() => setSelected(undefined)} footer={null} width={850}>
+    <Modal title="测试快照" open={!!selected} onCancel={() => { setSelected(undefined); tests.reload() }} footer={null} width={850}>
       {selected && <Space orientation="vertical" style={{ width: '100%' }}>
         <Descriptions items={[{ key: 'time', label: '测试时间', children: formatTimestamp(selected.created_at) }]} />
         {canReveal && selected.masked && <Button onClick={async () => {
@@ -84,7 +84,14 @@ export function PromptDebug({ version }: { version: Version }) {
           finally { setBusy(false) }
         }}>执行此快照</Button>}
         {error && <Alert type="error" title={error} />}
-        {selected.run_id && <RunViewer key={selected.run_id} runId={selected.run_id} />}<RenderResult value={selected.rendered} />
+        {selected.run_id && <RunViewer key={selected.run_id} runId={selected.run_id} onCompleted={() => {
+          tests.reload()
+          const testId = selected.test_id
+          const reveal = canReveal && !selected.masked ? '?reveal=true' : ''
+          void apiClient.request<Schema<'PromptTestView'>>(`/admin/v1/prompt-tests/${testId}${reveal}`)
+            .then(value => setSelected(current => current?.test_id === testId ? value : current))
+            .catch(error => setError(errorText(error)))
+        }} />}<RenderResult value={selected.rendered} />
         <Typography.Title level={5}>模型结果</Typography.Title>
         <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{selected.output == null ? (selected.masked ? '内容已脱敏' : '暂无结果') : jsonDisplay(selected.output)}</Typography.Paragraph>
         <Collapse items={[{ key: 'snapshot', label: '模板配置快照', children: <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(selected.snapshot.content, null, 2)}</pre> }]} />

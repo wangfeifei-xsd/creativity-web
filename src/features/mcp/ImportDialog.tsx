@@ -23,7 +23,7 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
       const output = current?.output_schema ?? JSON.parse(String(values.output_schema)) as unknown
       if (!output || Array.isArray(output) || typeof output !== 'object') throw new Error('输出结构须为 JSON 对象')
       await send(`/admin/v1/mcp-connections/${id}/imports`, 'POST', {
-        ...values, ...(current && target.data ? {
+        ...values, version_label: '当前配置', ...(current && target.data ? {
           name: target.data.tool.name, description: target.data.tool.description, owner: target.data.tool.owner,
           version_label: '当前配置', effect_type: current.effect_type, required_scopes: current.required_scopes,
           timeout_seconds: current.timeout_seconds, max_result_size: current.max_result_size,
@@ -34,11 +34,11 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
-  return <Modal open title={targetId ? '重新绑定工具' : '导入工具草稿'} width={660} onCancel={onClose} closable={!busy} maskClosable={!busy}
-    footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button><Button type="primary" loading={busy} disabled={!!targetId && !target.data} onClick={() => form.submit()}>{targetId ? '重新绑定' : '导入草稿'}</Button></Space>}>
+  return <Modal open title={targetId ? '重新绑定工具' : '导入本地工具'} width={660} onCancel={onClose} closable={!busy} maskClosable={!busy}
+    footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button><Button type="primary" loading={busy} disabled={!!targetId && !target.data} onClick={() => form.submit()}>{targetId ? '重新绑定' : '导入工具'}</Button></Space>}>
     <ErrorNotice error={error ?? target.error} />
     <Form form={form} layout="vertical" disabled={busy} onFinish={submit} initialValues={{ name: tool.title ?? '', description: tool.description,
-      version_label: '初始版本', timeout_seconds: 10, max_result_size: 262144, subject_required: true,
+      timeout_seconds: 10, max_result_size: 262144, subject_required: true,
       output_schema: tool.output_schema ? JSON.stringify(tool.output_schema, null, 2) : '',
     }}>
       <Form.Item name="target_tool_id" label="目标工具"><Select allowClear placeholder="创建新工具"
@@ -47,7 +47,6 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
       <Form.Item name="name" label="本地显示名称" rules={[{ required: true }]}><Input /></Form.Item>
       <Form.Item name="description" label="用途" rules={[{ required: true }]}><Input.TextArea /></Form.Item>
       <Form.Item name="owner" label="负责人" rules={[{ required: true }]}><Input /></Form.Item>
-      <Form.Item name="version_label" label="版本名称" rules={[{ required: true }]}><Input /></Form.Item>
       <Form.Item name="effect_type" label="实际影响" rules={[{ required: true }]}><Select options={[
         { value: 'READ_ONLY', label: '只读', disabled: tool.annotations?.readOnlyHint !== true },
         { value: 'IDEMPOTENT_WRITE', label: '幂等写入' }, { value: 'EXTERNAL_WRITE', label: '外部写入' },

@@ -29,7 +29,10 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
       }))
       setResult(await send<Schema<'ToolTestResult'>>(`/admin/v1/tool-versions/${version.version.version_id}/tests`, 'POST',
         { revision: query.data?.revision, arguments: args }))
-    } catch (failure) { setError(failure instanceof SyntaxError ? new Error('请按字段结构填写有效的 JSON') : failure); applyFormErrors(form, failure) }
+    } catch (failure) {
+      setError(failure instanceof SyntaxError ? new Error('请按字段结构填写有效的 JSON') : failure)
+      applyFormErrors(form, failure, path => jsonMode ? ['argumentsJson'] : path.slice(0, 1))
+    }
     finally { setBusy(false) }
   }
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />

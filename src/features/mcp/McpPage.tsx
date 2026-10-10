@@ -68,6 +68,7 @@ function McpDetail({ id }: { id: string }) {
   const { modal } = App.useApp()
   const query = useQuery<Schema<'McpDetail'>>(`${base}/${id}`)
   const [editor, setEditor] = useState<'connection' | 'credential'>()
+  const [activeTab, setActiveTab] = useState('basic')
   const [selected, setSelected] = useState<string>()
   const [importing, setImporting] = useState<Schema<'RemoteTool'>>()
   const [busy, setBusy] = useState(false)
@@ -111,7 +112,7 @@ function McpDetail({ id }: { id: string }) {
       { key: 'health', label: '健康状态', children: <StatusTag status={connection.health} /> },
       { key: 'checked', label: '最近检查', children: formatTimestamp(connection.last_check_at) },
     ]} />
-    <Tabs items={[
+    <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
       { key: 'basic', label: '基本配置', children: <Descriptions column={1} items={[
         { key: 'transport', label: '连接方式', children: connection.transport_label },
         { key: 'endpoint', label: '服务地址', children: <Typography.Text style={{ overflowWrap: 'anywhere' }}>{connection.endpoint}</Typography.Text> },
@@ -145,14 +146,14 @@ function McpDetail({ id }: { id: string }) {
           { title: '描述', dataIndex: 'description', ellipsis: true },
           { title: '用途', render: (_, row) => row.purpose === 'subject_review' ? '主体复核' : '业务工具' },
           { title: '变化', render: (_, row) => diff.data ? diff.data.items.find(item => item.remote_tool_name === row.name)?.labels.join('、') ?? '无变化' : diff.error ? '差异不可用' : '差异待加载' },
-          { title: '导入版本', render: (_, row) => { const imported = detail.imports.find(item => item.discovery_id === snapshot?.discovery_id && item.remote_tool_name === row.name)
-            return imported ? <Link to={`/tools/${imported.local_tool_id}`}>查看本地版本</Link> : '未导入' } },
-          { title: '操作', render: (_, row) => row.purpose === 'subject_review' ? <Link to="/integrations">配置主体复核</Link> : connection.actions.some(action => action.action_key === 'import') ? <Button disabled={busy} onClick={() => setImporting(row)}>导入草稿</Button> : null },
+          { title: '本地工具', render: (_, row) => { const imported = detail.imports.find(item => item.discovery_id === snapshot?.discovery_id && item.remote_tool_name === row.name)
+            return imported ? <Link to={`/tools/${imported.local_tool_id}`}>查看本地工具</Link> : '未导入' } },
+          { title: '操作', render: (_, row) => row.purpose === 'subject_review' ? <Link to="/integrations">配置主体复核</Link> : connection.actions.some(action => action.action_key === 'import') ? <Button disabled={busy} onClick={() => setImporting(row)}>导入工具</Button> : null },
         ]} /></> },
       { key: 'diff', label: '同步差异', children: diff.error ? <ErrorState error={diff.error} onRetry={diff.reload} /> :
         <Table rowKey="remote_tool_name" dataSource={diff.data?.items ?? []} columns={[
           { title: '工具名称', render: (_, row) => row.name ?? '待补充显示名称' }, { title: '变化', render: (_, row) => row.labels.join('、') },
-          { title: '影响', render: (_, row) => row.breaking ? <Tag color="error">需要新版本及重新验证</Tag> : '可审阅导入' },
+          { title: '影响', render: (_, row) => row.breaking ? <Tag color="error">需要重新绑定并验证</Tag> : '可审阅导入' },
         ]} /> },
       { key: 'agents', label: '引用影响', children: <><Table rowKey="import_id" dataSource={detail.imports} columns={[
         { title: '本地工具', render: (_, row) => <Link to={`/tools/${row.local_tool_id}`}>{row.name}</Link> },

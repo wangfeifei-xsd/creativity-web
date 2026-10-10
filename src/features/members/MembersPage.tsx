@@ -77,6 +77,12 @@ function GrantTable({ channelId, options, onSaved }: AccessProps) {
   const [selectedResource, setSelectedResource] = useState<ResourceEntry>()
   const latest = (row: Grant) => async () => (await apiClient.request<Grant[]>(path)).find(g => g.grant_id === row.grant_id)?.revision
   const row = editor?.row
+  const grantActionOptions = actionsAsOptions(selectedResource?.actions ?? options.grant_actions)
+  for (const [index, action] of (row?.allowed_actions ?? []).entries()) {
+    if (!grantActionOptions.some(option => option.value === action)) {
+      grantActionOptions.push({ value: action, label: row?.action_names[index] ?? '动作名称不可用' })
+    }
+  }
   return <PageContainer title="资源授权" actions={<Space><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={options.actions} handlers={{ 'grant:create': () => { setGranteeType('account'); setSelectedResource(undefined); setEditor({}) } }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="grant_id" dataSource={query.data} scroll={{ x: 900 }}
@@ -93,7 +99,7 @@ function GrantTable({ channelId, options, onSaved }: AccessProps) {
         ...(!row ? [{ name: 'grantee_id', label: '授权对象', kind: 'select' as const, required: true, options: granteeType === 'role' ? options.grantee_roles :
           options.member_accounts },
           { name: 'resource', label: '资源', required: true, control: <ResourcePicker channelId={channelId} base={options.resources} onChosen={setSelectedResource} /> }] : []),
-        { name: 'allowed_actions', label: '可操作动作', kind: 'multiple', required: true, options: actionsAsOptions(selectedResource?.actions ?? options.grant_actions) }, ...scopeFields(options),
+        { name: 'allowed_actions', label: '可操作动作', kind: 'multiple', required: true, options: grantActionOptions }, ...scopeFields(options),
       ]} onSave={values => {
         if (editor.revoke && row) return send(`${path}/${row.grant_id}?revision=${String(values.revision)}`, 'DELETE')
         const { resource, ...body } = values

@@ -2,6 +2,7 @@ import { Form, Input, InputNumber, Modal, Select, Switch, Button, Space } from '
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
+import { jsonObject } from '../../api/json'
 import { ErrorNotice, type Schema } from '../../components/Management'
 import { ErrorState, LoadingState } from '../../components/States'
 
@@ -15,7 +16,7 @@ export function MemoryPolicy({ onClose }: { onClose: () => void }) {
     <ErrorNotice error={error} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Form form={form} layout="vertical" initialValues={{ ...query.data, attributes: (query.data.attributes ?? []).map(a => ({ ...a, schema: JSON.stringify(a.value_schema, null, 2) })) }} onFinish={async (values) => {
       setBusy(true); setError(undefined)
-      try { await send('/admin/v1/memory-policy', 'PUT', { ...values, attributes: (values.attributes ?? []).map((a: { key: string; label: string; memory_type: string; schema: string }) => ({ key: a.key, label: a.label, memory_type: a.memory_type, value_schema: JSON.parse(a.schema) })), revision: query.data!.revision }); onClose() }
+      try { await send('/admin/v1/memory-policy', 'PUT', { ...values, attributes: (values.attributes ?? []).map((a: { key: string; label: string; memory_type: string; schema: string }) => ({ key: a.key, label: a.label, memory_type: a.memory_type, value_schema: jsonObject(a.schema) })), revision: query.data!.revision }); onClose() }
       catch (failure) { setError(failure) } finally { setBusy(false) }
     }} disabled={busy}>
       <Form.Item name="read_enabled" label="允许读取" valuePropName="checked"><Switch /></Form.Item>
@@ -28,7 +29,7 @@ export function MemoryPolicy({ onClose }: { onClose: () => void }) {
           <Form.Item name={[field.name, 'label']} label="画像属性名称" rules={[{ required: true }]}><Input maxLength={100} /></Form.Item>
           <Form.Item name={[field.name, 'key']} label="属性标识" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name={[field.name, 'memory_type']} label="属性类型"><Select options={[{ value: 'PREFERENCE', label: '偏好' }, { value: 'FACT', label: '权威事实' }]} /></Form.Item>
-          <Form.Item name={[field.name, 'schema']} label="值格式（JSON Schema）" rules={[{ required: true }]}><Input.TextArea rows={4} /></Form.Item>
+          <Form.Item name={[field.name, 'schema']} label="值格式（JSON Schema）" rules={[{ required: true }, { validator: async (_, value) => { jsonObject(value) } }]}><Input.TextArea rows={4} /></Form.Item>
           <Button danger onClick={() => remove(field.name)}>移除属性</Button>
         </div>)}
         <Button onClick={() => add({ memory_type: 'PREFERENCE', schema: '{"type":"string","minLength":1,"maxLength":100}' })}>添加画像属性</Button>

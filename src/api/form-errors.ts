@@ -1,10 +1,18 @@
 import type { FormInstance } from 'antd'
 import { ApiError } from './client'
 
-export function applyFormErrors(form: Pick<FormInstance, 'setFields'>, error: unknown): boolean {
+export function applyFormErrors(form: Pick<FormInstance, 'setFields'>, error: unknown,
+  mapPath: (path: (string | number)[]) => (string | number)[] = path => path): boolean {
   if (!(error instanceof ApiError)) return false
-  const fields = error.fields.filter((field) => field.path.length > 0)
+  const fields = error.fields.map(field => ({ ...field, path: mapPath(field.path) })).filter(field => field.path.length > 0)
   if (!fields.length) return false
-  form.setFields(fields.map((field) => ({ name: field.path, errors: [field.message] })))
+  const grouped = new Map<string, { name: (string | number)[]; errors: string[] }>()
+  for (const field of fields) {
+    const key = JSON.stringify(field.path)
+    const entry = grouped.get(key) ?? { name: field.path, errors: [] }
+    if (!entry.errors.includes(field.message)) entry.errors.push(field.message)
+    grouped.set(key, entry)
+  }
+  form.setFields([...grouped.values()])
   return true
 }

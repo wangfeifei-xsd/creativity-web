@@ -77,6 +77,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
   const query = useQuery<Schema<'ToolDetail'>>(`/admin/v1/tools/${toolId}`)
   const bindings = useQuery<Schema<'BindingOption'>[]>(`/admin/v1/tool-bindings?tool_id=${toolId}`)
   const [editor, setEditor] = useState<'resource' | 'new' | 'version' | undefined>(() => window.location.hash.includes('edit=1') ? 'version' : undefined)
+  const [activeTab, setActiveTab] = useState('contract')
   const detail = query.data
   const version = detail?.versions.find(v => v.version.version_id === toolId)
   const summaries = useResourceSummaries('tool', [toolId], query.data)
@@ -93,7 +94,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
       { key: 'state', label: '状态', children: summaries.items[toolId]?.status.label ?? '加载中' },
       { key: 'description', label: '用途', children: detail.tool.description },
     ]} />
-    {definition && version ? <Tabs items={[
+    {definition && version ? <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
       { key: 'contract', label: '契约', children: <><Descriptions items={[{ key: 'code', label: '工具编码', children: detail.tool.tool_code }]} />
         <Typography.Title level={5}>输入结构</Typography.Title>{json(definition.input_schema)}
         <Typography.Title level={5}>输出结构</Typography.Title>{json(definition.output_schema)}</> },

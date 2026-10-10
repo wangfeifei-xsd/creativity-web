@@ -3,6 +3,7 @@ import { Button, Form, Input, InputNumber, Select, Space, Switch } from 'antd'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'
+import { applyFormErrors } from '../../api/form-errors'
 import { ErrorNotice, type Schema } from '../../components/Management'
 import { type Version } from './types'
 
@@ -22,7 +23,10 @@ export function Debug({ version }: { version: Version }) {
     try {
       const input = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined).map(([key, value]) => [key, ['object', 'array'].includes(properties[key].type ?? '') && typeof value === 'string' ? JSON.parse(value) : value]))
       setResult(await send(`/admin/v1/agent-versions/${version.version_id}/tests`, 'POST', { revision: version.revision, input, idempotency_key: crypto.randomUUID() }))
-    } catch (failure) { setError(failure) } finally { setBusy(false) }
+    } catch (failure) {
+      applyFormErrors(form, failure, path => path.slice(0, 1))
+      setError(failure)
+    } finally { setBusy(false) }
   }
   return <Space orientation="vertical" size="middle" style={{ width: '100%' }}><ErrorNotice error={error} /><Form form={form} layout="vertical" onFinish={run} disabled={busy}>
     {Object.entries(properties).map(([name, field]) => <Form.Item key={name} name={name} label={field.title ?? name} valuePropName={field.type === 'boolean' ? 'checked' : 'value'} rules={[{ required: required.includes(name) }]}>

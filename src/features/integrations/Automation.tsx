@@ -7,6 +7,7 @@ import { RunSourceNames, RunSources } from './RunSources'
 import { useRunClients } from './useRunClients'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
+import { jsonObject, parseJson } from '../../api/json'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
 import { ErrorNotice, type Schema } from '../../components/Management'
@@ -31,7 +32,7 @@ function Schedules() {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number }>()
   const mode = Form.useWatch('mode', form)
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => setOpen(true)}>新增计划</Button><Button onClick={() => { setError(undefined); query.reload() }}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => { setError(undefined); form.resetFields(); setOpen(true) }}>新增计划</Button><Button onClick={() => { setError(undefined); query.reload() }}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' },
       { title: '周期', render: (_, r) => r.spec.interval_seconds ? `每 ${r.spec.interval_seconds} 秒` : `每日 ${r.spec.daily_at}` },
@@ -42,14 +43,14 @@ function Schedules() {
       <ErrorNotice error={error} />
       <Form name="schedule" form={form} layout="vertical" initialValues={{ input: '{}', timezone: 'Asia/Shanghai', mode: 'daily', daily: '09:00', interval: 3600 }} onFinish={async v => {
         if (busy) return; setBusy(true); setError(undefined)
-        try { await send('/admin/v1/schedules', 'POST', { name: v.name, request: { agent_code: v.agent, input: JSON.parse(v.input) as unknown }, timezone: v.timezone, daily_at: v.mode === 'daily' ? v.daily : null, interval_seconds: v.mode === 'interval' ? v.interval : null }); setOpen(false); query.reload() } catch (e) { setError(e) } finally { setBusy(false) }
+        try { await send('/admin/v1/schedules', 'POST', { name: v.name, request: { agent_code: v.agent, input: jsonObject(v.input) }, timezone: v.timezone, daily_at: v.mode === 'daily' ? v.daily : null, interval_seconds: v.mode === 'interval' ? v.interval : null }); setOpen(false); query.reload() } catch (e) { setError(e) } finally { setBusy(false) }
       }}>
         <Form.Item name="name" label="计划名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
         <Form.Item name="agent" label="智能体" rules={[{ required: true }]}><Select options={agents.data?.items.map(a => ({ value: a.agent_code, label: a.name }))} /></Form.Item>
-        <Form.Item name="input" label="运行输入" rules={[{ required: true }]}><Input.TextArea rows={4} /></Form.Item>
-        <Form.Item name="timezone" label="时区" rules={[{ required: true }]}><Input /></Form.Item>
+        <Form.Item name="input" label="运行输入" rules={[{ required: true }, { validator: async (_, value) => { jsonObject(value) } }]}><Input.TextArea rows={4} /></Form.Item>
+        <Form.Item name="timezone" label="时区" rules={[{ required: true }, { validator: async (_, value) => { if (value) { try { new Intl.DateTimeFormat('zh-CN', { timeZone: value }) } catch { throw new Error('请输入有效时区，例如 Asia/Shanghai') } } } }]}><Input /></Form.Item>
         <Form.Item name="mode" label="周期"><Select options={[{ value: 'daily', label: '每日' }, { value: 'interval', label: '固定间隔' }]} /></Form.Item>
-        {mode === 'daily' ? <Form.Item name="daily" label="本地时间" rules={[{ pattern: /^([01]\d|2[0-3]):[0-5]\d$/, message: '请输入时:分' }]}><Input /></Form.Item> : <Form.Item name="interval" label="间隔（秒）"><InputNumber min={60} max={2592000} /></Form.Item>}
+        {mode === 'daily' ? <Form.Item name="daily" label="本地时间" rules={[{ required: true, message: '请输入本地时间' }, { pattern: /^([01]\d|2[0-3]):[0-5]\d$/, message: '请输入时:分' }]}><Input /></Form.Item> : <Form.Item name="interval" label="间隔（秒）" rules={[{ required: true }]}><InputNumber min={60} max={2592000} /></Form.Item>}
       </Form>
     </Modal></>
 }
@@ -68,7 +69,7 @@ function Webhooks() {
     <Table rowKey="id" dataSource={deliveries.data} columns={[{ title: '投递端点', dataIndex: 'endpoint_name' }, { title: '结果', dataIndex: 'state_label' }, { title: '尝试次数', dataIndex: 'attempts' }, { title: '最近反馈', render: (_, r) => r.error?.message ?? (r.http_status ? `HTTP ${r.http_status}` : '未投递') }, { title: '操作', render: (_, r) => ['FAILED', 'CANCELLED'].includes(r.state) && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/webhook-deliveries/${r.id}/retry`, 'POST', { revision: r.revision }); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>重投</Button> }]} />
     <Modal open={open} title={editing ? '编辑通知范围' : '新增事件端点'} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }} onCancel={() => { setOpen(false); form.resetFields() }} onOk={() => form.submit()}>
       <ErrorNotice error={error} />
-      <Form name="webhook" form={form} layout="vertical" disabled={busy} initialValues={{ events: ['run.terminal'], client_ids: [] }} onFinish={async v => { if (busy) return; setBusy(true); try { await send(editing ? `/admin/v1/webhooks/${editing.id}` : '/admin/v1/webhooks', editing ? 'PATCH' : 'POST', editing ? { revision: editing.revision, active: editing.state === 'ACTIVE', client_ids: v.client_ids ?? [] } : { ...v, client_ids: v.client_ids ?? [] }); setOpen(false); form.resetFields(); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
+      <Form name="webhook" form={form} layout="vertical" disabled={busy} initialValues={{ events: ['run.terminal'], client_ids: [] }} onFinish={async v => { if (busy) return; setBusy(true); setError(undefined); try { await send(editing ? `/admin/v1/webhooks/${editing.id}` : '/admin/v1/webhooks', editing ? 'PATCH' : 'POST', editing ? { revision: editing.revision, active: editing.state === 'ACTIVE', client_ids: v.client_ids ?? [] } : { ...v, client_ids: v.client_ids ?? [] }); setOpen(false); form.resetFields(); reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
         {!editing && <><Form.Item name="name" label="名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
           <Form.Item name="url" label="接收地址" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="secret" label="签名密钥" rules={[{ required: true }, { min: 32, message: '至少 32 个字符' }]}><Input.Password autoComplete="new-password" /></Form.Item>
@@ -85,11 +86,11 @@ function Batches() {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [form] = Form.useForm<{ name: string; items: string }>()
   const key = useRef('')
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} onClick={() => { key.current = crypto.randomUUID(); setOpen(true) }}>新建批次</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space><Button type="primary" disabled={!canRun} onClick={() => { key.current = crypto.randomUUID(); setError(undefined); form.resetFields(); setOpen(true) }}>新建批次</Button><Button onClick={query.reload}>刷新</Button></Space>
     <Table rowKey="batch_id" dataSource={query.data} columns={[{ title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' }, { title: '条目数', render: (_, r) => r.items.length }, { title: '操作', render: (_, r) => r.state_label === '启用' && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/batches/${r.batch_id}/cancel`, 'POST', { revision: r.revision, cancel_runs: true }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>取消批次</Button> }]} expandable={{ expandedRowRender: r => <Table rowKey="item_id" dataSource={r.items} pagination={false} columns={[{ title: '外部事件编号', dataIndex: 'event_id' }, { title: '状态', dataIndex: 'state_label' }, { title: '反馈', render: (_, i) => i.error?.message ?? '无' }, { title: '操作', render: (_, i) => <Space>{i.run_id && <Link to={`/runs/${i.run_id}`}>查看运行</Link>}{i.state === 'FAILED' && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/batch-items/${i.item_id}/retry`, 'POST', { revision: i.revision }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>重试受理</Button>}</Space> }]} /> }} />
     <Modal open={open} title="新建批量运行" onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>
       <ErrorNotice error={error} />
-      <Form name="batch" form={form} layout="vertical" onFinish={async v => { if (busy) return; setBusy(true); try { await apiClient.request('/admin/v1/batches', { method: 'POST', headers: { 'Idempotency-Key': key.current }, body: JSON.stringify({ name: v.name, items: JSON.parse(v.items) as unknown }) }); setOpen(false); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
+      <Form name="batch" form={form} layout="vertical" onFinish={async v => { if (busy) return; setBusy(true); setError(undefined); try { await apiClient.request('/admin/v1/batches', { method: 'POST', headers: { 'Idempotency-Key': key.current }, body: JSON.stringify({ name: v.name, items: parseJson(v.items, []) }) }); setOpen(false); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
         <Form.Item name="name" label="批次名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
         <Form.Item name="items" label="运行条目" rules={[{ required: true }]}><Input.TextArea rows={8} /></Form.Item>
         <Typography.Text>每项填写 event_id 和 request（agent_code、input），最多 100 项。</Typography.Text>

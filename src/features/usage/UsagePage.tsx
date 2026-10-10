@@ -2,6 +2,7 @@ import { DateTimeInput } from '../../components/DateTimeInput'
 import { App, Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Tabs, Tag, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
+import dayjs from 'dayjs'
 import { apiClient } from '../../api/client'
 import { environments, send } from '../../api/management'
 import { formatAmount, formatTimestamp } from '../../api/presentation'
@@ -56,8 +57,8 @@ export function UsagePage() {
     <Space><Tag color={data?.price_complete ? 'success' : 'warning'}>{data?.price_complete ? '价格完整' : '部分费用未确认'}</Tag><Typography.Text>用量缺失：{number(data?.missing_usage)} 次</Typography.Text><Typography.Text type="secondary">更新于 {formatTimestamp(data?.aggregate_updated_at, filters.timezone)}</Typography.Text></Space>
   </Space>
   const trend = <Table rowKey="date" dataSource={data?.trend as { date: string; attempts: number; input_tokens: number | null; output_tokens: number | null; costs: { [currency: string]: { priced: string; provisional: string } } }[] | undefined} columns={[
-    { title: '日期', dataIndex: 'date' }, { title: '实际尝试数', dataIndex: 'attempts' }, { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) },
-    { title: '已计价 / 暂估费用', render: (_, r) => Object.entries(r.costs).map(([currency, cost]) => <div key={currency}>{formatAmount(cost.priced, currency)} / {formatAmount(cost.provisional, currency)}</div>) },
+    { title: '日期', render: (_, r) => dayjs(r.date).format('YYYY年M月D日') }, { title: '实际尝试数', dataIndex: 'attempts' }, { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) },
+    { title: '已计价 / 暂估费用', render: (_, r) => Object.keys(r.costs).length ? Object.entries(r.costs).map(([currency, cost]) => <div key={currency}>{formatAmount(cost.priced, currency)} / {formatAmount(cost.provisional, currency)}</div>) : '费用未确认' },
   ]} />
   return <PageContainer title="用量" actions={<Space><Button onClick={() => { summary.reload(); records.reload() }}>刷新</Button>{can('data:export') && <><Button loading={exporting} onClick={() => void exportUsage()}>导出明细</Button><Button onClick={() => setShowExports(true)}>导出任务</Button></>}</Space>}>
     <Form layout="inline" initialValues={initial} onFinish={(values: FilterValues) => { setFilters(parameters(values)); setOffset(0) }} style={{ marginBottom: 24 }}>

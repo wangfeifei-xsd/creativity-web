@@ -45,7 +45,7 @@ function RouteConfiguration({ route, onClose }: { route: Schema<'RouteView'>; on
     <Form.Item name="name" label="路由名称" rules={[{ required: true }]}><Input /></Form.Item>
     <RouteModelFields choices={choices} />
     <Form.Item name="required_capabilities" label="必需能力"><Select mode="multiple" options={capabilityOptions} /></Form.Item>
-    <Form.Item name="parameters" label="路由参数（JSON）"><Input.TextArea rows={3} /></Form.Item>
+    <Form.Item name="parameters" label="路由参数（JSON）" rules={[{ validator: async (_, value: unknown) => { jsonObject(value) } }]}><Input.TextArea rows={3} /></Form.Item>
     <Form.Item name="max_attempts" label="总尝试上限（次）"><InputNumber min={1} max={10} /></Form.Item>
     <Form.Item name="retries_per_model" label="每个模型重试上限（次）"><InputNumber min={0} max={2} /></Form.Item>
     <Form.Item name="hard_amount_budget" label="要求硬金额预算" valuePropName="checked"><Switch /></Form.Item>

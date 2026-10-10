@@ -60,8 +60,9 @@ export function PlatformUsagePage() {
     </Form>
     <ErrorNotice error={error ?? query.error} />
     <Table<Schema<'UsageView'>> rowKey="channel_id" dataSource={query.data} loading={!!filters && !query.data && !query.error} scroll={{ x: 1250 }} columns={[
-      { title: '渠道', dataIndex: 'channel_name' }, { title: '调用次数', render: (_, row) => `${row.calls} 次` },
-      { title: '实际请求数', render: (_, row) => row.requests == null ? '未确认' : `${row.requests} 次` },
+      { title: '渠道', dataIndex: 'channel_name' },
+      { title: '请求数', render: (_, row) => row.requests == null ? '未确认' : `${row.requests} 次` },
+      { title: '实际尝试数', render: (_, row) => `${row.calls} 次` },
       { title: '输入 Token', render: (_, row) => row.input_tokens == null ? '未确认' : row.input_tokens.toLocaleString('zh-CN') },
       { title: '输出 Token', render: (_, row) => row.output_tokens == null ? '未确认' : row.output_tokens.toLocaleString('zh-CN') },
       { title: '已计价费用', render: (_, row) => row.costs.map(m => formatAmount(m.amount, m.currency)).join('、') || '费用未确认' },
