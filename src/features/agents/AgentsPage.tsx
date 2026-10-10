@@ -1,7 +1,7 @@
 import { Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, theme } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { send } from '../../api/management'
 import { formatAmount, formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -15,6 +15,7 @@ import { AgentDifferences } from './AgentDifferences'
 import { Debug } from './Debug'
 import { Flow } from './Flow'
 import { type Detail, type Options, type Version, dependencyNames, workflowNames } from './types'
+import type { FlowIssue } from './flow-fields'
 import './agents.css'
 
 export function AgentsPage() {
@@ -47,14 +48,18 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const query = useQuery<Detail>(`/admin/v1/agents/${agentId}`)
   const options = useQuery<Options>('/admin/v1/agents/options')
   const [selected, setSelected] = useState<string>()
-  const [editor, setEditor] = useState<'version' | 'resource' | 'new' | 'release' | 'offline' | 'emergency_stop' | 'enable'>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [initialFocus, setInitialFocus] = useState<FlowIssue>()
+  const editVersion = searchParams.get('edit')
+  const closeVersionEditor = () => { setSearchParams({}, { replace: true }); setInitialFocus(undefined); setEditor(undefined) }
+  const [editor, setEditor] = useState<'resource' | 'new' | 'release' | 'offline' | 'emergency_stop' | 'enable'>()
   const [validation, setValidation] = useState<Schema<'AgentValidation'>>()
   const [tab, setTab] = useState('flow')
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const detail = query.data
-  const version = detail?.versions.find(v => v.version_id === selected) ?? detail?.versions.filter(v => v.status.value === 'DRAFT').at(-1) ?? detail?.versions.at(-1)
-  const saved = () => { setEditor(undefined); setValidation(undefined); query.reload(); options.reload() }
+  const version = detail?.versions.find(v => v.version_id === (editVersion ?? selected)) ?? detail?.versions.filter(v => v.status.value === 'DRAFT').at(-1) ?? detail?.versions.at(-1)
+  const saved = () => { closeVersionEditor(); setValidation(undefined); query.reload(); options.reload() }
   async function validate() {
     if (!version) return
     setBusy(true); setError(undefined)
@@ -63,12 +68,18 @@ function AgentDetail({ agentId }: { agentId: string }) {
   }
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!detail) return <LoadingState />
+  if (editVersion && !options.data) return options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />
   const definition = version?.definition
   const depIds = definition ? [...new Set([definition.bindings.prompt_id, definition.bindings.model_route_id, definition.bindings.embedding_route_id,
     ...definition.bindings.tool_ids, ...definition.bindings.skill_ids, ...definition.steps.map(step => step.dependency)].filter((id): id is string => !!id))] : []
   // 校验可能在解析依赖前失败，仍保留已保存的依赖，方便定位和修改。
   const dependencies = depIds.map(id => validation?.dependencies.find(d => d.version_id === id) ?? options.data?.dependencies.find(d => d.version_id === id)
     ?? { version_id: id, name: '依赖名称不可用', version_label: '版本不可用', resource_type: '' })
+  const validationIssues = validation?.checks.flatMap(check => check.issues ?? []) ?? []
+  if (editVersion && version?.version_id === editVersion && options.data && version.actions.some(action => action.action_key === 'edit')) return <AgentEditor key={version.version_id}
+    options={options.data} version={version} name={detail.agent.name} initialIssues={validationIssues.filter(issue => /^(steps|edges|start_step)(\.|$)/.test(issue.path ?? ''))}
+    initialFocus={initialFocus} onClose={closeVersionEditor} onSaved={saved} />
+  const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id }) }
   return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={detail.agent.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
       offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>
@@ -82,7 +93,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
       options={detail.versions.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.status.label}${v.version_id === detail.release_version_id ? ' · 当前环境生效' : ''}` }))}
       onChange={value => { setSelected(value); setValidation(undefined) }} /></div>
       <div className="agent-version-actions">
-      {version && <ActionButtons actions={version.actions} disabled={busy} handlers={{ edit: options.data ? () => setEditor('version') : undefined, validate: () => void validate(), test: () => setTab('debug'), release: () => setEditor('release') }} />}
+      {version && <ActionButtons actions={version.actions} disabled={busy} handlers={{ edit: options.data ? () => openEditor() : undefined, validate: () => void validate(), test: () => setTab('debug'), release: () => setEditor('release') }} />}
       </div>
     </div>
     {definition && version && <Tabs className="agent-detail-tabs" activeKey={tab} onChange={setTab} items={[
@@ -95,14 +106,14 @@ function AgentDetail({ agentId }: { agentId: string }) {
         { key: 'input', label: '输入结构', children: <SchemaView value={definition.input_schema} label="输入结构" /> },
         { key: 'output', label: '输出结构', children: <SchemaView value={definition.output_schema} label="输出结构" /> },
       ]} /> },
-      { key: 'flow', label: '流程', children: <Flow definition={definition} /> },
+      { key: 'flow', label: '流程', children: <Flow key={version.version_id} definition={definition} options={options.data} /> },
       { key: 'dependencies', label: '模型、提示词与工具技能', children: <Space orientation="vertical" style={{ width: '100%' }}>
         <Table rowKey="version_id" pagination={false} dataSource={dependencies} columns={[
           { title: '类型', render: (_, d) => dependencyNames[d.resource_type] ?? '资源不可用' }, { title: '资源', dataIndex: 'name' },
         ]} />
         {validation && <Table rowKey="key" pagination={false} dataSource={validation.checks} columns={[
           { title: '发布检查', dataIndex: 'label' }, { title: '结果', render: (_, c) => c.passed ? '通过' : '未通过' },
-          { title: '说明', render: (_, c) => c.passed ? '已核验' : c.issues?.map(i => i.message).join('；') },
+          { title: '说明', render: (_, c) => c.passed ? '已核验' : <Space orientation="vertical" size={0}>{c.issues?.map((issue, index) => version.actions.some(action => action.action_key === 'edit') && issue.path ? <Button key={index} type="link" className="agent-flow-issue-link" onClick={() => openEditor(issue)}>{issue.message}</Button> : <span key={index}>{issue.message}</span>)}</Space> },
         ]} />}
       </Space> },
       { key: 'memory', label: '会话与记忆', children: <Descriptions column={1} items={[
@@ -129,7 +140,6 @@ function AgentDetail({ agentId }: { agentId: string }) {
         { title: '说明', dataIndex: 'note' }, { title: '操作人', render: (_, r) => r.actor_name ?? '名称不可用' }, { title: '时间', render: (_, r) => formatTimestamp(r.created_at) },
       ]} /> },
     ]} />}
-    {editor === 'version' && version && options.data && <AgentEditor options={options.data} version={version} onClose={() => setEditor(undefined)} onSaved={saved} />}
     {editor === 'resource' && <EditorDialog title="编辑基本信息" fields={[{ name: 'name', label: '智能体名称', required: true }, { name: 'description', label: '用途', required: true }, { name: 'owner', label: '负责人', required: true }]}
       initial={{ name: detail.agent.name, description: detail.agent.description, owner: detail.agent.owner, revision: detail.agent.revision }} onClose={() => setEditor(undefined)} onSaved={saved}
       onSave={values => send(`/admin/v1/agents/${agentId}`, 'PATCH', values)} />}

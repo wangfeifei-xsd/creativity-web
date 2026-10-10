@@ -10,20 +10,58 @@
 .agent-version-select { width: 320px; max-width: 100%; min-width: 0; }
 .agent-version-actions .ant-space { flex-wrap: wrap; gap: 8px !important; }
 .agent-detail-tabs > .ant-tabs-nav { margin-bottom: 24px; }
-.agent-flow { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-.agent-flow-diagram { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px; }
-.agent-flow-diagram > .ant-tag { margin: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
-.agent-flow-nodes { display: flex; flex-wrap: wrap; align-items: stretch; gap: 16px; width: 100%; min-width: 0; }
-.agent-flow-node { width: 240px; max-width: 100%; }
-.agent-flow-node .ant-card-head-title { white-space: normal; overflow-wrap: anywhere; }
-.agent-flow-node .ant-card-body { display: flex; flex-direction: column; gap: 8px; overflow-wrap: anywhere; }
-.agent-flow-node .ant-typography { margin-bottom: 0; }
-
 @media (max-width: 575px) {
   .agent-detail-summary { padding: 16px; }
   .agent-version-picker { flex-basis: 100%; }
   .agent-version-select { flex: 1; width: auto; }
   .agent-version-actions { width: 100%; }
-  .agent-flow-diagram { padding: 16px; }
-  .agent-flow-node { width: 100%; }
+}
+
+.agent-editor-page, .agent-flow-editor { min-width: 0; }
+.agent-editor-state { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.agent-editor-tabs > .ant-tabs-nav { margin-bottom: 20px; }
+.agent-flow-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); gap: 20px; align-items: start; min-width: 0; }
+.agent-flow-canvas { border: 1px solid; min-width: 0; overflow: hidden; }
+.agent-flow-canvas-toolbar, .agent-flow-editor-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.agent-flow-canvas-toolbar { padding: 12px; }
+.agent-flow-editor-toolbar { margin-bottom: 16px; }
+.agent-flow-start-picker { width: 240px; max-width: 100%; }
+.agent-flow-zoom { display: inline-block; min-width: 40px; text-align: center; }
+.agent-flow-viewport { overflow: auto; height: clamp(440px, 64vh, 780px); max-width: 100%; }
+.agent-flow-scaled { position: relative; margin: 0 auto; }
+.agent-flow-scene { position: absolute; inset: 0 auto auto 0; transform-origin: top left; }
+.agent-flow-edges { position: absolute; inset: 0; pointer-events: none; }
+.agent-flow-graph-node.ant-btn { position: absolute; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 10px; padding: 12px 16px; text-align: left; white-space: normal; }
+.agent-flow-node-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; font-weight: 600; line-height: 20px; }
+.agent-flow-node-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.agent-flow-node-meta .ant-tag { margin: 0; }
+.agent-flow-end { position: absolute; display: flex; align-items: center; justify-content: center; border: 1px solid; border-radius: 20px; }
+.agent-flow-edge-label.ant-btn { position: absolute; white-space: normal; padding: 2px 8px; text-align: center; box-shadow: none; font-size: 13px; }
+.agent-flow-edge-label.ant-btn > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 18px; overflow-wrap: anywhere; }
+.agent-flow-inspector { min-width: 0; }
+.agent-flow-inspector .ant-tabs-tab { font-size: 13px; }
+.agent-flow-inspector .ant-tabs-tab + .ant-tabs-tab { margin-left: 16px; }
+.agent-flow-inspector .ant-form-item { margin-bottom: 16px; }
+.agent-flow-inspector .ant-input-number { width: 100%; }
+.agent-flow-inspector h5.ant-typography { margin: 0; overflow-wrap: anywhere; }
+.agent-flow-inspector-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.agent-flow-full-width { width: 100%; min-width: 0; }
+.agent-flow-full-width > .ant-space-item { min-width: 0; }
+.agent-flow-branch .ant-card-head-title, .agent-flow-branch .ant-card-body { overflow-wrap: anywhere; white-space: normal; }
+.agent-flow-branch-actions { margin-top: 12px; }
+.agent-flow-inspector-actions { margin-top: 16px; }
+.agent-flow-form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.agent-flow-field-notice { margin-bottom: 16px; }
+.agent-flow-mapping-summary { overflow-wrap: anywhere; }
+.agent-flow-issue-link.ant-btn { height: auto; white-space: normal; text-align: left; padding: 0; }
+@media (max-width: 1100px) {
+  .agent-flow-workspace { grid-template-columns: minmax(0, 1fr); }
+  .agent-flow-inspector { padding-top: 8px; }
+}
+@media (max-width: 575px) {
+  .agent-flow-canvas-toolbar { padding: 8px; }
+  .agent-flow-canvas-toolbar .ant-space { flex-wrap: wrap; }
+  .agent-flow-start-picker { width: 100%; }
+  .agent-flow-editor-toolbar > .ant-space { width: 100%; }
+  .agent-flow-form-pair { grid-template-columns: minmax(0, 1fr); gap: 0; }
 }

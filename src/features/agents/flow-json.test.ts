@@ -12,7 +12,7 @@ describe('流程 JSON 编辑', () => {
   it.each([null, [], { ...flow, steps: [null] }, { ...flow, steps: [{ ...step, inputs: { x: null } }] }, { ...flow, edges: [null] }])('拒绝会破坏画布的结构 %j', value => {
     expect(() => parseFlowJson(JSON.stringify(value))).toThrow()
   })
-  it.each([{ ...flow, start_step: 'missing' }, { ...flow, steps: [step, step] }, { ...flow, edges: [{ source: 'finish', target: 'missing' }] }, { ...flow, bindings: {} }])('拒绝错误引用或修改流程外配置 %j', value => {
+  it.each([{ ...flow, start_step: 'missing' }, { ...flow, steps: [{ ...step, key: 'END' }] }, { ...flow, steps: [step, step] }, { ...flow, edges: [{ source: 'finish', target: 'missing' }] }, { ...flow, bindings: {} }])('拒绝错误引用或修改流程外配置 %j', value => {
     expect(() => parseFlowJson(JSON.stringify(value))).toThrow()
   })
 })

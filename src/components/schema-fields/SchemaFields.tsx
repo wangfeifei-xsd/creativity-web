@@ -5,9 +5,9 @@ import { changeType, constraintLabel, deleteField, fieldTitle, isObject, parseSc
 import './schema-fields.css'
 
 type Editing = { row?: FieldRow; parentPath: string[] }
-type Props = { value?: string; onChange?: (value: string) => void; label: string; id?: string; disabled?: boolean }
+type Props = { value?: string; onChange?: (value: string) => void; label: string; id?: string; disabled?: boolean; compact?: boolean }
 
-export function SchemaFields({ value = '{}', onChange, label, id, disabled }: Props) {
+export function SchemaFields({ value = '{}', onChange, label, id, disabled, compact }: Props) {
   const [mode, setMode] = useState('fields')
   const [editing, setEditing] = useState<Editing>()
   let schema: SchemaObject | undefined, error: string | undefined
@@ -25,13 +25,14 @@ export function SchemaFields({ value = '{}', onChange, label, id, disabled }: Pr
     {mode === 'json' ? <Input.TextArea aria-label={`${label} JSON`} value={value} readOnly={!editable} disabled={disabled} autoSize={{ minRows: 8, maxRows: 22 }}
       onChange={event => onChange?.(event.target.value)} spellCheck={false} className="schema-fields-json" /> : schema && <>
       {!!schema.description && <Typography.Paragraph type="secondary">{String(schema.description)}</Typography.Paragraph>}
-      <Table<FieldRow> size="small" rowKey="key" pagination={false} dataSource={schemaRows(schema)} scroll={{ x: 660 }}
+      <Table<FieldRow> size="small" rowKey="key" pagination={false} dataSource={schemaRows(schema)} scroll={compact ? undefined : { x: 660 }}
         expandable={{ defaultExpandAllRows: true, indentSize: 16 }} locale={{ emptyText: '暂未定义字段' }} columns={[
-          { title: '字段名称 / 标识', width: 210, render: (_, row) => <span className="schema-fields-name"><span>{fieldTitle(row)}</span>{!row.item && <Typography.Text type="secondary">{row.name}</Typography.Text>}</span> },
-          { title: '类型', width: 98, render: (_, row) => typeLabel(row.schema) },
-          { title: '必填', width: 62, render: (_, row) => row.item ? '—' : row.required ? <Tag color="blue">是</Tag> : '否' },
-          { title: '说明与约束', render: (_, row) => <div className="schema-fields-description">{isObject(row.schema) && typeof row.schema.description === 'string' && <div>{row.schema.description}</div>}<Typography.Text type="secondary">{constraintLabel(row.schema)}</Typography.Text></div> },
-          ...(editable ? [{ title: '操作', width: 164, render: (_: unknown, row: FieldRow) => <Space size={[4, 0]} wrap>
+          { title: '字段名称 / 标识', width: compact ? undefined : 210, render: (_: unknown, row: FieldRow) => <span className="schema-fields-name"><span>{fieldTitle(row)}{compact && <Tag>{typeLabel(row.schema)}{row.required ? ' · 必填' : ''}</Tag>}</span>{!row.item && <Typography.Text type="secondary">{row.name}</Typography.Text>}{compact && <Typography.Text type="secondary" className="schema-fields-description">{isObject(row.schema) && typeof row.schema.description === 'string' ? `${row.schema.description}；` : ''}{constraintLabel(row.schema)}</Typography.Text>}</span> },
+          ...(!compact ? [{ title: '类型', width: 98, render: (_: unknown, row: FieldRow) => typeLabel(row.schema) },
+          { title: '必填', width: 62, render: (_: unknown, row: FieldRow) => row.item ? '—' : row.required ? <Tag color="blue">是</Tag> : '否' },
+          { title: '说明与约束', render: (_: unknown, row: FieldRow) => <div className="schema-fields-description">{isObject(row.schema) && typeof row.schema.description === 'string' && <div>{row.schema.description}</div>}<Typography.Text type="secondary">{constraintLabel(row.schema)}</Typography.Text></div> },
+          ] : []),
+          ...(editable ? [{ title: '操作', width: compact ? 76 : 164, render: (_: unknown, row: FieldRow) => <Space size={[4, 0]} wrap>
             <Button type="link" size="small" disabled={disabled || !isObject(row.schema)} onClick={() => setEditing({ row, parentPath: row.path.slice(0, -2) })}>修改</Button>
             {isObject(row.schema) && (row.schema.type === 'object' || isObject(row.schema.properties)) && <Button type="link" size="small" disabled={disabled} onClick={() => setEditing({ parentPath: row.path })}>添加子字段</Button>}
             {!row.item && <Popconfirm title={`删除字段“${fieldTitle(row)}”？`} description="其子字段也会一并移除。" okText="删除" cancelText="取消"
@@ -116,6 +117,6 @@ function FieldEditor({ editing, schema, onClose, onSave }: { editing: Editing; s
   </Modal>
 }
 
-export function SchemaView({ value, label }: { value: SchemaObject; label: string }) {
-  return <SchemaFields value={JSON.stringify(value, null, 2)} label={label} />
+export function SchemaView({ value, label, compact }: { value: SchemaObject; label: string; compact?: boolean }) {
+  return <SchemaFields value={JSON.stringify(value, null, 2)} label={label} compact={compact} />
 }

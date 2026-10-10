@@ -11,6 +11,7 @@ export function parseFlowJson(source: string): Pick<Definition, 'start_step' | '
   const keys = new Set<string>()
   for (const step of value.steps) {
     if (!object(step) || !text(step.key) || !text(step.name) || !['model', 'tool', 'compute'].includes(String(step.kind)) || !object(step.input_schema) || !object(step.output_schema) || !object(step.inputs)) throw new Error('每个步骤须包含标识、名称、类型、输入输出结构和输入映射')
+    if (step.key === 'END') throw new Error('步骤标识不能使用保留的结束标识')
     if (keys.has(step.key)) throw new Error('步骤标识不能重复')
     keys.add(step.key)
     if (Object.values(step.inputs).some(mapping => !object(mapping) || !['input', 'step', 'constant'].includes(String(mapping.source)))) throw new Error('输入映射须声明运行输入、步骤输出或固定值来源')
