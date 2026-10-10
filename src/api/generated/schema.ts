@@ -5563,11 +5563,6 @@ export interface components {
             agent_code: string;
             /** Agent Id */
             agent_id: string;
-            /**
-             * Builtin
-             * @default false
-             */
-            builtin: boolean;
             /** Description */
             description: string;
             /** Name */

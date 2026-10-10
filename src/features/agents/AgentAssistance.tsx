@@ -27,7 +27,7 @@ export function AgentAssistance({ agentId, versionId }: { agentId?: string; vers
   </Space>
   const base = query.data?.versions.find(version => version.version_id === versionId)
     ?? (versionId ? undefined : query.data?.versions.filter(version => version.status.value === 'DRAFT').at(-1) ?? query.data?.versions.at(-1))
-  if (agentId && (query.data?.agent.builtin || !query.data?.agent.actions.some(action => action.action_key === 'edit') || !base)) return <Space orientation="vertical">
+  if (agentId && (!query.data?.agent.actions.some(action => action.action_key === 'edit') || !base)) return <Space orientation="vertical">
     <Button icon={<ArrowLeftOutlined aria-hidden />} onClick={() => navigate('/agents')}>返回智能体列表</Button>
     <Alert type="warning" showIcon title="当前智能体或版本不可修改，请返回列表重新选择" />
   </Space>
@@ -162,7 +162,11 @@ function AssistanceWorkspace({ agent, base }: { agent?: Detail['agent']; base?: 
             {message.response?.error && <Alert type="error" showIcon title={message.response.error} />}
             {message.response && ['CANCELLED', 'TIMED_OUT'].includes(message.response.state) && !message.response.error && <Alert type="warning" title={message.response.state_label} />}
           </div>)}
-          {pending && <Space className="agent-assistance-working"><Spin size="small" /><span>{last?.response?.state_label ?? '正在生成方案…'}</span></Space>}
+          {pending && <Space className="agent-assistance-working"><Spin size="small" /><span>{
+            last?.response?.state === 'QUEUED' ? '排队中，请勿切换或关闭页面'
+              : last?.response?.state === 'RUNNING' ? '执行中，请勿切换或关闭页面'
+                : last?.response?.state_label ?? '排队中，请勿切换或关闭页面'
+          }</span></Space>}
           <ErrorNotice error={pollError} />{pollError != null && <Button onClick={() => { setPollError(undefined); setRetry(value => value + 1) }}>重新获取结果</Button>}
           <div ref={bottom} />
         </div>

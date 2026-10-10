@@ -40,7 +40,7 @@ const assistedProposal = { agent_code: 'business_task', name: '咨询摘要助�
   definition: { ...definition, instructions: '总结咨询问题并列出待办事项。' } }
 async function assistanceFixture(page: Page) {
   await fixture(page)
-  await page.route('**/admin/v1/agents?*', route => route.fulfill({ json: { items: [agent, { ...agent, agent_id: 'builtin_agent_builder', builtin: true, name: '智能体配置助手', actions: [], status: { value: 'BUILTIN', label: '内置 · 只读' } }], actions: [action('create', '新增智能体'), action('assist', '智能协助')] } }))
+  await page.route('**/admin/v1/agents?*', route => route.fulfill({ json: { items: [{ ...agent, actions: [action('assist', '智能修改')] }], actions: [action('create', '新增智能体'), action('assist', '智能协助')] } }))
 }
 
 test('智能协助追问后生成方案，确认保存前没有创建资源', async ({ page }) => {
@@ -66,7 +66,8 @@ test('智能协助追问后生成方案，确认保存前没有创建资源', as
     await route.fulfill({ json: { agent_id: 'agent_a', version_id: 'draft_a' } })
   })
   await page.goto('#/agents')
-  await expect(page.getByText('内置 · 只读', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: '业务助手', exact: true })).toBeVisible()
+  await expect(page.getByRole('row').filter({ hasText: '智能体配置助手' })).toHaveCount(0)
   await page.getByRole('button', { name: '智能创建', exact: true }).click()
   const dialog = page.getByRole('region', { name: '智能协助工作区', exact: true })
   await dialog.getByLabel('创建或修改需求').fill('创建一个咨询摘要助手')
@@ -174,6 +175,8 @@ test('智能创建使用独立入口，示例只填入需求，返回前保留�
 test('列表智能修改带入对象与草稿，直达刷新仍保留修改上下文', async ({ page }) => {
   await assistanceFixture(page)
   await page.goto('#/agents')
+  await expect(page.getByRole('button', { name: '智能创建', exact: true })).toBeVisible()
+  await page.screenshot({ path: '.local/agent-list-without-builtin.png', fullPage: true })
   await page.getByRole('button', { name: '智能修改', exact: true }).click()
   await expect(page).toHaveURL(/agents\/assistance\?agent=agent_a/)
   await page.reload()

@@ -34,18 +34,17 @@ function AgentList() {
   const options = useQuery<Options>(creating ? '/admin/v1/agents/options' : null)
   const navigate = useNavigate()
   const canAssist = query.data?.actions.some(action => action.action_key === 'assist')
+  const canModify = query.data?.items.some(item => item.actions.some(action => action.action_key === 'assist'))
   return <PageContainer title="智能体" actions={<Space wrap><Button onClick={query.reload}>刷新</Button>
     <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} />
     {canAssist && <Button type="primary" icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate('/agents/assistance')}>智能创建</Button>}</Space>}>
     <ErrorNotice error={options.error} />
     <Input.Search aria-label="智能体名称或用途" placeholder="智能体名称或用途" onSearch={setSearch} allowClear style={{ maxWidth: 360, marginBottom: 16 }} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="agent_id" dataSource={query.data.items} columns={[
-      { title: '智能体名称', render: (_, row) => row.builtin ? <Link to="/agents/assistance">{row.name}</Link> : <Link to={`/agents/${row.agent_id}`}>{row.name}</Link> },
+      { title: '智能体名称', render: (_, row) => <Link to={`/agents/${row.agent_id}`}>{row.name}</Link> },
       { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '负责人', dataIndex: 'owner' },
       { title: '状态', render: (_, row) => <StatusTag status={row.status} /> },
-      ...(canAssist ? [{ title: '操作', width: 120, render: (_: unknown, row: Schema<'AgentList'>['items'][number]) => row.builtin
-        ? <Button type="link" onClick={() => navigate('/agents/assistance')}>开始创建</Button>
-        : row.actions.some(action => action.action_key === 'edit') && <Button type="link" onClick={() => navigate(`/agents/assistance?agent=${encodeURIComponent(row.agent_id)}`)}>智能修改</Button> }] : []),
+      ...(canModify ? [{ title: '操作', width: 120, render: (_: unknown, row: Schema<'AgentList'>['items'][number]) => row.actions.some(action => action.action_key === 'assist') && <Button type="link" onClick={() => navigate(`/agents/assistance?agent=${encodeURIComponent(row.agent_id)}`)}>智能修改</Button> }] : []),
     ]} />}
     {creating && !options.data && <Modal open title="新增智能体" footer={null} onCancel={() => setCreating(false)}>{options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />}</Modal>}
     {creating && options.data && <AgentEditor options={options.data} onClose={() => setCreating(false)} onSaved={detail => { if (detail) navigate(`/agents/${detail.agent.agent_id}`) }} />}
