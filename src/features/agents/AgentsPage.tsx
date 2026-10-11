@@ -1,5 +1,5 @@
-import { Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, theme } from 'antd'
-import { ThunderboltOutlined } from '@ant-design/icons'
+import { Button, Descriptions, Empty, Form, Input, Modal, Select, Space, Tabs, Tag, Typography } from 'antd'
+import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, DatabaseOutlined, EditOutlined, HistoryOutlined, MessageOutlined, PauseCircleOutlined, PlayCircleOutlined, PlusOutlined, PoweroffOutlined, ReloadOutlined, SendOutlined, SlidersOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -11,12 +11,14 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { StatusTag } from '../../components/StatusTag'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
+import { AgentDependencies } from './AgentDependencies'
+import { AgentSection, AgentValues, AgentWorkspace } from './AgentWorkspace'
 import { AgentAssistance } from './AgentAssistance'
 import { AgentEditor } from './AgentEditor'
 import { AgentDifferences } from './AgentDifferences'
 import { Debug } from './Debug'
 import { Flow } from './Flow'
-import { type Detail, type Options, type Version, dependencyNames, workflowNames } from './types'
+import { type Detail, type Options, type Version, workflowNames } from './types'
 import type { FlowIssue } from './flow-fields'
 import './agents.css'
 
@@ -52,7 +54,6 @@ function AgentList() {
 }
 
 function AgentDetail({ agentId }: { agentId: string }) {
-  const { token } = theme.useToken()
   const query = useQuery<Detail>(`/admin/v1/agents/${agentId}`)
   const options = useQuery<Options>('/admin/v1/agents/options')
   const navigate = useNavigate()
@@ -90,12 +91,12 @@ function AgentDetail({ agentId }: { agentId: string }) {
     options={options.data} version={version} name={detail.agent.name} initialIssues={validationIssues.filter(issue => /^(steps|edges|start_step)(\.|$)/.test(issue.path ?? ''))}
     initialFocus={initialFocus} onClose={closeVersionEditor} onSaved={saved} />
   const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id }) }
-  return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={reload}>刷新</Button>
+  return <AgentWorkspace className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents"><ArrowLeftOutlined aria-hidden /> 返回智能体列表</Link><Button icon={<ReloadOutlined aria-hidden />} onClick={reload}>刷新</Button>
     {detail.agent.actions.some(action => action.action_key === 'edit') && <Button icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate(`/agents/assistance?${new URLSearchParams({ agent: agentId, ...(version ? { version: version.version_id } : {}) })}`)}>智能修改</Button>}
-    <ActionButtons actions={detail.agent.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
+    <ActionButtons actions={detail.agent.actions} icons={{ edit: <EditOutlined aria-hidden />, create_version: <PlusOutlined aria-hidden />, offline: <PoweroffOutlined aria-hidden />, emergency_stop: <PauseCircleOutlined aria-hidden />, enable: <PlayCircleOutlined aria-hidden /> }} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
       offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>
     <ErrorNotice error={error ?? options.error} />
-    <div className="agent-detail-summary" style={{ background: token.colorFillAlter, borderRadius: token.borderRadiusLG }}>
+    <div className="agent-detail-summary">
     <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} items={[{ key: 'status', label: '当前环境状态', children: <StatusTag status={detail.agent.status} /> },
       { key: 'owner', label: '负责人', children: detail.agent.owner }, { key: 'purpose', label: '用途', children: detail.agent.description }]} />
     </div>
@@ -104,53 +105,60 @@ function AgentDetail({ agentId }: { agentId: string }) {
       options={detail.versions.map(v => ({ value: v.version_id, label: `${v.version_label} · ${v.status.label}${v.version_id === detail.release_version_id ? ' · 当前环境生效' : ''}` }))}
       onChange={value => { setSelected(value); setValidation(undefined) }} /></div>
       <div className="agent-version-actions">
-      {version && <ActionButtons actions={version.actions} disabled={busy} handlers={{ edit: options.data ? () => openEditor() : undefined, validate: () => void validate(), test: () => setTab('debug'), release: () => setEditor('release') }} />}
+      {version && <ActionButtons actions={version.actions} primaryAction="edit" icons={{ edit: <EditOutlined aria-hidden />, validate: <CheckCircleOutlined aria-hidden />, test: <SlidersOutlined aria-hidden />, release: <SendOutlined aria-hidden /> }} disabled={busy} handlers={{ edit: options.data ? () => openEditor() : undefined, validate: () => void validate(), test: () => setTab('debug'), release: () => setEditor('release') }} />}
       </div>
     </div>
     {definition && version && <Tabs className="agent-detail-tabs" activeKey={tab} onChange={setTab} items={[
-      { key: 'base', label: '基本信息', children: <Descriptions items={[
-        { key: 'instructions', label: '任务指令', span: 3, children: <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{definition.instructions || '未设置'}</Typography.Paragraph> },
-        { key: 'flow', label: '流程类型', children: workflowNames[definition.workflow_type] },
-        { key: 'code', label: '接入调用编码', children: <Typography.Text copyable>{detail.agent.agent_code}</Typography.Text> },
-        { key: 'rev', label: '修订号', children: version.revision },
-      ]} /> },
-      { key: 'schema', label: '输入输出', children: <Tabs items={[
+      { key: 'base', label: '基本信息', children: <AgentSection><AgentValues items={[
+        { label: '任务指令', wide: true, value: <Typography.Paragraph className="agent-instructions">{definition.instructions || '未设置'}</Typography.Paragraph> },
+        { label: '流程类型', value: workflowNames[definition.workflow_type] },
+        { label: '接入调用编码', value: <Typography.Text copyable>{detail.agent.agent_code}</Typography.Text> },
+        { label: '修订号', value: version.revision },
+      ]} /></AgentSection> },
+      { key: 'schema', label: '输入输出', children: <AgentSection className="agent-schema-section"><Tabs className="agent-inner-tabs" items={[
         { key: 'input', label: '输入结构', children: <SchemaView value={definition.input_schema} label="输入结构" /> },
         { key: 'output', label: '输出结构', children: <SchemaView value={definition.output_schema} label="输出结构" /> },
-      ]} /> },
+      ]} /></AgentSection> },
       { key: 'flow', label: '流程', children: <Flow key={version.version_id} definition={definition} options={options.data} /> },
-      { key: 'dependencies', label: '模型、提示词与工具技能', children: <Space orientation="vertical" style={{ width: '100%' }}>
-        <Table rowKey="version_id" pagination={false} dataSource={dependencies} columns={[
-          { title: '类型', render: (_, d) => dependencyNames[d.resource_type] ?? '资源不可用' }, { title: '资源', dataIndex: 'name' },
-        ]} />
-        {validation && <Table rowKey="key" pagination={false} dataSource={validation.checks} columns={[
+      { key: 'dependencies', label: '模型、提示词与工具技能', children: <Space orientation="vertical" className="agent-full-width" size={20}>
+        <AgentDependencies resources={dependencies} />
+        {validation && <AgentSection title="发布检查"><Table rowKey="key" pagination={false} dataSource={validation.checks} columns={[
           { title: '发布检查', dataIndex: 'label' }, { title: '结果', render: (_, c) => c.passed ? '通过' : '未通过' },
           { title: '说明', render: (_, c) => c.passed ? '已核验' : <Space orientation="vertical" size={0}>{c.issues?.map((issue, index) => version.actions.some(action => action.action_key === 'edit') && issue.path ? <Button key={index} type="link" className="agent-flow-issue-link" onClick={() => openEditor(issue)}>{issue.message}</Button> : <span key={index}>{issue.message}</span>)}</Space> },
-        ]} />}
+        ]} /></AgentSection>}
       </Space> },
-      { key: 'memory', label: '会话与记忆', children: <Descriptions column={1} items={[
-        { key: 'conversation', label: '会话', children: definition.context.conversation_enabled ? '已启用' : '未启用' },
-        { key: 'summary', label: '摘要', children: definition.context.summary_policy === 'recent' ? '最近摘要' : '不读取' },
-        { key: 'memory', label: '长期记忆', children: definition.context.memory_policy ? <><div>读取：{definition.context.memory_policy.read_enabled ? '已启用' : '未启用'}</div>
-          <div>写入：{({ DISABLED: '禁止写入', CANDIDATE: '生成候选', EXPLICIT: '明确确认' })[definition.context.memory_policy.write_mode]}</div>
-          <div>检索上限：{definition.context.memory_policy.retrieval_limit} 条</div><div>有效期：{definition.context.memory_policy.ttl_seconds} 秒</div></> : '未启用' },
-      ]} /> },
-      { key: 'limits', label: '运行限制', children: <Descriptions items={[
-        { key: 'deadline', label: '运行限时', children: `${definition.limits.deadline_seconds} 秒` },
-        { key: 'token', label: 'Token 上限', children: `${definition.limits.token_limit} 个` },
-        { key: 'context', label: '上下文上限', children: `${definition.context.context_limit} Token` },
-        { key: 'model', label: '模型轮数', children: `最多 ${definition.limits.max_model_rounds} 次` },
-        { key: 'tool', label: '工具调用', children: `最多 ${definition.limits.max_tool_calls} 次` },
-        { key: 'loop', label: '循环', children: `最多 ${definition.limits.max_iterations} 次，${definition.limits.loop_timeout_seconds} 秒` },
-        { key: 'repair', label: '输出修复', children: `最多 ${definition.limits.output_repair_attempts} 次` },
-        { key: 'cost', label: '费用上限', children: definition.limits.cost_limit ? formatAmount(definition.limits.cost_limit.amount, definition.limits.cost_limit.currency) : '未设置' },
-      ]} /> },
+      { key: 'memory', label: '会话与记忆', children: <div className="agent-two-columns">
+        <AgentSection title="会话" icon={<MessageOutlined aria-hidden />}><AgentValues className="is-rows" items={[
+          { label: '会话状态', value: <Tag color={definition.context.conversation_enabled ? 'success' : 'default'}>{definition.context.conversation_enabled ? '已启用' : '未启用'}</Tag> },
+          { label: '摘要', value: definition.context.summary_policy === 'recent' ? '最近摘要' : '不读取' },
+        ]} /></AgentSection>
+        <AgentSection title="长期记忆" icon={<DatabaseOutlined aria-hidden />}><AgentValues className="is-rows" items={definition.context.memory_policy ? [
+          { label: '读取', value: <Tag color={definition.context.memory_policy.read_enabled ? 'success' : 'default'}>{definition.context.memory_policy.read_enabled ? '已启用' : '未启用'}</Tag> },
+          { label: '写入', value: ({ DISABLED: '禁止写入', CANDIDATE: '生成候选', EXPLICIT: '明确确认' })[definition.context.memory_policy.write_mode] },
+          { label: '检索上限', value: `${definition.context.memory_policy.retrieval_limit} 条` },
+          { label: '有效期', value: `${definition.context.memory_policy.ttl_seconds} 秒` },
+        ] : [{ label: '记忆状态', value: <Tag>未启用</Tag> }]} /></AgentSection>
+      </div> },
+      { key: 'limits', label: '运行限制', children: <div className="agent-two-columns">
+        <AgentSection title="运行预算" icon={<ClockCircleOutlined aria-hidden />}><AgentValues className="is-rows" items={[
+          { label: '运行限时', value: `${definition.limits.deadline_seconds} 秒` },
+          { label: 'Token 上限', value: `${definition.limits.token_limit} 个` },
+          { label: '上下文上限', value: `${definition.context.context_limit} Token` },
+          { label: '费用上限', value: definition.limits.cost_limit ? formatAmount(definition.limits.cost_limit.amount, definition.limits.cost_limit.currency) : '未设置' },
+        ]} /></AgentSection>
+        <AgentSection title="执行上限" icon={<SlidersOutlined aria-hidden />}><AgentValues className="is-rows" items={[
+          { label: '模型轮数', value: `最多 ${definition.limits.max_model_rounds} 次` },
+          { label: '工具调用', value: `最多 ${definition.limits.max_tool_calls} 次` },
+          { label: '循环', value: `最多 ${definition.limits.max_iterations} 次，${definition.limits.loop_timeout_seconds} 秒` },
+          { label: '输出修复', value: `最多 ${definition.limits.output_repair_attempts} 次` },
+        ]} /></AgentSection>
+      </div> },
       { key: 'debug', label: '调试', children: <Debug key={`${version.version_id}:${version.revision}`} version={version} /> },
       { key: 'diff', label: '草稿与当前发布差异', children: <AgentDifferences detail={detail} options={options.data} /> },
-      { key: 'releases', label: '发布记录', children: <Table rowKey="release_id" dataSource={detail.releases} scroll={{ x: 640 }} columns={[
+      { key: 'releases', label: '发布记录', children: <AgentSection title="发布记录" icon={<HistoryOutlined aria-hidden />}><Table locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无发布记录" /> }} rowKey="release_id" dataSource={detail.releases} scroll={{ x: 640 }} columns={[
         { title: '环境', dataIndex: 'environment_label' }, { title: '版本', dataIndex: 'version_label' }, { title: '操作', dataIndex: 'operation_label' },
-        { title: '说明', dataIndex: 'note' }, { title: '操作人', render: (_, r) => r.actor_name ?? '名称不可用' }, { title: '时间', render: (_, r) => formatTimestamp(r.created_at) },
-      ]} /> },
+        { title: '说明', dataIndex: 'note', ellipsis: true }, { title: '操作人', render: (_, r) => r.actor_name ?? '名称不可用' }, { title: '时间', render: (_, r) => formatTimestamp(r.created_at) },
+      ]} /></AgentSection> },
     ]} />}
     {editor === 'resource' && <EditorDialog title="编辑基本信息" fields={[{ name: 'name', label: '智能体名称', required: true }, { name: 'description', label: '用途', required: true }, { name: 'owner', label: '负责人', required: true }]}
       initial={{ name: detail.agent.name, description: detail.agent.description, owner: detail.agent.owner, revision: detail.agent.revision }} onClose={() => setEditor(undefined)} onSaved={saved}
@@ -161,7 +169,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
       fields={[{ name: 'reason', label: '操作原因', required: true }]} onClose={() => setEditor(undefined)} onSaved={saved}
       onSave={values => send(`/admin/v1/agents/${agentId}/state`, 'POST', { ...values, revision: detail.agent.revision, operation: editor })} />}
     {editor === 'release' && version && options.data && <ReleaseDialog version={version} detail={detail} options={options.data} onClose={() => setEditor(undefined)} onSaved={saved} />}
-  </PageContainer></div>
+  </PageContainer></AgentWorkspace>
 }
 
 function ReleaseDialog({ detail, version, options, onClose, onSaved }: { detail: Detail; version: Version; options: Options; onClose: () => void; onSaved: () => void }) {

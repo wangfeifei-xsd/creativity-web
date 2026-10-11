@@ -1,4 +1,6 @@
 import { Button, Form, Input, InputNumber, Modal, Select, Space, Steps, Switch, Tabs, Tag } from 'antd'
+import { ApiOutlined, ArrowLeftOutlined, ClockCircleOutlined, FileTextOutlined, MessageOutlined, SafetyCertificateOutlined, SaveOutlined } from '@ant-design/icons'
+import { AgentSection, AgentWorkspace } from './AgentWorkspace'
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { ApiError } from '../../api/client'
@@ -159,10 +161,10 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
   async function changeSection(next: number) {
     try { await flow.current?.flush(); setStep(next) } catch { setStep(2) }
   }
-  const actions = <Space wrap><Button onClick={close} disabled={busy}>{version ? '返回详情' : '取消'}</Button>
+  const actions = <Space wrap><Button icon={version ? <ArrowLeftOutlined aria-hidden /> : undefined} onClick={close} disabled={busy}>{version ? '返回详情' : '取消'}</Button>
     {!version && step > 0 && <Button onClick={() => void changeSection(step - 1)} disabled={busy}>上一步</Button>}
     {!version && step < 4 ? <Button type="primary" disabled={busy} onClick={() => void form.validateFields(stepFields[step]).then(() => changeSection(step + 1)).catch(() => {})}>下一步</Button> :
-      <Button type="primary" loading={busy} onClick={() => void save()}>保存草稿</Button>}</Space>
+      <Button type="primary" icon={<SaveOutlined aria-hidden />} loading={busy} onClick={() => void save()}>保存草稿</Button>}</Space>
   const content = <>
     <Modal open={blocker.state === 'blocked'} title="放弃尚未保存的配置？" okText="放弃修改" cancelText="继续编辑"
       okButtonProps={{ disabled: busy }} onOk={() => blocker.state === 'blocked' && blocker.proceed()}
@@ -175,7 +177,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
       skill_loading_by_resource: Object.fromEntries((initial.bindings.skill_loading ?? []).map(item => [item.skill_id, item])),
       amount: initial.limits.cost_limit?.amount, currency: initial.limits.cost_limit?.currency ?? 'CNY', memory_enabled: !!initial.context.memory_policy,
       memory_policy: pretty(initial.context.memory_policy ?? { allowed_types: ['PREFERENCE', 'FACT'], read_enabled: true, suggest_enabled: false, write_mode: 'DISABLED', ttl_seconds: 15552000, max_items: 100, retrieval_limit: 10, failure_mode: 'OMIT' }) }}>
-      <div hidden={step !== 0}>
+      <div hidden={step !== 0} className="agent-editor-section"><AgentSection title="基本配置" icon={<FileTextOutlined aria-hidden />} className="agent-base-editor">
         {!version && <><Form.Item name="agent_code" label="调用编码" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>
           <Form.Item name="name" label="智能体名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
           <Form.Item name="description" label="用途" rules={[{ required: true }]}><Input.TextArea rows={2} /></Form.Item>
@@ -183,13 +185,13 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
           <Form.Item name="version_label" label="草稿名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item></>}
         <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key,
           label: t.name === workflowNames[t.workflow_type] ? t.name : `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
-        <Form.Item name="instructions" label="任务指令"><Input.TextArea rows={6} maxLength={32000} /></Form.Item>
+        <Form.Item name="instructions" label="任务指令"><Input.TextArea rows={6} showCount maxLength={32000} /></Form.Item>
+      </AgentSection></div>
+      <div hidden={step !== 1} className="agent-editor-section agent-schema-editor">
+        <AgentSection title="输入结构"><Form.Item name="input_schema" rules={schemaRules}><SchemaFields label="输入结构" disabled={busy} /></Form.Item></AgentSection>
+        <AgentSection title="输出结构"><Form.Item name="output_schema" rules={schemaRules}><SchemaFields label="输出结构" disabled={busy} /></Form.Item></AgentSection>
       </div>
-      <div hidden={step !== 1}>
-        <Form.Item name="input_schema" label="输入结构" rules={schemaRules}><SchemaFields label="输入结构" disabled={busy} /></Form.Item>
-        <Form.Item name="output_schema" label="输出结构" rules={schemaRules}><SchemaFields label="输出结构" disabled={busy} /></Form.Item>
-      </div>
-      <div hidden={step !== 2}>
+      <div hidden={step !== 2} className="agent-editor-section">
         <FlowEditor key={definition.entrypoint} ref={flow} value={flowDefinition} options={options} disabled={busy} issues={issues} onDirty={() => setDirty(true)} onChange={next => {
           setDefinition(next)
           form.setFieldsValue({ steps: pretty(next.steps), edges: pretty(next.edges), start_step: next.start_step })
@@ -198,21 +200,21 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
         <Form.Item name="steps" hidden><Input /></Form.Item>
         <Form.Item name="edges" hidden><Input /></Form.Item>
       </div>
-      <div hidden={step !== 3}>
+      <div hidden={step !== 3} className="agent-editor-section agent-dependency-editor"><AgentSection title="模型与提示词" icon={<ApiOutlined aria-hidden />}><div className="agent-form-grid">
         <Form.Item name="prompt_id" label="默认提示词" extra="未单独配置提示词的模型步骤使用此项。"><Select allowClear showSearch optionFilterProp="label" options={depOptions('prompt')} /></Form.Item>
         <Form.Item name="model_route_id" label="默认模型路由" extra="未单独配置模型路由的模型步骤使用此项。" rules={routeRules(['text'], '请选择支持文本生成的模型路由')}><Select allowClear showSearch optionFilterProp="label" options={routeOptions(['text'], '不支持文本生成')} /></Form.Item>
-        <Table rowKey="key" size="small" pagination={false} dataSource={definition.steps.filter(item => item.kind === 'model')} className="agent-model-dependencies" columns={[
+        </div><Table rowKey="key" size="small" pagination={false} dataSource={definition.steps.filter(item => item.kind === 'model')} className="agent-model-dependencies" columns={[
           { title: '模型步骤', dataIndex: 'name' },
           { title: '模型路由', render: (_, item) => options.dependencies.find(resource => resource.version_id === (item.dependency || liveRoute))?.name ?? '未配置' },
           { title: '提示词', render: (_, item) => options.dependencies.find(resource => resource.version_id === (item.prompt_id || livePrompt))?.name ?? '未配置' },
           { title: '操作', render: (_, item) => <Button type="link" disabled={busy} onClick={() => void flow.current?.openStep(item.key).then(() => setStep(2))}>配置步骤</Button> },
         ]} />
         <Form.Item name="embedding_route_id" label="语义检索模型路由" extra="仅在读取长期记忆时使用，需选择支持向量生成的路由" rules={routeRules(['embedding'], '此路由不支持向量生成，请更换或清空语义检索模型路由')}><Select allowClear showSearch optionFilterProp="label" options={routeOptions(['embedding'], '不支持向量生成')} /></Form.Item>
-        <Form.Item name="tool_ids" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
+        </AgentSection><AgentSection title="工具与技能" icon={<SafetyCertificateOutlined aria-hidden />}><Form.Item name="tool_ids" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
         <Form.Item name="skill_ids" label="技能"><Select mode="multiple" optionFilterProp="label" options={depOptions('skill')} /></Form.Item>
         {selectedSkills.map(id => <SkillLoadingFields key={id} versionId={id} label={depOptions('skill').find(d => d.value === id)?.label ?? '技能名称不可用'} />)}
-      </div>
-      <div hidden={step !== 4}>
+      </AgentSection></div>
+      <div hidden={step !== 4} className="agent-editor-section agent-policy-editor"><AgentSection title="运行预算" icon={<ClockCircleOutlined aria-hidden />}><div className="agent-form-grid">
         {([
           ['deadline_seconds', '运行限时（秒）', 1, 3600], ['loop_timeout_seconds', '循环限时（秒）', 1, 3600], ['token_limit', 'Token 上限（个）', 1, 1000000],
           ['context_limit', '上下文上限（Token）', 1, 1000000], ['max_model_rounds', '模型轮数上限（次）', 1, 100], ['max_tool_calls', '工具调用上限（次）', 0, 100],
@@ -220,15 +222,15 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
         ] as const).map(([name, label, min, max]) => <Form.Item key={name} name={name} label={label}><InputNumber min={min} max={max} precision={0} style={{ width: '100%' }} /></Form.Item>)}
         <Form.Item name="amount" label="费用上限"><InputNumber stringMode min="0.00000001" precision={8} style={{ width: '100%' }} /></Form.Item>
         <Form.Item name="currency" label="币种"><Select options={[{ value: 'CNY', label: '人民币' }, { value: 'USD', label: '美元' }]} /></Form.Item>
-        <Form.Item name="conversation_enabled" label="启用会话" valuePropName="checked"><Switch /></Form.Item>
+        </div></AgentSection><AgentSection title="会话与记忆" icon={<MessageOutlined aria-hidden />}><Form.Item name="conversation_enabled" label="启用会话" valuePropName="checked"><Switch /></Form.Item>
         <Form.Item name="summary_policy" label="会话摘要"><Select options={[{ value: 'none', label: '不读取' }, { value: 'recent', label: '最近摘要' }]} /></Form.Item>
         <Form.Item name="memory_enabled" label="启用长期记忆" valuePropName="checked"><Switch /></Form.Item>
         <Form.Item name="memory_policy" label="记忆策略" hidden={!memoryEnabled}><Input.TextArea rows={8} /></Form.Item>
-      </div>
+      </AgentSection></div>
     </Form>
   </>
-  return version ? <div className="agent-editor-page"><PageContainer title={`${name ?? '智能体'} · 编辑配置`} actions={actions}>
+  return version ? <AgentWorkspace className="agent-editor-page"><PageContainer title={`${name ?? '智能体'} · 编辑配置`} actions={actions}>
     <div className="agent-editor-state"><Tag>{version.version_label}</Tag><Tag color={dirty ? 'processing' : 'default'}>{dirty ? '有未保存的修改' : '草稿'}</Tag></div>{content}
-  </PageContainer></div> : <Modal open width={1280} title="新增智能体" onCancel={close} closable={!busy} maskClosable={false}
-    styles={{ body: { maxHeight: '75vh', overflowY: 'auto' } }} footer={actions}>{content}</Modal>
+  </PageContainer></AgentWorkspace> : <Modal open width={1280} title="新增智能体" onCancel={close} closable={!busy} maskClosable={false}
+    styles={{ body: { maxHeight: '75vh', overflowY: 'auto' } }} footer={actions}><AgentWorkspace className="agent-create-workspace">{content}</AgentWorkspace></Modal>
 }

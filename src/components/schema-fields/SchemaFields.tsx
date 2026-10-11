@@ -1,7 +1,7 @@
 import { Alert, Button, Form, Input, InputNumber, Modal, Popconfirm, Segmented, Select, Space, Switch, Tag, Typography } from 'antd'
 import { useId, useState } from 'react'
 import { Table } from '../Table'
-import { changeType, constraintLabel, deleteField, fieldTitle, isObject, parseSchema, replaceNode, saveField, schemaAt, schemaRows, schemaType, typeLabel, typeNames, type FieldRow, type SchemaObject } from './schema'
+import { changeType, constraintLabel, deleteField, fieldTitle, isObject, parseSchema, replaceNode, saveField, schemaAt, schemaRows, schemaType, typeLabel, typeNames, type FieldRow, type SchemaNode, type SchemaObject } from './schema'
 import './schema-fields.css'
 
 type Editing = { row?: FieldRow; parentPath: string[] }
@@ -27,10 +27,10 @@ export function SchemaFields({ value = '{}', onChange, label, id, disabled, comp
       {!!schema.description && <Typography.Paragraph type="secondary">{String(schema.description)}</Typography.Paragraph>}
       <Table<FieldRow> size="small" rowKey="key" pagination={false} dataSource={schemaRows(schema)} scroll={compact ? undefined : { x: 660 }}
         expandable={{ defaultExpandAllRows: true, indentSize: 16 }} locale={{ emptyText: '暂未定义字段' }} columns={[
-          { title: '字段名称 / 标识', width: compact ? undefined : 210, render: (_: unknown, row: FieldRow) => <span className="schema-fields-name"><span>{fieldTitle(row)}{compact && <Tag>{typeLabel(row.schema)}{row.required ? ' · 必填' : ''}</Tag>}</span>{!row.item && <Typography.Text type="secondary">{row.name}</Typography.Text>}{compact && <Typography.Text type="secondary" className="schema-fields-description">{isObject(row.schema) && typeof row.schema.description === 'string' ? `${row.schema.description}；` : ''}{constraintLabel(row.schema)}</Typography.Text>}</span> },
+          { title: '字段名称 / 标识', width: compact ? undefined : 210, render: (_: unknown, row: FieldRow) => <span className="schema-fields-name"><span>{fieldTitle(row)}{compact && <Tag>{typeLabel(row.schema)}{row.required ? ' · 必填' : ''}</Tag>}</span>{!row.item && <Typography.Text type="secondary">{row.name}</Typography.Text>}{compact && <SchemaDescription schema={row.schema} />}</span> },
           ...(!compact ? [{ title: '类型', width: 98, render: (_: unknown, row: FieldRow) => typeLabel(row.schema) },
-          { title: '必填', width: 62, render: (_: unknown, row: FieldRow) => row.item ? '—' : row.required ? <Tag color="blue">是</Tag> : '否' },
-          { title: '说明与约束', render: (_: unknown, row: FieldRow) => <div className="schema-fields-description">{isObject(row.schema) && typeof row.schema.description === 'string' && <div>{row.schema.description}</div>}<Typography.Text type="secondary">{constraintLabel(row.schema)}</Typography.Text></div> },
+          { title: '必填', width: 62, render: (_: unknown, row: FieldRow) => row.item ? null : row.required ? <Tag color="blue">是</Tag> : '否' },
+          { title: '说明与约束', render: (_: unknown, row: FieldRow) => <SchemaDescription schema={row.schema} /> },
           ] : []),
           ...(editable ? [{ title: '操作', width: compact ? 76 : 164, render: (_: unknown, row: FieldRow) => <Space size={[4, 0]} wrap>
             <Button type="link" size="small" disabled={disabled || !isObject(row.schema)} onClick={() => setEditing({ row, parentPath: row.path.slice(0, -2) })}>修改</Button>
@@ -46,11 +46,17 @@ export function SchemaFields({ value = '{}', onChange, label, id, disabled, comp
           onChange={choice => { const next = { ...schema }; if (choice === 'default') delete next.additionalProperties; else next.additionalProperties = choice === 'allow'; update(next) }} /> :
           <Typography.Text>{schema.additionalProperties === false ? '不允许' : isObject(schema.additionalProperties) ? '按高级规则校验' : '允许'}</Typography.Text>}
       </div>}
-      {!schemaRows(schema).length && !canAdd && <Typography.Paragraph type="secondary">{constraintLabel(schema)}；可在高级 JSON 中查看完整结构。</Typography.Paragraph>}
+      {!schemaRows(schema).length && !canAdd && <Typography.Paragraph type="secondary">{[constraintLabel(schema), '可在高级 JSON 中查看完整结构。'].filter(Boolean).join('；')}</Typography.Paragraph>}
     </>}
     {error && !editable && <Alert type="error" title={error} showIcon />}
     {editing && schema && <FieldEditor editing={editing} schema={schema} onClose={() => setEditing(undefined)} onSave={next => { update(next); setEditing(undefined) }} />}
   </div>
+}
+
+export function SchemaDescription({ schema }: { schema: SchemaNode }) {
+  const description = isObject(schema) && typeof schema.description === 'string' ? schema.description.trim() : ''
+  const text = [description, constraintLabel(schema)].filter(Boolean).join('；')
+  return text ? <Typography.Text type="secondary" className="schema-fields-description">{text}</Typography.Text> : null
 }
 
 type FieldValues = { name: string; title?: string; type: string; required: boolean; description?: string; enum?: string[];

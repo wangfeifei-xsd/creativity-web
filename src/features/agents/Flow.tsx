@@ -28,7 +28,7 @@ export function Flow({ definition, options, compact = false }: { definition: Def
         ]} /> },
         { key: 'inputs', label: '输入映射', children: <Space orientation="vertical" className="agent-flow-full-width" size="middle">
           {Object.entries(step.inputs ?? {}).map(([key, source]) => <div className="agent-flow-mapping-summary" key={key}><Typography.Text strong>{fieldName(step.input_schema, key)}</Typography.Text>
-            <div><Typography.Text type="secondary">← {source.source === 'constant' ? `固定值：${displayValue(source.value, key)}` : `${source.source === 'input' ? '运行输入' : label(source.step)} / ${fieldName(source.source === 'input' ? definition.input_schema : definition.steps.find(item => item.key === source.step)?.output_schema ?? {}, source.path ?? '')}`}</Typography.Text></div>
+            <div><Typography.Text type="secondary">输入来源：{source.source === 'constant' ? `固定值：${displayValue(source.value, key)}` : `${source.source === 'input' ? '运行输入' : label(source.step)} / ${fieldName(source.source === 'input' ? definition.input_schema : definition.steps.find(item => item.key === source.step)?.output_schema ?? {}, source.path ?? '')}`}</Typography.Text></div>
           </div>)}
           <SchemaView value={step.input_schema} label="步骤输入结构" compact />
         </Space> },

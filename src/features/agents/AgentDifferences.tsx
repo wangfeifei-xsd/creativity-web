@@ -10,8 +10,8 @@ import { type Definition, type Detail, type Options, workflowNames } from './typ
 export function AgentDifferences({ detail, options }: { detail: Detail; options?: Options }) {
   const released = detail.versions.find(version => version.version_id === detail.release_version_id)?.definition
   const draft = detail.versions.filter(version => version.status.value === 'DRAFT').at(-1)?.definition
-  if (!detail.differences.length) return <Empty description="暂无差异" />
-  return <Space orientation="vertical" style={{ width: '100%' }} size={20}>{detail.differences.map(item => <Card size="small" title={item.label} key={item.field}>
+  if (!detail.differences.length) return <Card className="agent-section agent-empty-section"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无差异" /></Card>
+  return <Space orientation="vertical" className="agent-differences" style={{ width: '100%' }} size={20}>{detail.differences.map(item => <Card size="small" title={item.label} key={item.field}>
     {['input_schema', 'output_schema'].includes(item.field) ? <SchemaComparison before={item.before} after={item.after} label={item.label} /> :
       <Row gutter={[24, 20]}><Col xs={24} lg={12}><Typography.Title level={5}>当前发布</Typography.Title><DifferenceValue field={item.field} value={item.before} definition={released} options={options} /></Col>
         <Col xs={24} lg={12}><Typography.Title level={5}>草稿</Typography.Title><DifferenceValue field={item.field} value={item.after} definition={draft} options={options} /></Col></Row>}

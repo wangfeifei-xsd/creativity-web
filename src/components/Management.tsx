@@ -18,10 +18,10 @@ export function ErrorNotice({ error }: { error: unknown }) {
     title={error instanceof Error ? error.message : '操作失败，请稍后重试'} />
 }
 type DisplayAction = Schema<'VisibleAction'> & Partial<Pick<Schema<'AccessAction'>, 'enabled' | 'disabled_reason'>>
-export function ActionButtons({ actions, handlers, disabled }: { actions: readonly DisplayAction[];
-  handlers: Record<string, (() => void) | undefined>; disabled?: boolean }) {
+export function ActionButtons({ actions, handlers, disabled, primaryAction, icons }: { actions: readonly DisplayAction[];
+  handlers: Record<string, (() => void) | undefined>; disabled?: boolean; primaryAction?: string; icons?: Record<string, ReactNode> }) {
   return <Space wrap>{actions.filter(a => handlers[a.action_key]).map(a => {
-    const button = <Button key={a.action_key} disabled={disabled || a.enabled === false} onClick={handlers[a.action_key]}>{a.label}</Button>
+    const button = <Button key={a.action_key} icon={icons?.[a.action_key]} type={a.action_key === primaryAction ? 'primary' : 'default'} disabled={disabled || a.enabled === false} onClick={handlers[a.action_key]}>{a.label}</Button>
     return a.enabled === false && a.disabled_reason
       ? <Tooltip key={a.action_key} title={a.disabled_reason}><span>{button}</span></Tooltip>
       : button

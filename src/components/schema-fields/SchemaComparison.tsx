@@ -1,7 +1,7 @@
 import { Collapse, Space, Tag, Typography } from 'antd'
 import { Table } from '../Table'
-import { SchemaView } from './SchemaFields'
-import { compareRows, constraintLabel, isObject, schemaRows, typeLabel, type ComparisonRow, type FieldRow, type SchemaObject } from './schema'
+import { SchemaDescription, SchemaView } from './SchemaFields'
+import { compareRows, isObject, schemaRows, typeLabel, type ComparisonRow, type FieldRow, type SchemaObject } from './schema'
 
 export function SchemaComparison({ before, after, label, beforeLabel = '当前发布', afterLabel = '草稿' }: {
   before: unknown; after: unknown; label: string; beforeLabel?: string; afterLabel?: string
@@ -30,7 +30,6 @@ function FieldValue({ row, empty, root }: { row?: FieldRow; empty: string; root:
   return <div className="schema-fields-description">
     <Space size={4} wrap><Tag>{typeLabel(schema)}</Tag>{!row.item && <Tag>{row.required ? '必填' : '选填'}</Tag>}</Space>
     {!root && isObject(schema) && typeof schema.title === 'string' && <div>{schema.title}</div>}
-    {isObject(schema) && typeof schema.description === 'string' && <div>{schema.description}</div>}
-    <Typography.Text type="secondary">{constraintLabel(schema)}</Typography.Text>
+    <SchemaDescription schema={schema} />
   </div>
 }

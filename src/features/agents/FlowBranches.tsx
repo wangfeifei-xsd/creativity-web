@@ -17,7 +17,7 @@ export function FlowBranches({ definition, source, onEdit, onAdd, onDelete, onMo
         <Button size="small" type="text" icon={<ArrowUpOutlined />} aria-label={`提高第 ${order + 1} 条分支优先级`} disabled={disabled || !order} onClick={() => onMove(index, -1)} />
         <Button size="small" type="text" icon={<ArrowDownOutlined />} aria-label={`降低第 ${order + 1} 条分支优先级`} disabled={disabled || order === conditions.length - 1} onClick={() => onMove(index, 1)} /></Space>}>
       {edge.condition && <Typography.Paragraph>{edgeLabel(definition, edge, false)}</Typography.Paragraph>}
-      <div>→ {edge.target === 'END' ? '结束' : definition.steps.find(step => step.key === edge.target)?.name ?? '步骤不可用'}</div>
+      <div><Typography.Text type="secondary">后续步骤：</Typography.Text>{edge.target === 'END' ? '结束' : definition.steps.find(step => step.key === edge.target)?.name ?? '步骤不可用'}</div>
       {onEdit && <Space className="agent-flow-branch-actions"><Button size="small" disabled={disabled} onClick={() => onEdit(index)}>配置流转</Button>
         <Popconfirm title="删除这条流转？" onConfirm={() => onDelete?.(index)} okText="删除" cancelText="取消" disabled={disabled}><Button size="small" danger disabled={disabled}>删除</Button></Popconfirm></Space>}
     </Card>)}

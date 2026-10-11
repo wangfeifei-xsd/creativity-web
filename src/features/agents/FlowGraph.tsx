@@ -1,4 +1,4 @@
-import { MinusOutlined, PlusOutlined, AimOutlined } from '@ant-design/icons'
+import { MinusOutlined, PlusOutlined, AimOutlined, ToolOutlined, RobotOutlined, FunctionOutlined } from '@ant-design/icons'
 import { Button, Space, Tag, Tooltip, Typography, theme } from 'antd'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Definition } from './types'
@@ -30,12 +30,12 @@ export function FlowGraph({ definition, selected, onSelect, onEdge, invalidNodes
     if (top < el.scrollTop || top + node.height * scale > el.scrollTop + el.clientHeight) el.scrollTop = Math.max(0, top - 24)
   }, [selected, layout, scale])
   const stepNames = new Map(definition.steps.map(step => [step.key, step.name]))
-  return <section className="agent-flow-canvas" aria-label="流程图" style={{ background: token.colorFillAlter, borderColor: token.colorBorderSecondary, borderRadius: token.borderRadiusLG }}>
+  return <section className="agent-flow-canvas" aria-label="流程图" style={{ background: token.colorFillAlter, borderColor: token.colorBorder, borderRadius: token.borderRadiusLG }}>
     <div className="agent-flow-canvas-toolbar"><Typography.Text type="secondary">{definition.steps.length} 个步骤</Typography.Text>
-      <Space size={4}><Tooltip title="缩小"><Button size="small" aria-label="缩小流程图" icon={<MinusOutlined />} disabled={scale <= 0.5} onClick={() => setZoom(Math.max(0.5, scale - 0.1))} /></Tooltip>
+      <Space size={4}><Tooltip title="缩小"><Button size="small" aria-label="缩小流程图" icon={<MinusOutlined aria-hidden />} disabled={scale <= 0.5} onClick={() => setZoom(Math.max(0.5, scale - 0.1))} /></Tooltip>
         <Typography.Text className="agent-flow-zoom">{Math.round(scale * 100)}%</Typography.Text>
-        <Tooltip title="放大"><Button size="small" aria-label="放大流程图" icon={<PlusOutlined />} disabled={scale >= 1.5} onClick={() => setZoom(Math.min(1.5, scale + 0.1))} /></Tooltip>
-        <Button size="small" icon={<AimOutlined />} onClick={() => { setZoom(undefined); viewport.current?.scrollTo({ top: 0, left: 0 }) }}>适应宽度</Button></Space>
+        <Tooltip title="放大"><Button size="small" aria-label="放大流程图" icon={<PlusOutlined aria-hidden />} disabled={scale >= 1.5} onClick={() => setZoom(Math.min(1.5, scale + 0.1))} /></Tooltip>
+        <Button size="small" icon={<AimOutlined aria-hidden />} onClick={() => { setZoom(undefined); viewport.current?.scrollTo({ top: 0, left: 0 }) }}>适应宽度</Button></Space>
     </div>
     <div className="agent-flow-viewport" ref={viewport}>
       <div className="agent-flow-scaled" style={{ width: layout.width * scale, height: layout.height * scale }}>
@@ -57,7 +57,7 @@ export function FlowGraph({ definition, selected, onSelect, onEdge, invalidNodes
               data-step-key={step.key} onClick={() => onSelect(step.key)} style={{ left: node.x - node.width / 2, top: node.y - node.height / 2, width: node.width, height: node.height,
                 background: token.colorBgContainer, borderColor: invalid ? token.colorError : selected === step.key ? token.colorPrimary : token.colorBorder,
                 boxShadow: selected === step.key ? `0 0 0 2px ${token.colorPrimaryBg}` : token.boxShadowTertiary }}>
-              <span className="agent-flow-node-name">{step.name || '未命名步骤'}</span>
+              <span className="agent-flow-node-heading"><span className="agent-flow-node-icon" style={{ color: token.colorPrimary }}>{step.kind === 'model' ? <RobotOutlined aria-hidden /> : step.kind === 'tool' ? <ToolOutlined aria-hidden /> : <FunctionOutlined aria-hidden />}</span><span className="agent-flow-node-name">{step.name || '未命名步骤'}</span></span>
               <span className="agent-flow-node-meta"><Tag>{stepKinds[step.kind]}</Tag><span>{step.timeout_seconds} 秒</span>{step.key === definition.start_step && <Tag color="blue">起点</Tag>}{invalid && <Tag color="error">待修正</Tag>}</span>
             </Button></Tooltip>
           })}

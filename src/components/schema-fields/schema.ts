@@ -112,7 +112,7 @@ export function changeType(schema: SchemaObject, type: string): SchemaObject {
     ...(type === 'array' ? { items: { type: 'string' } } : {}) }
 }
 export function constraintLabel(schema: SchemaNode): string {
-  if (!isObject(schema)) return '—'
+  if (!isObject(schema)) return ''
   const items: string[] = []
   if (Array.isArray(schema.enum)) items.push(`可选值：${schema.enum.map(value => JSON.stringify(value)).join('、')}`)
   if (Object.hasOwn(schema, 'const')) items.push(`固定值：${JSON.stringify(schema.const)}`)
@@ -122,5 +122,5 @@ export function constraintLabel(schema: SchemaNode): string {
   if (schema.additionalProperties === false) items.push('不允许额外字段')
   const basic = new Set(['type', 'title', 'description', 'properties', 'required', 'items', 'enum', 'const', 'minLength', 'maxLength', 'minimum', 'maximum', 'minItems', 'maxItems', 'pattern', 'format', 'additionalProperties'])
   if (Object.keys(schema).some(key => !basic.has(key)) || isObject(schema.additionalProperties) || Array.isArray(schema.items)) items.push('含高级规则')
-  return items.join('；') || '—'
+  return items.join('；')
 }
