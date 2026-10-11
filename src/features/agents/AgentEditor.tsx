@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { PageContainer } from '../../components/PageContainer'
+import { Table } from '../../components/Table'
 import { type FlowIssue } from './flow-fields'
 import { send } from '../../api/management'
 import { ErrorNotice } from '../../components/Management'
@@ -73,6 +74,8 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
   const [busy, setBusy] = useState(false)
   const liveInput = Form.useWatch('input_schema', form)
   const liveTools = Form.useWatch('tool_ids', form)
+  const livePrompt = Form.useWatch('prompt_id', form)
+  const liveRoute = Form.useWatch('model_route_id', form)
   let flowDefinition = definition
   try { flowDefinition = { ...definition, input_schema: parseObject(liveInput ?? pretty(definition.input_schema)), bindings: { ...definition.bindings, tool_ids: liveTools ?? definition.bindings.tool_ids } } } catch { /* 输入结构修正前沿用最近有效字段列表。 */ }
   const memoryEnabled = Form.useWatch('memory_enabled', form)
@@ -196,8 +199,14 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
         <Form.Item name="edges" hidden><Input /></Form.Item>
       </div>
       <div hidden={step !== 3}>
-        <Form.Item name="prompt_id" label="提示词"><Select allowClear showSearch optionFilterProp="label" options={depOptions('prompt')} /></Form.Item>
-        <Form.Item name="model_route_id" label="模型路由" rules={routeRules(['text'], '请选择支持文本生成的模型路由')}><Select allowClear showSearch optionFilterProp="label" options={routeOptions(['text'], '不支持文本生成')} /></Form.Item>
+        <Form.Item name="prompt_id" label="默认提示词" extra="未单独配置提示词的模型步骤使用此项。"><Select allowClear showSearch optionFilterProp="label" options={depOptions('prompt')} /></Form.Item>
+        <Form.Item name="model_route_id" label="默认模型路由" extra="未单独配置模型路由的模型步骤使用此项。" rules={routeRules(['text'], '请选择支持文本生成的模型路由')}><Select allowClear showSearch optionFilterProp="label" options={routeOptions(['text'], '不支持文本生成')} /></Form.Item>
+        <Table rowKey="key" size="small" pagination={false} dataSource={definition.steps.filter(item => item.kind === 'model')} className="agent-model-dependencies" columns={[
+          { title: '模型步骤', dataIndex: 'name' },
+          { title: '模型路由', render: (_, item) => options.dependencies.find(resource => resource.version_id === (item.dependency || liveRoute))?.name ?? '未配置' },
+          { title: '提示词', render: (_, item) => options.dependencies.find(resource => resource.version_id === (item.prompt_id || livePrompt))?.name ?? '未配置' },
+          { title: '操作', render: (_, item) => <Button type="link" disabled={busy} onClick={() => void flow.current?.openStep(item.key).then(() => setStep(2))}>配置步骤</Button> },
+        ]} />
         <Form.Item name="embedding_route_id" label="语义检索模型路由" extra="仅在读取长期记忆时使用，需选择支持向量生成的路由" rules={routeRules(['embedding'], '此路由不支持向量生成，请更换或清空语义检索模型路由')}><Select allowClear showSearch optionFilterProp="label" options={routeOptions(['embedding'], '不支持向量生成')} /></Form.Item>
         <Form.Item name="tool_ids" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
         <Form.Item name="skill_ids" label="技能"><Select mode="multiple" optionFilterProp="label" options={depOptions('skill')} /></Form.Item>

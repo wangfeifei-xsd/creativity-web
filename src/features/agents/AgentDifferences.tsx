@@ -75,6 +75,7 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
       { key: 'timeout', label: '超时', children: `${step.timeout_seconds} 秒` },
       { key: 'retry', label: '失败处理', children: step.failure_policy === 'retry' ? `最多重试 ${step.max_retries} 次` : step.failure_policy === 'partial' ? '返回部分结果' : '终止' },
       { key: 'resource', label: '依赖资源', children: step.dependency ? resourceName(step.dependency) : '沿用智能体配置' },
+      ...(step.kind === 'model' ? [{ key: 'prompt', label: '提示词', children: step.prompt_id ? resourceName(step.prompt_id) : '沿用默认提示词' }] : []),
     ]} />
     <Table rowKey="name" pagination={false} size="small" dataSource={Object.entries(step.inputs ?? {}).map(([name, source]) => ({ name, source }))} columns={[
       { title: '输入字段', render: (_, row) => fieldLabel(step.input_schema, row.name) },

@@ -42,6 +42,7 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
       }
       return { ...step, key: values.key, name: values.name, kind: values.kind, operator: values.kind === 'compute' ? values.operator ?? 'object' : null,
         dependency: values.kind === 'compute' ? null : values.dependency ?? null, inputs,
+        prompt_id: values.kind === 'model' ? values.prompt_id ?? null : null,
         input_schema: parseObject(values.input_schema), output_schema: parseObject(values.output_schema), timeout_seconds: values.timeout_seconds,
         failure_policy: values.failure_policy, max_retries: values.failure_policy === 'retry' ? values.max_retries : 0 }
     },
@@ -55,12 +56,17 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
   const dependency = Form.useWatch('dependency', form) ?? initial.dependency
   const depOptions = dependencies.map(item => ({ value: item.version_id, label: item.name, disabled: kind === 'model' && !item.required_capabilities?.includes('text') }))
   if (dependency && !depOptions.some(item => item.value === dependency)) depOptions.push({ value: dependency, label: '资源不可用，请重新选择', disabled: true })
+  const prompt = Form.useWatch('prompt_id', form) ?? initial.prompt_id
+  const promptOptions = options.dependencies.filter(item => item.resource_type === 'prompt').map(item => ({ value: item.version_id, label: item.name, disabled: false }))
+  if (prompt && !promptOptions.some(item => item.value === prompt)) promptOptions.push({ value: prompt, label: '提示词不可用，请重新选择', disabled: true })
   const base = <>
     <Form.Item name="name" label="步骤名称" rules={[{ required: true, whitespace: true, message: '请填写步骤名称' }]}><Input maxLength={128} /></Form.Item>
-    <Form.Item name="kind" label="步骤类型"><Select options={Object.entries(stepKinds).map(([value, label]) => ({ value, label }))} onChange={() => form.setFieldsValue({ dependency: null })} /></Form.Item>
+    <Form.Item name="kind" label="步骤类型"><Select options={Object.entries(stepKinds).map(([value, label]) => ({ value, label }))} onChange={() => form.setFieldsValue({ dependency: null, prompt_id: null })} /></Form.Item>
     {kind === 'compute' ? <Form.Item name="operator" label="操作"><Select options={[{ value: 'object', label: '对象组装' }, { value: 'input', label: '等待补充' }, { value: 'approval', label: '等待审批' }]} /></Form.Item> :
       <Form.Item name="dependency" label={kind === 'tool' ? '工具' : '模型路由'} extra={kind === 'model' ? '留空使用智能体默认模型路由' : undefined} rules={kind === 'tool' ? [{ required: true, message: '请选择工具' }] : []}>
         <Select allowClear showSearch optionFilterProp="label" options={depOptions} /></Form.Item>}
+    {kind === 'model' && <Form.Item name="prompt_id" label="提示词" extra="留空沿用默认提示词；单独选择时，提示词变量读取本步骤的输入映射。">
+      <Select allowClear showSearch optionFilterProp="label" options={promptOptions} /></Form.Item>}
     {kind === 'tool' && dependency && !definition.bindings.tool_ids.includes(dependency) && <Alert type="warning" showIcon title="此工具尚未加入资源依赖中的工具白名单" className="agent-flow-field-notice" />}
     <div className="agent-flow-form-pair"><Form.Item name="timeout_seconds" label="超时（秒）" rules={[{ required: true, message: '请填写超时' }]}><InputNumber min={1} max={3600} precision={0} /></Form.Item>
       <Form.Item name="failure_policy" label="失败处理"><Select options={[{ value: 'fail', label: '终止并报错' }, { value: 'retry', label: '重试' }, { value: 'partial', label: '返回部分结果' }]} /></Form.Item></div>

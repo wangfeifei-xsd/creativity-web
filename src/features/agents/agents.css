@@ -19,6 +19,7 @@
 
 .agent-editor-page, .agent-flow-editor { min-width: 0; }
 .agent-editor-state { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.agent-model-dependencies { margin-bottom: 24px; }
 .agent-editor-tabs > .ant-tabs-nav { margin-bottom: 20px; }
 .agent-flow-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); gap: 20px; align-items: start; min-width: 0; }
 .agent-flow-canvas { border: 1px solid; min-width: 0; overflow: hidden; }

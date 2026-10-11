@@ -9,8 +9,8 @@ import { locateFlowIssue, moveBranch, type FlowIssue, type StepTab } from './flo
 import { parseFlowJson } from './flow-json'
 import { type Definition, type Options, pretty } from './types'
 
-type Selection = { kind: 'step'; key: string; tab?: StepTab } | { kind: 'new' } | { kind: 'edge'; index: number | 'new'; source: string }
-export type FlowEditorHandle = { flush: () => Promise<Definition>; focus: (issue: FlowIssue) => void }
+type Selection = { kind: 'step'; key: string; tab?: StepTab } | { kind: 'new'; after?: string } | { kind: 'edge'; index: number | 'new'; source: string }
+export type FlowEditorHandle = { flush: () => Promise<Definition>; focus: (issue: FlowIssue) => void; openStep: (key: string) => Promise<void> }
 
 export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, issues = [] }: {
   ref?: Ref<FlowEditorHandle>; value: Definition; options: Options; onChange: (value: Definition) => void; onDirty: () => void; disabled?: boolean; issues?: FlowIssue[]
@@ -19,6 +19,7 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
   const stepForm = useRef<StepFormHandle>(null)
   const edgeForm = useRef<EdgeFormHandle>(null)
   const pending = useRef(false)
+  const flushing = useRef<Promise<Definition> | null>(null)
   const [generation, setGeneration] = useState(0)
   const [error, setError] = useState<unknown>()
   const [focus, setFocus] = useState<FlowIssue>()
@@ -29,7 +30,14 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
   const names = value.steps.map(item => ({ value: item.key, label: item.name }))
   function dirty() { pending.current = true; onDirty() }
   function change(next: Definition) { onChange(next); onDirty() }
-  async function flush(): Promise<Definition> {
+  function flush(): Promise<Definition> {
+    if (flushing.current) return flushing.current
+    const operation = applyPending()
+    flushing.current = operation
+    void operation.finally(() => { flushing.current = null }).catch(() => {})
+    return operation
+  }
+  async function applyPending(): Promise<Definition> {
     if (!pending.current) return value
     let next = value
     try {
@@ -41,6 +49,14 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
       } else if (stepForm.current) {
         const result = await stepForm.current.flush()
         next = { ...value, steps: selection.kind === 'new' ? [...value.steps, result] : value.steps.map(item => item.key === selectedKey ? result : item) }
+        if (selection.kind === 'new' && selection.after) {
+          const outgoing = value.edges.filter(edge => edge.source === selection.after)
+          next.edges = [
+            ...value.edges.map(edge => edge.source === selection.after ? { ...edge, target: result.key } : edge),
+            ...(!outgoing.length ? [{ source: selection.after, target: result.key, condition: null, otherwise: false }] : []),
+            { source: result.key, target: outgoing[0]?.target ?? 'END', condition: null, otherwise: false },
+          ]
+        }
         if (selection.kind === 'new') setSelection({ kind: 'step', key: result.key })
       }
       pending.current = false; setError(undefined); change(next)
@@ -52,15 +68,19 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
     setFocus(issue)
     if (location.node) setSelection({ kind: 'step', key: location.node, tab: location.tab })
   }
-  useImperativeHandle(ref, () => ({ flush, focus: focusIssue }))
+  useImperativeHandle(ref, () => ({ flush, focus: focusIssue, openStep: key => select({ kind: 'step', key, tab: 'base' }) }))
   useEffect(() => { if (focus) stepForm.current?.focus(focus) }, [focus, selection])
-  async function select(next: Selection) {
+  async function select(target: Selection | ((current: Definition) => Selection)) {
+    let next: Selection
     const activate = () => {
-      if (next.kind === 'new' || next.kind === 'edge') setGeneration(n => n + 1)
+      setGeneration(n => n + 1)
       setSelection(next); pending.current = next.kind === 'new' || (next.kind === 'edge' && next.index === 'new'); setFocus(undefined); setError(undefined)
     }
-    if (!pending.current) { activate(); return }
-    try { await flush(); activate() } catch { /* 保留未完成的当前配置，字段已显示错误。 */ }
+    try {
+      const current = await flush()
+      next = typeof target === 'function' ? target(current) : target
+      activate()
+    } catch { /* 保留未完成的当前配置，字段已显示错误。 */ }
   }
   async function mutate(action: (current: Definition) => Definition) {
     try { change(action(await flush())) } catch { /* 修正当前字段后再修改流程。 */ }
@@ -73,7 +93,7 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
     <div className="agent-flow-editor-toolbar"><Space wrap><Typography.Text>起始步骤</Typography.Text><Select aria-label="起始步骤" value={value.start_step} options={names} disabled={disabled}
       className="agent-flow-start-picker" onChange={start_step => void mutate(current => ({ ...current, start_step }))} />
       <Button disabled={disabled || value.steps.length >= 64} onClick={() => void select({ kind: 'new' })}>新增步骤</Button>
-      <Button disabled={disabled || value.edges.length >= 256} onClick={() => void select({ kind: 'edge', index: 'new', source: selectedKey ?? value.start_step })}>新增连线</Button></Space>
+      <Button disabled={disabled || value.edges.length >= 256} onClick={() => void select(current => ({ kind: 'edge', index: 'new', source: selection.kind === 'new' ? current.steps.at(-1)!.key : selectedKey ?? current.start_step }))}>新增连线</Button></Space>
       <Dropdown disabled={disabled} menu={{ items: [{ key: 'json', label: '高级 JSON' }], onClick: () => void (async () => {
         try { const current = await flush(); setJsonError(undefined); setJsonDraft(pretty({ start_step: current.start_step, steps: current.steps, edges: current.edges })) } catch { /* 保留字段错误。 */ }
       })() }}><Button disabled={disabled}>高级</Button></Dropdown>
@@ -95,7 +115,13 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
             initialTab={selection.kind === 'step' ? selection.tab : undefined} branches={selection.kind === 'new' ? undefined : branches} onDirty={dirty} disabled={disabled} />}
         <Space wrap className="agent-flow-inspector-actions">
           <Button type="primary" disabled={disabled} onClick={() => void flush().catch(() => {})}>应用配置</Button>
-          {selection.kind !== 'step' && <Button disabled={disabled} onClick={() => { pending.current = false; setError(undefined); setSelection({ kind: 'step', key: selectedKey ?? value.start_step, tab: 'branches' }) }}>返回步骤</Button>}
+          {selection.kind === 'step' && value.edges.filter(edge => edge.source === selectedKey).length <= 1 && <Button disabled={disabled || value.steps.length >= 64 || value.edges.length >= 255}
+            onClick={() => void select({ kind: 'new', after: selectedKey })}>在此步骤后新增</Button>}
+          {selection.kind === 'edge' && <Button disabled={disabled} onClick={() => void select(current => ({ kind: 'step', key: current.edges[selection.index === 'new' ? current.edges.length - 1 : selection.index]?.source ?? selection.source, tab: 'branches' }))}>返回步骤</Button>}
+          {(selection.kind === 'new' || (selection.kind === 'edge' && selection.index === 'new')) && <Button disabled={disabled} onClick={() => { pending.current = false; setError(undefined); setSelection({ kind: 'step', key: selectedKey ?? value.start_step, tab: 'branches' }) }}>取消新增</Button>}
+          {selection.kind === 'edge' && selection.index !== 'new' && <Popconfirm title="删除这条连线？" okText="删除" cancelText="取消" onConfirm={() => {
+            pending.current = false; setError(undefined); change({ ...value, edges: value.edges.filter((_, index) => index !== selection.index) }); setSelection({ kind: 'step', key: selection.source, tab: 'branches' })
+          }}><Button danger disabled={disabled}>删除连线</Button></Popconfirm>}
         </Space>
       </aside>
     </div>

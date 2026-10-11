@@ -5449,6 +5449,8 @@ export interface components {
             output_schema: {
                 [key: string]: unknown;
             };
+            /** Prompt Id */
+            prompt_id?: string | null;
             /**
              * Timeout Seconds
              * @default 30

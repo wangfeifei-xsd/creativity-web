@@ -13,7 +13,7 @@ export function layoutFlow(definition: Definition) {
   graph.setNode('END', { width: 96, height: 40 })
   definition.edges.forEach((edge, index) => {
     if (!keys.has(edge.source) || (!keys.has(edge.target) && edge.target !== 'END')) return
-    const label = edge.condition || edge.otherwise ? edgeLabel(definition, edge) : ''
+    const label = edgeLabel(definition, edge)
     graph.setEdge(edge.source, edge.target, { width: label ? 156 : 0, height: label ? 40 : 0, labelpos: 'c', label }, String(index))
   })
   dagre.layout(graph)

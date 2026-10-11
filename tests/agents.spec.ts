@@ -444,6 +444,65 @@ async function branchFixture(page: Page) {
   await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: branchedDefinition }] } }))
 }
 
+test('新增步骤后直接连线使用新步骤，返回步骤保留连线，直连可再次编辑', async ({ page }) => {
+  await branchFixture(page)
+  let body: { definition: typeof branchedDefinition } | undefined
+  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.getByRole('button', { name: '新增步骤', exact: true }).click()
+  const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
+  await step.getByLabel('步骤名称').fill('补充复核')
+  await step.getByLabel('步骤标识').fill('review')
+  await page.getByRole('button', { name: '新增连线', exact: true }).click()
+  const edge = page.getByRole('complementary', { name: '流转配置', exact: true })
+  await expect(edge.locator('.ant-select').first()).toContainText('补充复核')
+  await edge.getByLabel('后续步骤').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('保存模型分析', { exact: true }).click()
+  await edge.getByRole('button', { name: '返回步骤', exact: true }).click()
+  await expect(step.getByRole('tab', { name: '后续流转' })).toHaveAttribute('aria-selected', 'true')
+  const graph = page.getByRole('region', { name: '流程图', exact: true })
+  await graph.getByRole('button', { name: '补充复核：直接进入，进入保存模型分析' }).click()
+  await expect(edge.locator('.ant-select').last()).toContainText('保存模型分析')
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect.poll(() => body?.definition.edges.at(-1)).toMatchObject({ source: 'review', target: 'save' })
+  expect(body?.definition.steps.filter(item => item.key === 'review')).toHaveLength(1)
+})
+
+test('在步骤后新增自动接续原连线，多模型节点的独立资源保存并展示', async ({ page }) => {
+  await branchFixture(page)
+  await page.route('**/admin/v1/agents/options*', route => route.fulfill({ json: { ...options, dependencies: [...options.dependencies,
+    { ...options.dependencies[0], resource_id: 'review_prompt', version_id: 'review_prompt', name: '复核提示词' },
+    { ...options.dependencies[1], resource_id: 'review_route', version_id: 'review_route', name: '复核模型路由' },
+  ] } }))
+  let body: { definition: typeof branchedDefinition & { steps: { key: string; dependency?: string; prompt_id?: string }[] } } | undefined
+  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=draft_a')
+  const graph = page.getByRole('region', { name: '流程图', exact: true })
+  await graph.getByRole('button', { name: '分析本单问题与下一步', exact: true }).click()
+  const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
+  await step.getByRole('button', { name: '在此步骤后新增' }).click()
+  await step.getByLabel('步骤名称').fill('复核分析')
+  await step.getByLabel('步骤标识').fill('review')
+  await step.getByLabel('步骤类型').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('模型调用', { exact: true }).click()
+  await step.getByLabel('模型路由', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('复核模型路由', { exact: true }).click()
+  await step.getByLabel('提示词', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('复核提示词', { exact: true }).click()
+  await page.getByRole('tab', { name: '资源依赖', exact: true }).click()
+  const row = page.getByRole('row').filter({ hasText: '复核分析' })
+  await expect(row).toContainText('复核模型路由')
+  await expect(row).toContainText('复核提示词')
+  await row.getByRole('button', { name: '配置步骤' }).click()
+  await expect(step.getByLabel('步骤名称')).toHaveValue('复核分析')
+  await expect(step.locator('.ant-select').filter({ hasText: '复核提示词' })).toBeVisible()
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect.poll(() => body?.definition.steps.find(item => item.key === 'review')).toMatchObject({ dependency: 'review_route', prompt_id: 'review_prompt' })
+  expect(body?.definition.edges.filter(item => item.source === 'analyze')).toEqual([{ source: 'analyze', target: 'review' }])
+  expect(body?.definition.edges.at(-1)).toMatchObject({ source: 'review', target: 'save' })
+  expect(body?.definition.bindings).toMatchObject(branchedDefinition.bindings)
+})
+
 test('真实分支条件可读，侧栏修改随节点及分区切换保留，保存包括未点应用的内容', async ({ page }) => {
   await branchFixture(page)
   let body: { definition: typeof branchedDefinition } | undefined
