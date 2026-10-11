@@ -128,7 +128,7 @@ test('工作台指引直达供应商连接，编辑保留未填写的密钥', as
     saved = route.request().postDataJSON()
     return route.fulfill({ json: connection })
   })
-  await page.goto('#/')
+  await page.goto('#/workbench')
   await page.getByRole('region', { name: '配置指引' }).getByRole('link', { name: '打开供应商连接' }).first().click()
   await expect(page).toHaveURL('/creativity/#/models?tab=connections')
   await page.reload()

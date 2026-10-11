@@ -1,8 +1,7 @@
-import { Alert, Button, Card, Grid, Select, Tabs, Tooltip, Typography, theme } from 'antd'
-import { ArrowRightOutlined } from '@ant-design/icons'
-import { Link } from 'react-router-dom'
+import { Alert, Card, Grid, Select, Tabs, Typography, theme } from 'antd'
 import { useState, type CSSProperties } from 'react'
 import { workspaceGuides } from './workspaceGuides'
+import { WorkspaceGuideLink } from './WorkspaceGuideLink'
 
 export function WorkspaceGuide({ entries, hasWorkspace }: {
   entries: readonly { navigationKey: string; path: string }[]
@@ -25,10 +24,7 @@ export function WorkspaceGuide({ entries, hasWorkspace }: {
               <Typography.Paragraph type="secondary">{step.description}</Typography.Paragraph>
             </div>
             <div className="workspace-guide-action">
-              {path ? <Link to={`${path}${step.action.search ?? ''}`}>{step.action.label}<ArrowRightOutlined aria-hidden /></Link>
-                : <Tooltip title={hasWorkspace ? '当前账号没有此配置入口，请联系渠道管理员' : '请先切换到渠道环境'}>
-                  <Button disabled>{step.action.label}</Button>
-                </Tooltip>}
+              <WorkspaceGuideLink action={step.action} path={path} hasWorkspace={hasWorkspace} />
             </div>
           </li>
         })}

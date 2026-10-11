@@ -1,67 +1,16 @@
-import { Avatar, Breadcrumb, Button, Card, Col, Drawer, Dropdown, Grid, Layout, Menu, Row, Select, Tooltip, Typography, theme } from 'antd'
-import { ApartmentOutlined, AppstoreOutlined, ArrowRightOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UpOutlined, UserOutlined } from '@ant-design/icons'
+import { Avatar, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Select, Tooltip, Typography, theme } from 'antd'
+import { ApartmentOutlined, AppstoreOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/Management'
-import { EmptyState } from '../../components/States'
-import { PageContainer } from '../../components/PageContainer'
 import { features } from '../../features/registry'
 import { resolveNavigation } from '../../features/navigation'
 import { BrandMark } from '../../features/auth/BrandMark'
 import { useSession } from './context'
-import { navigationIcon, navigationItems } from './navigation'
-import { WorkspaceGuide } from './WorkspaceGuide'
+import { navigationItems } from './navigation'
 import type { CSSProperties, ReactNode } from 'react'
 import './workspace.css'
 
-export function WorkspaceHome() {
-  const { session } = useSession()
-  const { token } = theme.useToken()
-  const entries = resolveNavigation(session.navigation, features)
-  const screens = Grid.useBreakpoint()
-  const [expanded, setExpanded] = useState(false)
-  const collapsedCount = (screens.xl ? 4 : screens.md ? 3 : 2) * 2
-  const visibleEntries = expanded ? entries : entries.slice(0, collapsedCount)
-  const iconColors: Record<string, [string, string]> = {
-    'model-routes': [token.purple6, token.purple1],
-    skills: [token.purple6, token.purple1],
-    agents: [token.cyan7, token.cyan1],
-    runs: [token.cyan7, token.cyan1],
-    tools: [token.orange6, token.orange1],
-  }
-  return <div className="workspace-home"><PageContainer title="工作台">
-    {entries.length > 0 ? <nav aria-label="工作台入口" className="workspace-shortcuts" style={{
-      '--shortcut-accent': token.colorPrimary,
-      '--shortcut-icon-bg': token.colorPrimaryBg,
-      '--shortcut-text': token.colorText,
-      '--shortcut-muted': token.colorTextTertiary,
-      '--shortcut-radius': `${token.borderRadiusLG}px`,
-    } as CSSProperties}>
-      <Row id="workspace-shortcut-grid" gutter={[16, 16]}>
-        {visibleEntries.map(item => <Col key={item.navigationKey} xs={12} md={8} xl={6}>
-          <Link className="workspace-shortcut" to={item.path}>
-            <Card hoverable className="workspace-shortcut-card" styles={{ body: { padding: 0, height: '100%' } }}>
-              <div className="workspace-shortcut-content">
-                <span className="workspace-shortcut-icon" style={iconColors[item.navigationKey] && {
-                  color: iconColors[item.navigationKey][0], background: iconColors[item.navigationKey][1],
-                }}>{navigationIcon(item.navigationKey)}</span>
-                <Typography.Text className="workspace-shortcut-label">{item.label}</Typography.Text>
-                <ArrowRightOutlined className="workspace-shortcut-arrow" aria-hidden />
-              </div>
-            </Card>
-          </Link>
-        </Col>)}
-      </Row>
-      {entries.length > collapsedCount && <div className="workspace-shortcut-toggle">
-        <Button type="text" aria-expanded={expanded} aria-controls="workspace-shortcut-grid"
-          icon={expanded ? <UpOutlined /> : <DownOutlined />} onClick={() => setExpanded(value => !value)}>
-          {expanded ? '收起快捷入口' : `展开全部快捷入口（${entries.length}）`}
-        </Button>
-      </div>}
-    </nav> : <EmptyState message={session.workspace
-      ? '暂无可用菜单，请联系管理员' : '尚未分配可用渠道，请联系平台管理员'} />}
-  </PageContainer><WorkspaceGuide entries={entries} hasWorkspace={!!session.workspace} /></div>
-}
 export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const { session, switchWorkspace, logout } = useSession()
   const { token } = theme.useToken()
@@ -93,19 +42,24 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const current = entries.filter(entry => location.pathname === entry.path || location.pathname.startsWith(`${entry.path}/`))
     .sort((a, b) => b.path.length - a.path.length)[0]
   const isDetail = current && location.pathname !== current.path && location.pathname !== `${current.path}/`
+  const isWorkbench = location.pathname === '/workbench' || location.pathname === '/workbench/'
   const breadcrumbs = current ? [
     ...current.ancestors.map(parent => ({ title: parent.label })),
     { title: isDetail ? <Link to={current.path}>{current.label}</Link> : current.label },
     ...(isDetail ? [{ title: location.pathname === '/agents/assistance' ? new URLSearchParams(location.search).has('agent') ? '智能修改' : '智能创建' : '详情' }] : []),
-  ] : [{ title: location.pathname === '/' ? '工作台' : <Link to="/">工作台</Link> }]
+  ] : [
+    { title: location.pathname === '/' ? '首页' : <Link to="/">首页</Link> },
+    ...(isWorkbench ? [{ title: '工作台' }] : []),
+  ]
   const selectPage = (path: string) => { navigate(path); setMenuOpen(false) }
-  const brand = <Link className="workspace-brand" to="/" aria-label="Creativity 工作台" onClick={() => setMenuOpen(false)}>
+  const brand = <Link className="workspace-brand" to="/" aria-label="Creativity 首页" onClick={() => setMenuOpen(false)}>
     <span className="workspace-brand-icon"><BrandMark variant="flat" /></span><span>Creativity</span>
   </Link>
   const menu = <nav aria-label="主导航" className="workspace-navigation"><Menu theme="light" mode="inline"
-    className="workspace-menu" selectedKeys={current ? [current.path] : location.pathname === '/' ? ['/'] : []}
+    className="workspace-menu" selectedKeys={current ? [current.path] : isWorkbench ? ['/workbench'] : location.pathname === '/' ? ['/'] : []}
     onClick={({ key }) => selectPage(key)} items={[
-      { key: '/', label: '工作台', icon: <HomeOutlined aria-hidden /> },
+      { key: '/', label: '首页', icon: <HomeOutlined aria-hidden /> },
+      { key: '/workbench', label: '工作台', icon: <AppstoreOutlined aria-hidden /> },
       ...navigationItems(entries),
     ]} /></nav>
   const workspaceStyle = {

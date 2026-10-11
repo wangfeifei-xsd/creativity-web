@@ -25,7 +25,7 @@ test('渠道管理员自动进入服务端默认渠道，切换不再经过工�
     return route.fulfill({ json: [] })
   })
   await page.goto('#/')
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
   expect(switches).toEqual([{ channel_id: a.channel_id, environment: 'test' }])
   await expect(page.getByText('选择工作区', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: '进入工作区' })).toHaveCount(0)

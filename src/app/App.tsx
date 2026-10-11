@@ -5,13 +5,16 @@ import { features } from '../features/registry'
 import { OAuthCallback } from '../features/mcp/OAuthPanel'
 import { theme } from './theme'
 import { SessionProvider } from './workspace/SessionProvider'
-import { WorkspaceHome, WorkspaceLayout } from './workspace/WorkspaceLayout'
+import { WorkspaceLayout } from './workspace/WorkspaceLayout'
+import { WorkspaceHome } from './workspace/WorkspaceHome'
+import { WorkspaceWorkbench } from './workspace/WorkspaceWorkbench'
 
 const router = createHashRouter([{ path: '*', element: <WorkspaceRoutes /> }])
 
 function WorkspaceRoutes() {
   return <Layout className="app-layout"><SessionProvider><WorkspaceLayout><OAuthCallback /><Routes>
       <Route path="/" element={<WorkspaceHome />} />
+      <Route path="/workbench" element={<WorkspaceWorkbench />} />
       {features.map(({ navigationKey, path, Component }) => <Route key={navigationKey} path={`${path}/*`} element={<Component />} />)}
       <Route path="*" element={<Result status="404" title="页面不存在" />} />
   </Routes></WorkspaceLayout></SessionProvider></Layout>

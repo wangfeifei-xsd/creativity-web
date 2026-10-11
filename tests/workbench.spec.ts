@@ -28,7 +28,7 @@ for (const [width, columns] of [[1391, 4], [820, 3], [375, 2], [320, 2]]) {
   test(`工作台卡片自适应布局，无横向溢出（${width}）`, async ({ page }) => {
     await fixture(page)
     await page.setViewportSize({ width, height: 900 })
-    await page.goto('#/')
+    await page.goto('#/workbench')
     const shortcuts = page.getByRole('navigation', { name: '工作台入口' })
     const visible = navigation.slice(0, columns * 2)
     await expect(shortcuts.getByRole('link')).toHaveCount(visible.length)
@@ -56,7 +56,7 @@ for (const [width, columns] of [[1391, 4], [820, 3], [375, 2], [320, 2]]) {
 
 test('整张卡片支持跳转、返回和键盘焦点', async ({ page }) => {
   await fixture(page)
-  await page.goto('#/')
+  await page.goto('#/workbench')
   const link = page.getByRole('navigation', { name: '工作台入口' }).getByRole('link', { name: '模型供应商', exact: true })
   const card = link.locator('.workspace-shortcut-card')
   const border = await card.evaluate(element => getComputedStyle(element).borderColor)
@@ -81,25 +81,25 @@ test('仅展示服务端返回的已登记入口，名称较长时换行且保�
     { navigation_key: 'unknown-page', label: '未登记入口' },
   ], true)
   await page.setViewportSize({ width: 320, height: 900 })
-  await page.goto('#/')
+  await page.goto('#/workbench')
   const shortcuts = page.getByRole('navigation', { name: '工作台入口' })
   await expect(shortcuts.getByRole('link')).toHaveCount(1)
   await expect(shortcuts.getByRole('link', { name: label, exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: '账号管理', exact: true })).toHaveCount(0)
   await expect(page.getByText('未登记入口', { exact: true })).toHaveCount(0)
-  const guide = page.getByRole('region', { name: '配置指引' })
-  await expect(guide.getByRole('link')).toHaveCount(0)
-  await expect(guide.getByRole('button', { name: '打开供应商连接' }).first()).toBeDisabled()
   const text = shortcuts.locator('.workspace-shortcut-label')
   expect(await text.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
   expect(await text.evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(21)
+  const guide = page.getByRole('region', { name: '配置指引' })
+  await expect(guide.getByRole('link')).toHaveCount(0)
+  await expect(guide.getByRole('button', { name: '打开供应商连接' }).first()).toBeDisabled()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
 })
 
 for (const channel of [false, true]) {
   test(`没有可用入口时保留空状态（${channel ? '渠道' : '平台'}）`, async ({ page }) => {
     await fixture(page, [], channel)
-    await page.goto('#/')
+    await page.goto('#/workbench')
     await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
     await expect(page.getByRole('navigation', { name: '工作台入口' })).toHaveCount(0)
     await expect(page.getByText(channel ? '暂无可用菜单，请联系管理员' : '尚未分配可用渠道，请联系平台管理员', { exact: true })).toBeVisible()

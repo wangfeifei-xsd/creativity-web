@@ -44,9 +44,9 @@
 
 .workspace-main { min-width: 0; min-height: 100vh; }
 .workspace-main > .app-content { padding: 24px; }
-.workspace-home { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.workspace-home .page-heading { margin-bottom: 24px; }
-.workspace-home .page-heading h2.ant-typography { font-size: 28px; line-height: 1.4; letter-spacing: -.5px; }
+.workspace-home, .workspace-workbench { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.workspace-workbench .page-heading { margin-bottom: 24px; }
+.workspace-workbench .page-heading h2.ant-typography { font-size: 28px; line-height: 1.4; letter-spacing: -.5px; }
 .workspace-header.ant-layout-header {
   position: sticky;
   top: 0;
@@ -193,11 +193,87 @@
 .workspace-guide-action { flex-shrink: 0; padding-top: 8px; }
 .workspace-guide-action a { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; }
 
+.workspace-usage { min-width: 0; container-type: inline-size; }
+.workspace-usage > h2.ant-typography { margin: 0 0 clamp(20px, 1.43cqi, 21px) 8px; color: var(--usage-ink); font-size: clamp(28px, 2.72cqi, 40px); font-weight: 700; line-height: 1.3; letter-spacing: -.8px; }
+.workspace-usage-flows {
+  --usage-card-padding: clamp(20px, 1.9cqi, 28px);
+  --usage-icon-size: clamp(48px, 4.35cqi, 64px);
+  --usage-marker-size: clamp(30px, 2.72cqi, 40px);
+  --usage-marker-column: clamp(40px, 3.53cqi, 52px);
+  --usage-step-gap: clamp(14px, 1.22cqi, 18px);
+  --usage-step-title-size: clamp(15px, 1.36cqi, 20px);
+  --usage-step-text-size: clamp(14px, 1.22cqi, 18px);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(18px, 1.5cqi, 22px);
+}
+.workspace-usage-flow { min-width: 0; }
+.workspace-usage-card.ant-card { height: 100%; border-color: var(--usage-card-border); border-radius: var(--usage-radius); box-shadow: 0 4px 20px color-mix(in srgb, var(--usage-primary) 3%, transparent); }
+.workspace-usage-card > .ant-card-body { display: flex; flex-direction: column; height: 100%; padding: 20px var(--usage-card-padding) clamp(20px, 1.63cqi, 24px); }
+.workspace-usage-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: clamp(16px, 1.22cqi, 18px); }
+.workspace-usage-heading h3.ant-typography { display: flex; align-items: center; gap: clamp(16px, 1.77cqi, 26px); min-width: 0; margin: 0; color: var(--usage-ink); font-size: clamp(18px, 1.63cqi, 24px); font-weight: 650; line-height: 1.5; }
+.workspace-usage-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--usage-icon-size); height: var(--usage-icon-size); border-radius: clamp(12px, 1.09cqi, 16px); color: var(--usage-accent); background: linear-gradient(135deg, var(--usage-icon-bg), color-mix(in srgb, var(--usage-icon-bg) 70%, var(--usage-accent-bg))); font-size: clamp(26px, 2.18cqi, 32px); }
+.workspace-usage-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
+.workspace-usage-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 36px; border-radius: 6px; font-size: clamp(14px, 1.22cqi, 18px); font-weight: 500; line-height: 1.5; }
+.workspace-usage-actions a:focus-visible { outline: 2px solid var(--usage-primary); outline-offset: 4px; }
+.workspace-usage-actions a .anticon { flex-shrink: 0; transition: transform .15s ease; }
+.workspace-usage-actions a:hover .anticon { transform: translateX(3px); }
+.workspace-usage-actions .ant-btn { height: auto; min-height: 36px; white-space: normal; }
+.workspace-usage-diagram { display: grid; gap: var(--usage-step-gap); margin: 0; padding: 0; list-style: none; }
+.workspace-usage-node { position: relative; display: grid; grid-template-columns: var(--usage-marker-column) minmax(0, 1fr); align-items: start; gap: clamp(12px, 1.09cqi, 16px); min-width: 0; }
+.workspace-usage-number { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; justify-self: center; width: var(--usage-marker-size); height: var(--usage-marker-size); margin-top: 4px; border-radius: 50%; color: var(--usage-accent); background: color-mix(in srgb, var(--usage-icon-bg) 35%, var(--usage-accent-bg)); font-size: var(--usage-step-title-size); font-weight: 650; font-variant-numeric: tabular-nums; }
+.workspace-usage-node:not(:last-child)::after { position: absolute; top: calc(var(--usage-marker-size) + 9px); bottom: calc(-1 * var(--usage-step-gap)); left: calc(var(--usage-marker-column) / 2); width: 1px; background: var(--usage-accent-border); content: ''; }
+.workspace-usage-copy { min-width: 0; padding: clamp(10px, .92cqi, 13.5px) clamp(14px, 1.22cqi, 18px); border: 1px solid var(--usage-border); border-radius: 12px; background: var(--usage-node-bg); }
+.workspace-usage-copy .ant-typography { overflow-wrap: anywhere; }
+.workspace-usage-copy > .ant-typography:first-child { display: block; color: var(--usage-ink); font-size: var(--usage-step-title-size); line-height: 1.4; }
+.workspace-usage-copy .ant-typography-secondary { margin: 2px 0 0; color: var(--usage-muted); font-size: var(--usage-step-text-size); line-height: 1.4; }
+.workspace-usage-footer { margin-top: auto; padding-top: 16px; }
+.workspace-usage-footer .workspace-usage-actions { justify-content: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--usage-border); }
+.workspace-usage-footer .workspace-usage-actions > * { flex: 1; min-width: 0; text-align: center; }
+.workspace-usage-footer .workspace-usage-actions > a + a { border-left: 1px solid var(--usage-border); border-radius: 0; }
+.workspace-usage-api.ant-typography { margin: 14px 0 0; color: var(--usage-muted); font-size: clamp(12px, .95cqi, 14px); line-height: 1.6; overflow-wrap: anywhere; }
+.workspace-usage-api .ant-typography { color: var(--usage-ink); font-size: inherit; }
+.workspace-usage-api code { margin-inline: 2px; padding: 3px 5px; border: 0; border-radius: 4px; background: var(--usage-code-bg); white-space: normal; overflow-wrap: anywhere; }
+.workspace-usage-flow-publish { grid-column: 1 / -1; }
+.workspace-usage-flow-publish .workspace-usage-card { border-color: color-mix(in srgb, var(--usage-accent-border) 45%, var(--usage-surface)); background: linear-gradient(110deg, var(--usage-accent-bg), color-mix(in srgb, var(--usage-accent-bg) 65%, var(--usage-surface))); box-shadow: none; }
+.workspace-usage-flow-publish .workspace-usage-icon { font-size: clamp(28px, 2.44cqi, 36px); background: linear-gradient(135deg, color-mix(in srgb, var(--usage-primary) 23%, var(--usage-surface)), color-mix(in srgb, var(--usage-primary) 15%, var(--usage-surface))); }
+.workspace-usage-flow-publish .workspace-usage-actions { flex-shrink: 0; }
+.workspace-usage-flow-publish .workspace-usage-actions a { min-height: clamp(42px, 3.53cqi, 52px); padding: 9px clamp(18px, 1.9cqi, 28px); border: 1px solid color-mix(in srgb, var(--usage-primary) 80%, var(--usage-surface)); border-radius: 10px; color: var(--usage-on-primary); background: var(--usage-primary); font-weight: 600; box-shadow: inset 0 1px 0 rgb(255 255 255 / 15%); }
+.workspace-usage-flow-publish .workspace-usage-actions a:hover { background: var(--usage-primary-hover); }
+.workspace-usage-flow-publish .workspace-usage-diagram { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(26px, 2.44cqi, 36px); }
+.workspace-usage-flow-publish .workspace-usage-node { display: block; padding: clamp(14px, 1.02cqi, 15px) clamp(16px, 1.36cqi, 20px); border: 1px solid color-mix(in srgb, var(--usage-accent-border) 45%, var(--usage-surface)); border-radius: 12px; background: var(--usage-surface); }
+.workspace-usage-flow-publish .workspace-usage-node::after { display: none; }
+.workspace-usage-flow-publish .workspace-usage-number { float: left; margin: 0 clamp(10px, .95cqi, 14px) 0 0; background: var(--usage-accent-bg); }
+.workspace-usage-flow-publish .workspace-usage-copy { padding: 0; border: 0; background: none; }
+.workspace-usage-flow-publish .workspace-usage-copy > .ant-typography:first-child { min-height: var(--usage-marker-size); line-height: var(--usage-marker-size); }
+.workspace-usage-flow-publish .workspace-usage-copy .ant-typography-secondary { clear: both; padding-top: 6px; margin-top: 0; font-size: clamp(14px, 1.19cqi, 17.5px); }
+.workspace-usage-arrow { position: absolute; top: 50%; right: calc(-1 * clamp(24px, 2.04cqi, 30px)); color: var(--usage-accent); font-size: clamp(18px, 1.36cqi, 20px); transform: translateY(-50%); }
+
+@container (max-width: 900px) {
+  .workspace-usage-flows { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .workspace-usage-flow-publish .workspace-usage-diagram { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .workspace-usage-flow-publish .workspace-usage-arrow { top: auto; right: auto; bottom: -22px; left: calc(50% - 9px); transform: rotate(90deg); }
+}
+
+@container (max-width: 480px) {
+  .workspace-usage-flows { --usage-marker-size: 28px; --usage-marker-column: 30px; --usage-icon-size: 44px; }
+  .workspace-usage-card > .ant-card-body { padding: 18px 16px; }
+  .workspace-usage-heading { gap: 12px; margin-bottom: 18px; }
+  .workspace-usage-heading h3.ant-typography { gap: 12px; font-size: 16px; }
+  .workspace-usage-icon { border-radius: 12px; font-size: 24px; }
+  .workspace-usage-flow-publish .workspace-usage-heading { flex-wrap: wrap; }
+  .workspace-usage-flow-publish .workspace-usage-actions { width: 100%; }
+  .workspace-usage-flow-publish .workspace-usage-actions > * { width: 100%; }
+  .workspace-usage-node { gap: 10px; }
+  .workspace-usage-copy { padding: 12px; }
+  .workspace-usage-footer .workspace-usage-actions { flex-direction: column; gap: 8px; }
+  .workspace-usage-footer .workspace-usage-actions > * { width: 100%; }
+  .workspace-usage-footer .workspace-usage-actions > a + a { border-left: 0; }
+}
+
 @media (max-width: 767px) {
   .workspace-main > .app-content { padding: 16px; }
-  .workspace-home .page-container > .ant-card-body,
+  .workspace-workbench .page-container > .ant-card-body,
   .workspace-guide-panel > .ant-card-body { padding: 20px; }
-  .workspace-home .page-heading h2.ant-typography { font-size: 24px; }
+  .workspace-workbench .page-heading h2.ant-typography { font-size: 24px; }
   .workspace-guide-panel h4.ant-typography { font-size: 20px; }
   .workspace-guide-number { width: 30px; height: 30px; font-size: 14px; }
   .workspace-guide-step { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px 12px; }
@@ -218,7 +294,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace-shortcut-card.ant-card, .workspace-shortcut-arrow { transition: none; }
+  .workspace-shortcut-card.ant-card, .workspace-shortcut-arrow,
+  .workspace-usage-actions a, .workspace-usage-actions a .anticon { transition: none; }
   .workspace-shortcut:hover .workspace-shortcut-card,
   .workspace-shortcut:focus-visible .workspace-shortcut-card { transform: none; }
 }

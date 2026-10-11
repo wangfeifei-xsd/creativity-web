@@ -114,7 +114,7 @@ test('切换渠道后同号主体不会复用前一渠道记忆', async ({ page 
   await expect(page.getByText('100–200 元')).toBeVisible()
   await page.getByLabel('切换渠道', { exact: true }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('陪玩渠道', { exact: true }).click()
-  await expect(page.getByRole('heading', { name: '工作台' })).toBeVisible()
+  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
   await page.goto('#/memories/subjects/memory_one')
   await expect(page.getByText('800–900 元')).toBeVisible()
   await expect(page.getByText('100–200 元')).toHaveCount(0)

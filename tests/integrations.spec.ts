@@ -136,7 +136,7 @@ test('主体复核从 MCP 发现绑定，保存不含用户或数据域覆盖', 
 
 test('定时运行按时区保存，批量失败保留条目并重用幂等键', async ({ page }) => {
   await fixture(page)
-  await page.route('**/admin/v1/agents', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }], actions: [] } }))
+  await page.route('**/admin/v1/agents?published_only=true', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }], actions: [] } }))
   let scheduleSaved = false
   await page.route('**/admin/v1/schedules', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: [] })

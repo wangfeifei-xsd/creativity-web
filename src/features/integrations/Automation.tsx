@@ -1,7 +1,7 @@
 import { Button, Form, Input, InputNumber, Modal, Select, Space, Tabs, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Alerts } from './Alerts'
 import { RunSourceNames, RunSources } from './RunSources'
 import { useRunClients } from './useRunClients'
@@ -21,8 +21,15 @@ type Batch = { batch_id: string; name: string; revision: number; state_label: st
 
 export function Automation() {
   const { session } = useSession()
+  const [parameters, setParameters] = useSearchParams()
   const canReadRuns = session.actions.some(action => action.action_key === 'run:read')
-  return <Tabs items={[{ key: 'schedules', label: '定时运行', children: <Schedules /> }, { key: 'webhooks', label: '事件投递', children: <Webhooks /> }, { key: 'batches', label: '批量运行', disabled: !canReadRuns, children: <Batches /> }, { key: 'alerts', label: '外部告警', children: <Alerts /> }]} />
+  const items = [{ key: 'schedules', label: '定时运行', children: <Schedules /> }, { key: 'webhooks', label: '事件投递', children: <Webhooks /> }, { key: 'batches', label: '批量运行', disabled: !canReadRuns, children: <Batches /> }, { key: 'alerts', label: '外部告警', children: <Alerts /> }]
+  const activeKey = items.find(item => item.key === parameters.get('section') && !item.disabled)?.key ?? 'schedules'
+  return <Tabs activeKey={activeKey} onChange={key => setParameters(previous => {
+    const next = new URLSearchParams(previous)
+    next.set('section', key)
+    return next
+  })} items={items} />
 }
 
 function Schedules() {

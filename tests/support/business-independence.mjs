@@ -68,7 +68,7 @@ try {
     await page.getByLabel('密码', { exact: true }).fill('Changed-password-5678')
     await button(page, '登录').click()
   }
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
   if (config.stage === 'channel') {
     const s = config.scenario
     await page.goto(`${webURL}#/channels`)

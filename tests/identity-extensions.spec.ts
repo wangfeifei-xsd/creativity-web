@@ -42,7 +42,7 @@ test('外部身份交换失败保留凭据，成功后使用平台 Token 并可�
   await expect(page.getByText('外部身份已过期', { exact: true })).toBeVisible()
   await expect(page.getByLabel('外部访问凭据', { exact: true })).toHaveValue('upstream-opaque')
   await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
   expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBe('platform-opaque')
   await page.getByRole('button', { name: '用户菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '退出登录', exact: true }).click()
