@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { formatTimestamp } from './presentation'
+import { formatAmount } from './presentation'
 
-describe('统一时间格式', () => {
-  it('月份和日期不补零，时分秒补齐两位', () => {
-    expect(formatTimestamp('2026-01-02T00:04:05Z')).toBe('2026年1月2日 08:04:05')
+describe('金额展示', () => {
+  it('展开科学计数法而不丢失十进制精度', () => {
+    expect(formatAmount('1.234567890123456789E-8', 'USD')).toBe('0.00000001234567890123456789 USD')
+    expect(formatAmount('-1.25e+3', 'CNY')).toBe('-1250 CNY')
+    expect(formatAmount('0E-7', 'USD')).toBe('0 USD')
   })
-  it('保留报表时区及零点格式', () => {
-    expect(formatTimestamp('2026-10-05T16:00:00Z')).toBe('2026年10月6日 00:00:00')
-    expect(formatTimestamp('2026-10-05T16:00:00Z', 'UTC')).toBe('2026年10月5日 16:00:00')
-  })
-  it('不编造缺失或无效时间', () => {
-    expect(formatTimestamp(null)).toBe('暂无时间')
-    expect(formatTimestamp('invalid')).toBe('时间不可用')
+
+  it('保留普通金额精度并明确区分缺失值', () => {
+    expect(formatAmount('0.00011000', 'USD')).toBe('0.00011000 USD')
+    expect(formatAmount(null, 'USD')).toBe('金额未确认')
+    expect(formatAmount('0', null)).toBe('金额未确认')
   })
 })

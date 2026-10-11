@@ -1,5 +1,6 @@
 import { Button, Form, Input, InputNumber, Modal, Select, Space, Steps, Switch, Tabs, Tag } from 'antd'
 import { useEffect, useRef, useState } from 'react'
+import { useBlocker } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { PageContainer } from '../../components/PageContainer'
 import { type FlowIssue } from './flow-fields'
@@ -51,6 +52,8 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
   const flow = useRef<FlowEditorHandle>(null)
   const submitting = useRef(false)
   const [dirty, setDirty] = useState(false)
+  const leaving = useRef(false)
+  const blocker = useBlocker(() => dirty && !leaving.current)
   const [issues, setIssues] = useState<FlowIssue[]>(initialIssues)
   useEffect(() => {
     if (!initialFocus) return
@@ -120,9 +123,15 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
         context: { conversation_enabled: v.conversation_enabled, context_limit: v.context_limit, summary_policy: v.summary_policy,
           memory_policy: memoryPolicy },
       }
-      if (version) { await send(`/admin/v1/agent-versions/${version.version_id}`, 'PATCH', { revision: version.revision, definition: body }); onSaved() }
-      else onSaved(await send<Detail>('/admin/v1/agents', 'POST', { agent_code: v.agent_code, name: v.name, description: v.description, owner: v.owner, version_label: v.version_label, definition: body }))
+      if (version) {
+        await send(`/admin/v1/agent-versions/${version.version_id}`, 'PATCH', { revision: version.revision, definition: body })
+        leaving.current = true; onSaved()
+      } else {
+        const created = await send<Detail>('/admin/v1/agents', 'POST', { agent_code: v.agent_code, name: v.name, description: v.description, owner: v.owner, version_label: v.version_label, definition: body })
+        leaving.current = true; onSaved(created)
+      }
     } catch (failure) {
+      leaving.current = false
       setError(failure)
       if (failure instanceof ApiError && failure.fields.length) {
         const nextIssues = failure.fields.map(field => ({ path: field.path.map(String).join('.').replace(/^(body\.)?(definition\.)?/, ''), message: field.message }))
@@ -142,7 +151,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
   const titles = ['基本配置', '输入输出', '流程', '资源依赖', '运行策略']
   function close() {
     if (!dirty) { onClose(); return }
-    Modal.confirm({ title: '放弃尚未保存的配置？', okText: '放弃修改', cancelText: '继续编辑', onOk: onClose })
+    Modal.confirm({ title: '放弃尚未保存的配置？', okText: '放弃修改', cancelText: '继续编辑', onOk: () => { leaving.current = true; onClose() } })
   }
   async function changeSection(next: number) {
     try { await flow.current?.flush(); setStep(next) } catch { setStep(2) }
@@ -152,6 +161,9 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
     {!version && step < 4 ? <Button type="primary" disabled={busy} onClick={() => void form.validateFields(stepFields[step]).then(() => changeSection(step + 1)).catch(() => {})}>下一步</Button> :
       <Button type="primary" loading={busy} onClick={() => void save()}>保存草稿</Button>}</Space>
   const content = <>
+    <Modal open={blocker.state === 'blocked'} title="放弃尚未保存的配置？" okText="放弃修改" cancelText="继续编辑"
+      okButtonProps={{ disabled: busy }} onOk={() => blocker.state === 'blocked' && blocker.proceed()}
+      onCancel={() => blocker.state === 'blocked' && blocker.reset()} />
     {version ? <Tabs className="agent-editor-tabs" activeKey={String(step)} onChange={key => void changeSection(Number(key))} items={titles.map((label, index) => ({ key: String(index), label, disabled: busy }))} /> :
       <Steps size="small" current={step} items={titles.map(title => ({ title }))} style={{ marginBottom: 24 }} />}
     {error != null && <div style={{ marginBottom: 16 }}><ErrorNotice error={error} /></div>}

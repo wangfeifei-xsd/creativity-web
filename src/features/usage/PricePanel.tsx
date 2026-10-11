@@ -7,11 +7,13 @@ import { useQuery } from '../../api/useQuery'
 import { formatTimestamp } from '../../api/presentation'
 import { useSession } from '../../app/workspace/context'
 import { ErrorNotice, type Schema } from '../../components/Management'
+import { dimensionNames } from '../models/options'
 import { localTime, type UsageOptions } from './types'
 
 type Price = Schema<'PriceVersionView'>
 type Values = { model_id: string; name: string; currency: string; effective_at: string; source: string; items: { dimension: string; amount: string; per_units: number; parent?: string }[] }
-const dimensions = [{ value: 'input', label: '输入 Token' }, { value: 'output', label: '输出 Token' }, { value: 'cached', label: '缓存读取 Token' }, { value: 'cache_write', label: '缓存写入 Token' }, { value: 'reasoning', label: '推理 Token' }]
+const dimensions = ['input', 'output', 'cache_read', 'cache_write', 'reasoning'].map(value => ({ value, label: `${dimensionNames[value]} Token` }))
+const dimensionLabel = (value: string) => dimensionNames[value] ? `${dimensionNames[value]} Token` : '扩展用量'
 export function PricePanel({ options }: { options?: UsageOptions }) {
   const { session } = useSession()
   const query = useQuery<Price[]>('/admin/v1/usage/prices')
@@ -37,7 +39,7 @@ export function PricePanel({ options }: { options?: UsageOptions }) {
     <Table<Price> rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '模型', render: (_, r) => options?.models.find(m => m.value === r.model_id)?.label ?? '名称不可用' },
       { title: '价格版本', dataIndex: 'name' }, { title: '币种', dataIndex: 'currency' }, { title: '生效时间', render: (_, r) => formatTimestamp(r.effective_at) },
-      { title: '计价维度', render: (_, r) => <Space orientation="vertical">{r.items.map(i => <Typography.Text key={i.dimension}>{dimensions.find(d => d.value === i.dimension)?.label ?? '扩展用量'}：{i.amount} {r.currency} / {i.per_units} Token{r.subset_relations?.[i.dimension] ? `，包含在${dimensions.find(d => d.value === r.subset_relations?.[i.dimension])?.label ?? '总量'}中` : ''}</Typography.Text>)}</Space> },
+      { title: '计价维度', render: (_, r) => <Space orientation="vertical">{r.items.map(i => <Typography.Text key={i.dimension}>{dimensionLabel(i.dimension)}：{i.amount} {r.currency} / {i.per_units} Token{r.subset_relations?.[i.dimension] ? `，包含在${dimensionLabel(r.subset_relations[i.dimension])}中` : ''}</Typography.Text>)}</Space> },
       { title: '来源', dataIndex: 'source' },
     ]} />
     <Modal open={editing} title="新增价格版本" width={800} onCancel={() => setEditing(false)} onOk={() => form.submit()} confirmLoading={busy} destroyOnHidden>

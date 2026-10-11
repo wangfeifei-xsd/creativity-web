@@ -63,7 +63,7 @@ export function EditorDialog({ title, fields, initial, children, onSave, onClose
       <Button type="primary" aria-label="确认" danger={danger} loading={busy} disabled={busy} onClick={() => form.submit()}>确认</Button></Space>}>
     <Space orientation="vertical" style={{ width: '100%' }} size="middle">
       <ErrorNotice error={error} />
-      {error instanceof ApiError && error.status === 409 && latestRevision && <Button disabled={busy} onClick={async () => {
+      {error instanceof ApiError && error.code === 'REVISION_CONFLICT' && latestRevision && <Button disabled={busy} onClick={async () => {
         if (submitting.current) return
         submitting.current = true; setBusy(true)
         try {

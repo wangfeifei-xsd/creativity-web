@@ -1,7 +1,7 @@
 import { Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, Upload } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
@@ -107,7 +107,8 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
 
 function SkillDetail({ skillId }: { skillId: string }) {
   const query = useQuery<Detail>(`/admin/v1/skills/${skillId}`)
-  const [editor, setEditor] = useState<'resource' | 'version' | undefined>(() => window.location.hash.includes('edit=1') ? 'version' : undefined)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [editor, setEditor] = useState<'resource' | 'version' | undefined>(() => searchParams.get('edit') === '1' ? 'version' : undefined)
   const [validation, setValidation] = useState<Schema<'SkillValidation'>>()
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
@@ -118,6 +119,13 @@ function SkillDetail({ skillId }: { skillId: string }) {
   const summary = detail?.versions.find(v => v.version_id === skillId)
   const versionQuery = useQuery<Schema<'SkillVersionView'>>(summary ? `/admin/v1/skills/${skillId}/configuration` : null, false, summary?.revision)
   const version = versionQuery.data?.revision === summary?.revision ? versionQuery.data : undefined
+  function closeEditor() {
+    setEditor(undefined)
+    if (searchParams.has('edit')) {
+      const next = new URLSearchParams(searchParams); next.delete('edit')
+      setSearchParams(next, { replace: true })
+    }
+  }
   async function mutate(action: 'validate' | 'export') {
     if (!version || !detail || busy) return
     setBusy(true); setError(undefined)
@@ -169,8 +177,8 @@ function SkillDetail({ skillId }: { skillId: string }) {
         ]} /></> : <Button onClick={() => void mutate('validate')} loading={busy}>检查当前依赖</Button> },
       { key: 'tests', label: '测试', children: <SkillTests key={`${version.version_id}:${version.revision}`} version={version} /> },
     ]} />}
-    {editor === 'resource' && <ResourceEditor detail={detail} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
-    {editor === 'version' && version && <SkillEditor version={version} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); setValidation(undefined); query.reload() }} />}
+    {editor === 'resource' && <ResourceEditor detail={detail} onClose={closeEditor} onSaved={() => { closeEditor(); query.reload() }} />}
+    {editor === 'version' && version && <SkillEditor version={version} onClose={closeEditor} onSaved={() => { closeEditor(); setValidation(undefined); query.reload() }} />}
   </PageContainer>
 }
 

@@ -6,6 +6,7 @@ import { Alerts } from './Alerts'
 import { RunSourceNames, RunSources } from './RunSources'
 import { useRunClients } from './useRunClients'
 import { apiClient } from '../../api/client'
+import { applyFormErrors, clearFormErrors } from '../../api/form-errors'
 import { send } from '../../api/management'
 import { jsonObject, parseJson } from '../../api/json'
 import { formatTimestamp } from '../../api/presentation'
@@ -42,8 +43,8 @@ function Schedules() {
     <Modal open={open} title="新增定时计划" onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>
       <ErrorNotice error={error} />
       <Form name="schedule" form={form} layout="vertical" initialValues={{ input: '{}', timezone: 'Asia/Shanghai', mode: 'daily', daily: '09:00', interval: 3600 }} onFinish={async v => {
-        if (busy) return; setBusy(true); setError(undefined)
-        try { await send('/admin/v1/schedules', 'POST', { name: v.name, request: { agent_code: v.agent, input: jsonObject(v.input) }, timezone: v.timezone, daily_at: v.mode === 'daily' ? v.daily : null, interval_seconds: v.mode === 'interval' ? v.interval : null }); setOpen(false); query.reload() } catch (e) { setError(e) } finally { setBusy(false) }
+        if (busy) return; clearFormErrors(form); setBusy(true); setError(undefined)
+        try { await send('/admin/v1/schedules', 'POST', { name: v.name, request: { agent_code: v.agent, input: jsonObject(v.input) }, timezone: v.timezone, daily_at: v.mode === 'daily' ? v.daily : null, interval_seconds: v.mode === 'interval' ? v.interval : null }); setOpen(false); query.reload() } catch (e) { setError(e); applyFormErrors(form, e, path => path[0] === 'request' && path[1] === 'input' ? ['input'] : path) } finally { setBusy(false) }
       }}>
         <Form.Item name="name" label="计划名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
         <Form.Item name="agent" label="智能体" rules={[{ required: true }]}><Select options={agents.data?.items.map(a => ({ value: a.agent_code, label: a.name }))} /></Form.Item>
@@ -90,7 +91,7 @@ function Batches() {
     <Table rowKey="batch_id" dataSource={query.data} columns={[{ title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label' }, { title: '条目数', render: (_, r) => r.items.length }, { title: '操作', render: (_, r) => r.state_label === '启用' && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/batches/${r.batch_id}/cancel`, 'POST', { revision: r.revision, cancel_runs: true }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>取消批次</Button> }]} expandable={{ expandedRowRender: r => <Table rowKey="item_id" dataSource={r.items} pagination={false} columns={[{ title: '外部事件编号', dataIndex: 'event_id' }, { title: '状态', dataIndex: 'state_label' }, { title: '反馈', render: (_, i) => i.error?.message ?? '无' }, { title: '操作', render: (_, i) => <Space>{i.run_id && <Link to={`/runs/${i.run_id}`}>查看运行</Link>}{i.state === 'FAILED' && <Button disabled={busy} onClick={async () => { setBusy(true); try { await send(`/admin/v1/batch-items/${i.item_id}/retry`, 'POST', { revision: i.revision }); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>重试受理</Button>}</Space> }]} /> }} />
     <Modal open={open} title="新建批量运行" onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>
       <ErrorNotice error={error} />
-      <Form name="batch" form={form} layout="vertical" onFinish={async v => { if (busy) return; setBusy(true); setError(undefined); try { await apiClient.request('/admin/v1/batches', { method: 'POST', headers: { 'Idempotency-Key': key.current }, body: JSON.stringify({ name: v.name, items: parseJson(v.items, []) }) }); setOpen(false); query.reload() } catch (e) { setError(e) } finally { setBusy(false) } }}>
+      <Form name="batch" form={form} layout="vertical" onFinish={async v => { if (busy) return; clearFormErrors(form); setBusy(true); setError(undefined); try { await apiClient.request('/admin/v1/batches', { method: 'POST', headers: { 'Idempotency-Key': key.current }, body: JSON.stringify({ name: v.name, items: parseJson(v.items, []) }) }); setOpen(false); query.reload() } catch (e) { setError(e); applyFormErrors(form, e, path => path.slice(0, 1)) } finally { setBusy(false) } }}>
         <Form.Item name="name" label="批次名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
         <Form.Item name="items" label="运行条目" rules={[{ required: true }]}><Input.TextArea rows={8} /></Form.Item>
         <Typography.Text>每项填写 event_id 和 request（agent_code、input），最多 100 项。</Typography.Text>

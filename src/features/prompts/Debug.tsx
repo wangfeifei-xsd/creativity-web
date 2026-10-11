@@ -3,7 +3,7 @@ import { Alert, Button, Collapse, Descriptions, Form, Input, Modal, Select, Spac
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
-import { applyFormErrors } from '../../api/form-errors'
+import { applyFormErrors, clearFormErrors } from '../../api/form-errors'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
 import { ErrorState, LoadingState } from '../../components/States'
@@ -27,6 +27,7 @@ export function PromptDebug({ version }: { version: Version }) {
   const canEdit = version.actions.some(action => action.action_key === 'prompt:manage')
   const canReveal = version.actions.some(action => action.action_key === 'data:read_sensitive')
   async function submit(prepare: boolean) {
+    clearFormErrors(form)
     setError(undefined); setBusy(true)
     try {
       const values = await form.validateFields()
@@ -56,6 +57,7 @@ export function PromptDebug({ version }: { version: Version }) {
       { title: '操作', render: (_, row) => <Button onClick={() => setSelected(row)}>查看快照</Button> },
     ]} />}
     <Modal title="添加样例" open={sampleOpen} onCancel={() => setSampleOpen(false)} confirmLoading={busy} onOk={async () => {
+      clearFormErrors(sampleForm)
       setError(undefined); setBusy(true)
       try {
         const values = await sampleForm.validateFields()
@@ -67,7 +69,7 @@ export function PromptDebug({ version }: { version: Version }) {
       {sampleOpen && error && <Alert title={error} type="error" />}
       <Form form={sampleForm} layout="vertical"><Form.Item name="title" label="样例名称" rules={[{ required: true, message: '请填写样例名称' }]}><Input /></Form.Item>
         <BindingFields variables={contentOf(version).variables ?? []} />
-        <Form.Item name="constraints" label="输出约束（每行一项）"><Input.TextArea rows={3} /></Form.Item>
+        <Form.Item name="constraints" label="输出约束（每行一项）" extra="自动判定支持“包含：关键词”和“不包含：关键词”；其他要求需人工核对。"><Input.TextArea rows={3} /></Form.Item>
       </Form>
     </Modal>
     <Modal title="测试快照" open={!!selected} onCancel={() => { setSelected(undefined); tests.reload() }} footer={null} width={850}>

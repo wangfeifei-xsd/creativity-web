@@ -5,8 +5,8 @@ import { applyFormErrors } from '../../api/form-errors'
 import { isAbort } from '../../api/useQuery'
 import { ErrorNotice } from '../../components/Management'
 
-export function ModelDialog({ title, initial, children, onSave, onClose, onSaved }: {
-  title: string; initial?: Record<string, unknown>; children: ReactNode | ((form: FormInstance) => ReactNode)
+export function ModelDialog({ title, initial, children, onSave, onClose, onSaved, submitLabel = '保存' }: {
+  title: string; submitLabel?: string; initial?: Record<string, unknown>; children: ReactNode | ((form: FormInstance) => ReactNode)
   onSave: (values: Record<string, unknown>) => Promise<unknown>; onClose: () => void; onSaved: () => void
 }) {
   const [form] = Form.useForm()
@@ -14,7 +14,7 @@ export function ModelDialog({ title, initial, children, onSave, onClose, onSaved
   const submitting = useRef(false)
   const [error, setError] = useState<unknown>()
   return <Modal open title={title} onCancel={onClose} destroyOnHidden maskClosable={!busy} closable={!busy}
-    footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button><Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
+    footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button><Button type="primary" loading={busy} onClick={() => form.submit()}>{submitLabel}</Button></Space>}>
     <ErrorNotice error={error} />
     <Form form={form} layout="vertical" initialValues={initial} disabled={busy} onValuesChange={() => setError(undefined)} onFinish={async values => {
       if (submitting.current) return

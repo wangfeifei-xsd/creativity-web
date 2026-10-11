@@ -17,6 +17,13 @@ const stringify = (value: unknown) => JSON.stringify(value, null, 2)
 const initialInput = { type: 'object', properties: { values: { type: 'array', title: '数值列表',
   items: { type: 'string', pattern: '^-?[0-9]+(\\.[0-9]+)?$' }, maxItems: 1000 } }, required: ['values'], additionalProperties: false }
 const initialOutput = { type: 'object', properties: { sum: { type: 'string', title: '合计' } }, required: ['sum'], additionalProperties: false }
+const editorFields: Record<string, string[]> = {
+  contract: ['input', 'output'],
+  binding: ['adapter', 'profile', 'skillVersion', 'scriptPath'],
+  permission: ['scopes', 'required', 'types'],
+  policy: ['analysis', 'rowsPath', 'maxRows', 'statusVersion', 'authorizationMode', 'allowedAgents', 'allowedPrincipals', 'constraints', 'checkDelay', 'submissions', 'checks', 'timeout', 'maxSize', 'attempts', 'delay', 'ttl', 'freshness', 'volatile'],
+}
+const tabForField = (name: unknown) => Object.entries(editorFields).find(([, fields]) => fields.includes(String(name)))?.[0] ?? 'contract'
 
 export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
   tool: Schema<'ToolView'>; version?: Version; onClose: () => void; onSaved: () => void
@@ -66,10 +73,12 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
       if (failure instanceof ApiError) {
         const names: Record<string, keyof Values> = { input_schema: 'input', output_schema: 'output', binding: 'adapter', version_label: 'label',
           required_scopes: 'scopes', timeout_seconds: 'timeout', max_result_size: 'maxSize' }
-        form.setFields(failure.fields.flatMap(field => {
+        const fields = failure.fields.flatMap(field => {
           const name = names[String(field.path[field.path[0] === 'definition' ? 1 : 0])]
           return name ? [{ name, errors: [field.message] }] : []
-        }))
+        })
+        form.setFields(fields)
+        if (fields[0]) setActiveTab(tabForField(fields[0].name))
       }
     }
     finally { setBusy(false) }
@@ -80,7 +89,10 @@ export function ToolVersionEditor({ tool, version, onClose, onSaved }: {
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
     <ErrorNotice error={error ?? execution.error} />
     {bindings.error ? <ErrorState error={bindings.error} onRetry={bindings.reload} /> : !bindings.data ? <LoadingState /> :
-      <Form form={form} layout="vertical" disabled={busy} onFinish={save} onFinishFailed={() => setActiveTab('contract')}
+      <Form form={form} layout="vertical" disabled={busy} onFinish={save} onFinishFailed={({ errorFields }) => {
+        setError(undefined)
+        setActiveTab(tabForField(errorFields[0]?.name[0]))
+      }}
         initialValues={{ label: '', input: stringify(definition?.input_schema ?? initialInput), output: stringify(definition?.output_schema ?? initialOutput),
           adapter: definition?.binding.adapter_key ?? available[0]?.binding.adapter_key, required: definition?.subject_requirements.required ?? tool.source_type !== 'builtin',
           types: definition?.subject_requirements.allowed_types ?? [], scopes: definition?.required_scopes ?? ['run:create'],

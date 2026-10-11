@@ -7,6 +7,11 @@ export function isFormValidationError(error: unknown): boolean {
     && Array.isArray(error.errorFields) && error.errorFields.length > 0
 }
 
+/** 重试提交前清除服务端或手动设置的错误，避免无前端规则的字段保留旧提示。 */
+export function clearFormErrors(form: Pick<FormInstance, 'getFieldsError' | 'setFields'>): void {
+  form.setFields(form.getFieldsError().map(({ name }) => ({ name, errors: [] })))
+}
+
 export function applyFormErrors(form: Pick<FormInstance, 'setFields'>, error: unknown,
   mapPath: (path: (string | number)[]) => (string | number)[] = path => path): boolean {
   if (!(error instanceof ApiError)) return false

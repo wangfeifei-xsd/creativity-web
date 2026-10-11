@@ -1,4 +1,4 @@
-import { Alert, App, Button, Descriptions, Flex, Input, Select, Space, Tabs, Tag, Typography } from 'antd'
+import { Alert, App, Button, Descriptions, Empty, Flex, Input, Select, Space, Tabs, Tag, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -78,6 +78,8 @@ function McpDetail({ id }: { id: string }) {
   const snapshot = detail?.discoveries.find(item => item.discovery_id === selected) ?? detail?.discoveries[0]
   const diff = useQuery<Schema<'McpDiff'>>(snapshot ? `${base}/${id}/discoveries/${snapshot.discovery_id}/diff` : null)
   const impact = useQuery<Schema<'McpImpact'>>(`${base}/${id}/impact`)
+  const references = [...new Map((impact.data?.tools.flatMap(tool => tool.references) ?? [])
+    .map(reference => [`${reference.resource_type}:${reference.version_id}`, reference])).values()]
   async function act(action: string) {
     if (!detail || busy) return
     setBusy(true); setError(undefined); setFeedback(undefined)
@@ -159,11 +161,11 @@ function McpDetail({ id }: { id: string }) {
       { key: 'agents', label: '引用影响', children: <><Table rowKey="import_id" dataSource={detail.imports} columns={[
         { title: '本地工具', render: (_, row) => <Link to={`/tools/${row.local_tool_id}`}>{row.name}</Link> },
         { title: '连接可用性', render: (_, row) => row.unavailable_reason ?? '连接可用' },
-      ]} />{impact.error ? <ErrorState error={impact.error} onRetry={impact.reload} /> : <Table rowKey="version_id"
-        dataSource={impact.data?.tools.flatMap(tool => tool.references) ?? []} columns={[
+      ]} />{impact.error ? <ErrorState error={impact.error} onRetry={impact.reload} /> : <Table rowKey={row => `${row.resource_type}:${row.version_id}`}
+        dataSource={references} columns={[
           { title: '关联资源', render: (_, row) => row.resource_name ?? '名称不可用' }, { title: '引用版本', dataIndex: 'version_label' },
         ]} />}</> },
-      { key: 'calls', label: '运行记录', children: <Space orientation="vertical">{detail.imports.map(item => <Link key={item.import_id} to={`/tools/${item.local_tool_id}`}>查看“{item.name}”的调用记录</Link>)}</Space> },
+      { key: 'calls', label: '运行记录', children: detail.imports.length ? <Space orientation="vertical">{detail.imports.map(item => <Link key={item.import_id} to={`/tools/${item.local_tool_id}`}>查看“{item.name}”的调用记录</Link>)}</Space> : <Empty description="暂无已导入工具" /> },
     ]} />
     </Flex>
     {editor === 'connection' && <ConnectionEditor connection={connection} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}

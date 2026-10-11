@@ -13,6 +13,7 @@ import { PageContainer } from '../../components/PageContainer'
 import { BudgetPanel } from './BudgetPanel'
 import { Statements } from './Statements'
 import { PricePanel } from './PricePanel'
+import { dimensionNames } from '../models/options'
 import { localTime, purposes, zones, type UsageOptions } from './types'
 
 type Summary = Schema<'UsageSummary'>
@@ -52,7 +53,7 @@ export function UsagePage() {
     ].map(([label, value]) => <Col xs={12} lg={4} key={label}><Card>{value == null ? <><Typography.Text type="secondary">{label}</Typography.Text><p>未确认</p></> : <Statistic title={label} value={value} />}</Card></Col>)}</Row>
     <Table rowKey="currency" dataSource={data?.costs} pagination={false} columns={[
       { title: '币种', dataIndex: 'currency' }, { title: '已计价费用', render: (_, r) => formatAmount(r.priced, r.currency) }, { title: '暂估费用', render: (_, r) => formatAmount(r.provisional, r.currency) },
-      { title: '折算金额', render: (_, r) => r.conversion ? <Space orientation="vertical"><span>{formatAmount(r.conversion.amount as string | null, r.conversion.currency as string)}</span><Typography.Text type="secondary">{r.conversion.source == null ? '汇率未配置' : `${String(r.conversion.source)} · ${formatTimestamp(r.conversion.date as string)} · 汇率 ${String(r.conversion.rate)}`}</Typography.Text></Space> : '未折算' },
+      { title: '折算金额', render: (_, r) => r.conversion ? <Space orientation="vertical"><span>{formatAmount(r.conversion.amount as string | null, r.conversion.currency as string)}</span><Typography.Text type="secondary">{r.currency === r.conversion.currency ? '同币种，无需折算' : r.conversion.source == null ? '汇率未配置' : `${String(r.conversion.source)} · ${formatTimestamp(r.conversion.date as string)} · 汇率 ${String(r.conversion.rate)}`}</Typography.Text></Space> : '未折算' },
     ]} />
     <Space><Tag color={data?.price_complete ? 'success' : 'warning'}>{data?.price_complete ? '价格完整' : '部分费用未确认'}</Tag><Typography.Text>用量缺失：{number(data?.missing_usage)} 次</Typography.Text><Typography.Text type="secondary">更新于 {formatTimestamp(data?.aggregate_updated_at, filters.timezone)}</Typography.Text></Space>
   </Space>
@@ -85,12 +86,12 @@ export function UsagePage() {
       { key: 'prices', label: '价格', children: <PricePanel options={options.data} /> },
       { key: 'statements', label: '供应商账单', children: <Statements /> },
     ]} />
-    {selected && <RecordDrawer id={selected} onClose={() => setSelected(undefined)} />}
+    {selected && <RecordDrawer id={selected} timezone={filters.timezone} onClose={() => setSelected(undefined)} onRepriced={() => { summary.reload(); records.reload() }} />}
     {showExports && <ExportDrawer onClose={() => setShowExports(false)} />}
   </PageContainer>
 }
 
-function RecordDrawer({ id, onClose }: { id: string; onClose: () => void }) {
+function RecordDrawer({ id, timezone, onClose, onRepriced }: { id: string; timezone: string; onClose: () => void; onRepriced: () => void }) {
   const { session } = useSession()
   const detail = useQuery<Detail>(`/admin/v1/usage/records/${id}`)
   const prices = useQuery<Schema<'PriceVersionView'>[]>('/admin/v1/usage/prices')
@@ -101,7 +102,7 @@ function RecordDrawer({ id, onClose }: { id: string; onClose: () => void }) {
   async function reprice() {
     if (!price || !record || busy) return
     setBusy(true); setError(undefined)
-    try { await send(`/admin/v1/usage/records/${id}/reprice`, 'POST', { price_version_id: price, revision: record.revision }); detail.reload() }
+    try { await send(`/admin/v1/usage/records/${id}/reprice`, 'POST', { price_version_id: price, revision: record.revision }); setPrice(undefined); detail.reload(); onRepriced() }
     catch (failure) { setError(failure) } finally { setBusy(false) }
   }
   return <Drawer open title="用量核查" width={850} onClose={onClose}>
@@ -111,10 +112,10 @@ function RecordDrawer({ id, onClose }: { id: string; onClose: () => void }) {
         { key: 'model', label: '模型', children: record.names.model ?? '名称不可用' }, { key: 'purpose', label: '用途', children: record.purpose_label }, { key: 'usage', label: '用量状态', children: record.usage_label }, { key: 'price', label: '费用', children: `${formatAmount(record.amount, record.currency)}（${record.pricing_label}）` },
         { key: 'cached', label: '缓存 Token', children: number(record.cached_tokens) }, { key: 'reasoning', label: '推理 Token', children: number(record.reasoning_tokens) }, { key: 'source', label: '供应商请求标识', children: String(record.source.source_request_id ?? '未提供') },
       ]} />
-      <Table rowKey="id" size="small" dataSource={record.adjustments} columns={[{ title: '核算版本', render: (_, r) => `第 ${Number(r.previous_revision) + 1} 次修订` }, { title: '原因', dataIndex: 'reason' }, { title: '金额变化', render: (_, r) => formatAmount(r.amount_delta as string | null, r.currency as string | null) }, { title: '时间', render: (_, r) => formatTimestamp(r.created_at as string) }]} />
+      <Table rowKey="id" size="small" dataSource={record.adjustments} columns={[{ title: '核算版本', render: (_, r) => `第 ${Number(r.previous_revision) + 1} 次修订` }, { title: '原因', dataIndex: 'reason' }, { title: '金额变化', render: (_, r) => formatAmount(r.amount_delta as string | null, r.currency as string | null) }, { title: '时间', render: (_, r) => formatTimestamp(r.created_at as string, timezone) }]} />
       <Typography.Text>计价来源：{String(record.calculation.source ?? record.calculation.reason ?? '尚未确认')}</Typography.Text>
-      <Table rowKey="dimension" size="small" dataSource={record.calculation.formula as { dimension: string; quantity: number; billable_units: number; amount: string }[] | undefined} columns={[{ title: '计量维度', render: (_, r) => ({ input: '输入', output: '输出', cached: '缓存读取', cache_write: '缓存写入', reasoning: '推理' })[r.dimension] ?? '扩展用量' }, { title: '供应商 Token', dataIndex: 'quantity' }, { title: '扣除子集后计费 Token', dataIndex: 'billable_units' }, { title: '核算金额', render: (_, r) => formatAmount(r.amount, record.currency) }]} />
-      {session.actions.some(a => a.action_key === 'model:manage') && <Space><Select placeholder="重算价格版本" style={{ width: 240 }} options={prices.data?.filter(p => p.model_id === record.source.model_id).map(p => ({ value: p.id, label: p.name }))} onChange={setPrice} /><Button disabled={!price} loading={busy} onClick={() => void reprice()}>生成重算版本</Button></Space>}
+      <Table rowKey="dimension" size="small" dataSource={record.calculation.formula as { dimension: string; quantity: number; billable_units: number; amount: string }[] | undefined} columns={[{ title: '计量维度', render: (_, r) => dimensionNames[r.dimension] ?? '扩展用量' }, { title: '供应商 Token', dataIndex: 'quantity' }, { title: '扣除子集后计费 Token', dataIndex: 'billable_units' }, { title: '核算金额', render: (_, r) => formatAmount(r.amount, record.currency) }]} />
+      {session.actions.some(a => a.action_key === 'model:manage') && <Space><Select placeholder="重算价格版本" style={{ width: 240 }} value={price} options={prices.data?.filter(p => p.model_id === record.source.model_id).map(p => ({ value: p.id, label: p.name }))} onChange={setPrice} /><Button disabled={!price} loading={busy} onClick={() => void reprice()}>生成重算版本</Button></Space>}
     </Space>}
   </Drawer>
 }

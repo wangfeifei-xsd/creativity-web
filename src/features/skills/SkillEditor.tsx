@@ -60,7 +60,11 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
     styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }} footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button>
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
     <ErrorNotice error={error || tools.error || agents.error} />
-    <Form form={form} layout="vertical" onFinish={save} disabled={busy} onFinishFailed={() => setActiveTab('settings')}
+    <Form form={form} layout="vertical" onFinish={save} disabled={busy} onFinishFailed={({ errorFields }) => {
+      setError(undefined)
+      const field = errorFields[0]?.name[0]
+      setActiveTab(field === 'input_variables' ? 'variables' : field === 'tool_bindings' ? 'dependencies' : 'settings')
+    }}
       initialValues={version.settings}>
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
         { key: 'files', label: '文件编辑', children: <><Space.Compact style={{ width: '100%', marginBottom: 16 }}>

@@ -47,9 +47,14 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
   const cursor = useRef({ runId, sequence: 0 })
   const completed = useRef(false)
   const refresh = useCallback(async (signal?: AbortSignal) => {
-    const [value, timeline] = await readRun(runId, signal)
-    if (signal?.aborted) return
-    setDetail(value); setTrace(timeline); setError(undefined)
+    try {
+      const [value, timeline] = await readRun(runId, signal)
+      if (signal?.aborted) return
+      setDetail(value); setTrace(timeline); setError(undefined)
+    } catch (failure) {
+      // 终态刷新会关闭事件订阅；同时被中止的旧查询不应覆盖成功结果。
+      if (!signal?.aborted) throw failure
+    }
   }, [runId])
   useEffect(() => {
     const controller = new AbortController()
@@ -131,7 +136,7 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
     {!detail.content_allowed && <Alert type="info" title="当前权限可查看执行轨迹，输入输出未授权" />}
     {result?.result && <><Typography.Text strong>{businessLabels[result.result.business_status] ?? '业务结果'}</Typography.Text>
       <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{pretty(result.result.data)}</pre>
-      {result.result.warnings.map((warning, index) => <Alert key={index} type="warning" title={warning} />)}</>}
+      {[...new Set(result.result.warnings)].map(warning => <Alert key={warning} type="warning" title={warning} />)}</>}
     {detail.content_allowed && detail.state !== 'SUCCEEDED' && (partial || storedPartial?.text) && <Collapse items={[{ key: 'partial', label: '部分内容（尚未通过结果校验）', children:
       <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{partial || storedPartial?.text}</pre> }]} />}
     {usage && <Descriptions title="用量" items={[
@@ -152,7 +157,9 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
       try { const next = await apiClient.request<Trace>(`/admin/v1/runs/${runId}/trace?after_sequence=${trace.next_sequence}`); setTrace({ ...next, items: [...trace.items, ...next.items] }) } catch (failure) { setError(failure) }
     }}>加载后续步骤</Button>}</>}
     <Collapse items={[
-      { key: 'resource-uses', label: '资源使用', children: (detail.resource_uses ?? []).map((resource, index) => <div key={index}>{String(resource.type)}：{String(resource.name)}{resource.deleted ? '（已删除）' : ''} · {formatTimestamp(String(resource.used_at))}</div>) },
+      { key: 'resource-uses', label: '资源使用', children: detail.resource_uses?.length
+        ? detail.resource_uses.map((resource, index) => <div key={index}>{String(resource.type)}：{String(resource.name)}{resource.deleted ? '（已删除）' : ''} · {formatTimestamp(String(resource.used_at))}</div>)
+        : <Typography.Text type="secondary">暂无资源使用记录</Typography.Text> },
       ...(detail.content_allowed ? [{ key: 'input', label: '输入与配置快照', children: <><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(detail.input)}</pre>{detail.versions.map(v => <div key={v.version_id}>{v.name}</div>)}</> }] : []),
       ...(detail.content_allowed && detail.actual_inputs?.length ? [{ key: 'actual', label: '实际输入与加载记录', children: detail.actual_inputs.map((entry, index) => <div key={index}><Typography.Text strong>{entry.name}</Typography.Text><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(entry.value)}</pre></div>) }] : []),
       ...(detail.content_allowed && detail.evidence?.length ? [{ key: 'evidence', label: '工具证据', children: detail.evidence.map((entry, index) => <Descriptions key={index} items={[

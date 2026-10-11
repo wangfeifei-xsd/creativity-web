@@ -66,6 +66,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const [tab, setTab] = useState('flow')
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
+  const reload = () => { setError(undefined); setValidation(undefined); query.reload(); options.reload() }
   const detail = query.data
   const version = detail?.versions.find(v => v.version_id === (editVersion ?? selected)) ?? detail?.versions.filter(v => v.status.value === 'DRAFT').at(-1) ?? detail?.versions.at(-1)
   const saved = () => { closeVersionEditor(); setValidation(undefined); query.reload(); options.reload() }
@@ -75,7 +76,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
     try { setValidation(await send(`/admin/v1/agent-versions/${version.version_id}/validate`, 'POST', { revision: version.revision, purpose: 'production' })); setTab('dependencies') }
     catch (failure) { setError(failure) } finally { setBusy(false) }
   }
-  if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
+  if (query.error) return <ErrorState error={query.error} onRetry={reload} />
   if (!detail) return <LoadingState />
   if (editVersion && !options.data) return options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />
   const definition = version?.definition
@@ -89,7 +90,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
     options={options.data} version={version} name={detail.agent.name} initialIssues={validationIssues.filter(issue => /^(steps|edges|start_step)(\.|$)/.test(issue.path ?? ''))}
     initialFocus={initialFocus} onClose={closeVersionEditor} onSaved={saved} />
   const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id }) }
-  return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={query.reload}>刷新</Button>
+  return <div className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents">返回智能体列表</Link><Button onClick={reload}>刷新</Button>
     {detail.agent.actions.some(action => action.action_key === 'edit') && <Button icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate(`/agents/assistance?${new URLSearchParams({ agent: agentId, ...(version ? { version: version.version_id } : {}) })}`)}>智能修改</Button>}
     <ActionButtons actions={detail.agent.actions} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
       offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>

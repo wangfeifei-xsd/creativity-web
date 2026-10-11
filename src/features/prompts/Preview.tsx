@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Descriptions, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
 import { useState } from 'react'
 import { parseBindings, type BindingValues } from './binding-values'
-import { applyFormErrors } from '../../api/form-errors'
+import { applyFormErrors, clearFormErrors } from '../../api/form-errors'
 import { contentOf, errorText, send, type Schema, type Variable, type Version } from './types'
 
 export function BindingFields({ variables }: { variables: Variable[] }) {
@@ -37,6 +37,7 @@ export function PromptPreview({ version }: { version: Version }) {
   return <Space orientation="vertical" style={{ width: '100%' }} size="middle">
     {error && <Alert type="error" title={error} />}
     <Form form={form} layout="vertical" onFinish={async values => {
+      clearFormErrors(form)
       setBusy(true); setError(undefined); setResult(undefined)
       try { setResult(await send(`/admin/v1/prompt-versions/${version.version.version_id}/render`, { input: parseBindings(variables, values), reveal_sensitive: values.reveal_sensitive ?? false })) }
       catch (error) { applyFormErrors(form, error); setError(errorText(error)) }

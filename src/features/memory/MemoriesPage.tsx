@@ -84,7 +84,7 @@ function MemoryList({ anchorId }: { anchorId?: string }) {
         {!anchorId && <Select aria-label="主体筛选" placeholder="查看主体记忆" style={{ width: 190 }} options={subjects.data?.map(s => ({ value: s.anchor_id, label: s.label }))} onChange={value => navigate(`/memories/subjects/${value}`)} />}
         <Select aria-label="记忆层级" value={layer} style={{ width: 140 }} options={[{ value: "profile", label: "人物画像" }, { value: "archive", label: "归档" }]} onChange={value => { setLayer(value); setCursors([]); setAttribute(undefined) }} />
         <Select allowClear aria-label="状态筛选" placeholder="全部状态" style={{ width: 140 }} options={states} onChange={value => { setCursors([]); setStatus(value) }} />
-        <Select allowClear aria-label="属性筛选" placeholder="全部属性" style={{ width: 150 }} options={query.data?.attributes.map(a => ({ value: a.key, label: a.label }))} onChange={value => { setCursors([]); setAttribute(value) }} />
+        <Select allowClear aria-label="属性筛选" placeholder="全部属性" value={attribute} style={{ width: 150 }} options={query.data?.attributes.map(a => ({ value: a.key, label: a.label }))} onChange={value => { setCursors([]); setAttribute(value) }} />
       </Space>
       {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <>
         <MemoryTable items={query.data.items} />

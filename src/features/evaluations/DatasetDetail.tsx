@@ -3,6 +3,7 @@ import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'
+import { applyFormErrors, clearFormErrors } from '../../api/form-errors'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
 import { ActionButtons, ErrorNotice, type Schema } from '../../components/Management'
@@ -51,13 +52,18 @@ function SampleEditor({ dataset, onClose, onSaved }: { dataset: Dataset; onClose
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
   async function save(values: Record<string, string>) {
-    setBusy(true); setError(undefined)
+    setBusy(true); setError(undefined); clearFormErrors(form)
     try {
       const current = dataset.versions?.at(-1)
       if (current?.cases.some(c => !c.payload)) throw new Error('当前版本含无权读取或已失效样本，请导入完整新版本')
       const sample: Sample = { source_mode: 'all', case_key: values.case_key, title: values.title, input: parse(values.input, {}), assertions: parse(values.assertions, []), label_source: values.label_source, labels: values.labels?.split(/[，,]/).filter(Boolean) ?? [], fixture: parse(values.fixture, []) }
       await send(`/admin/v1/evaluation-datasets/${dataset.dataset_id}/versions`, 'POST', { revision: dataset.revision, version_label: values.version_label, captured_at: new Date().toISOString(), reference_versions: current?.reference_versions ?? [], cases: [...(current?.cases.map(c => c.payload) ?? []), sample] }); onSaved()
-    } catch (failure) { setError(failure) } finally { setBusy(false) }
+    } catch (failure) {
+      setError(failure)
+      applyFormErrors(form, failure, path => path[0] === 'cases'
+        ? path[1] === (dataset.versions?.at(-1)?.cases.length ?? 0) ? [String(path[2] ?? 'assertions')] : []
+        : path)
+    } finally { setBusy(false) }
   }
   return <Modal open title="新增样本版本" width={720} onCancel={onClose} onOk={() => form.submit()} confirmLoading={busy} okText="保存" cancelText="取消"><ErrorNotice error={error} />
     <Form form={form} layout="vertical" onFinish={save} disabled={busy}>

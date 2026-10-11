@@ -50,9 +50,9 @@ export function schemaRows(schema: SchemaNode, path: string[] = []): FieldRow[] 
   }
   return rows
 }
-function signature(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(signature).join(',')}]`
-  if (isObject(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${signature(value[key])}`).join(',')}}`
+export function jsonValueKey(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(jsonValueKey).join(',')}]`
+  if (isObject(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${jsonValueKey(value[key])}`).join(',')}}`
   return JSON.stringify(value) ?? ''
 }
 export function compareRows(before: FieldRow[], after: FieldRow[]): ComparisonRow[] {
@@ -61,7 +61,7 @@ export function compareRows(before: FieldRow[], after: FieldRow[]): ComparisonRo
     const left = previous.get(key), right = current.get(key), field = right ?? left!
     const children = compareRows(left?.children ?? [], right?.children ?? [])
     return { key, name: fieldTitle(field), before: left, after: right,
-      changed: !left || !right || left.required !== right.required || signature(left.schema) !== signature(right.schema),
+      changed: !left || !right || left.required !== right.required || jsonValueKey(left.schema) !== jsonValueKey(right.schema),
       ...(children.length ? { children } : {}) }
   })
 }

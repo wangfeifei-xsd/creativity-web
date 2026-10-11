@@ -2,7 +2,7 @@ import { DateTimeInput } from '../../components/DateTimeInput'
 import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Tabs, Tag } from 'antd'
 import { Table } from '../../components/Table'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -15,7 +15,7 @@ import { dimensionNames } from './options'
 
 export function ModelDetails({ modelId, initialTab = 'connection' }: { modelId: string; initialTab?: string }) {
   const [tab, setTab] = useState(initialTab)
-  const query = useQuery<Schema<'ModelView'>>(`/admin/v1/models/${modelId}`)
+  const query = useQuery<Schema<'ModelView'>>(`/admin/v1/models/${modelId}`, true)
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!query.data) return <LoadingState />
   const model = query.data
@@ -41,11 +41,22 @@ export function ModelDetails({ modelId, initialTab = 'connection' }: { modelId: 
   ]} />
 }
 function Tests({ modelId, onVerified }: { modelId: string; onVerified: () => void }) {
-  const query = useQuery<Schema<'TestView'>[]>(`/admin/v1/models/${modelId}/tests`)
+  const query = useQuery<Schema<'TestView'>[]>(`/admin/v1/models/${modelId}/tests`, true)
   const cases = useQuery<Schema<'CaseDefinition'>[]>('/admin/v1/model-test-cases')
   const [open, setOpen] = useState(false)
+  const active = query.data?.some(test => ['PENDING', 'RUNNING'].includes(test.state)) ?? false
+  const wasActive = useRef(false)
+  useEffect(() => {
+    if (wasActive.current && !active && query.data) onVerified()
+    wasActive.current = active
+  }, [active, onVerified, query.data])
+  useEffect(() => {
+    if (!active) return
+    const timer = setInterval(query.reload, 3000)
+    return () => clearInterval(timer)
+  }, [active, query.reload])
   return <Space orientation="vertical" style={{ width: '100%' }}><Space><Button onClick={() => setOpen(true)}>能力验证</Button><Button onClick={query.reload}>刷新</Button></Space>
-    {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} expandable={{ expandedRowRender: t => <>{t.run_id && <RunViewer key={t.run_id} runId={t.run_id} />}<Table pagination={false} rowKey="case" dataSource={t.results} columns={[
+    {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} expandable={{ expandedRowRender: t => <>{t.run_id && <RunViewer key={t.run_id} runId={t.run_id} onCompleted={query.reload} />}<Table pagination={false} rowKey="case" dataSource={t.results} columns={[
       { title: '用例', render: (_, r) => cases.data?.find(c => c.case === r.case)?.name ?? '名称不可用' }, { title: '结果', render: (_, r) => r.passed ? '通过' : '未通过' },
       { title: '原因', render: (_, r) => r.reason ?? '无' }, { title: '尝试次数', render: (_, r) => r.attempt_ids.length },
     ]}/></> }} columns={[
@@ -53,7 +64,7 @@ function Tests({ modelId, onVerified }: { modelId: string; onVerified: () => voi
       { title: '状态', render: (_, t) => <Tag>{t.state_label}</Tag> }, { title: '耗时', render: (_, t) => t.latency_ms === null ? '未记录' : `${t.latency_ms} 毫秒` },
       { title: '执行反馈', render: (_, t) => t.reason ?? (t.run_id ? '已关联调试运行' : '未创建运行') },
     ]} />}
-    {open && <ModelDialog title="能力验证" initial={{ cases: ['text', 'usage'] }} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); query.reload(); onVerified() }} onSave={values => send(`/admin/v1/models/${modelId}/tests`, 'POST', values)}>
+    {open && <ModelDialog title="能力验证" submitLabel="开始验证" initial={{ cases: ['text', 'usage'] }} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); query.reload(); onVerified() }} onSave={values => send(`/admin/v1/models/${modelId}/tests`, 'POST', values)}>
       {cases.error ? <ErrorState error={cases.error} onRetry={cases.reload} /> : null}
       <Form.Item name="cases" label="验证项目" rules={[{ required: true, message: '请至少选择一个验证项目' }]}>
         <Select mode="multiple" optionFilterProp="label" loading={!cases.data && !cases.error} options={[

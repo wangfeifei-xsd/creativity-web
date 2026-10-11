@@ -4,6 +4,7 @@ import { Table } from '../../components/Table'
 import { SchemaComparison } from '../../components/schema-fields/SchemaComparison'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
 import { isObject } from '../../components/schema-fields/schema'
+import { displayValue, fieldName, stepKinds } from './flow-fields'
 import { type Definition, type Detail, type Options, workflowNames } from './types'
 
 export function AgentDifferences({ detail, options }: { detail: Detail; options?: Options }) {
@@ -18,8 +19,7 @@ export function AgentDifferences({ detail, options }: { detail: Detail; options?
 }
 
 function fieldLabel(schema: Record<string, unknown> | undefined, path: string): string {
-  const field = isObject(schema?.properties) ? schema.properties[path] : undefined
-  return isObject(field) && typeof field.title === 'string' ? field.title : path || '完整内容'
+  return fieldName(schema ?? {}, path)
 }
 export function DifferenceValue({ field, value, definition, options }: { field: string; value: unknown; definition?: Definition; options?: Options }) {
   const resourceName = (id: unknown) => options?.dependencies.find(item => item.version_id === id || item.resource_id === id)?.name ?? '资源名称不可用'
@@ -70,7 +70,7 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
   }
   if (field === 'steps' && Array.isArray(value)) return <Collapse size="small" items={(value as Definition['steps']).map(step => ({ key: step.key, label: step.name, children: <Space orientation="vertical" style={{ width: '100%' }} size={16}>
     <Descriptions size="small" column={1} items={[
-      { key: 'type', label: '步骤类型', children: ({ model: '模型调用', tool: '工具调用', compute: '计算与确认' })[step.kind] },
+      { key: 'type', label: '步骤类型', children: stepKinds[step.kind] },
       ...(step.kind === 'compute' ? [{ key: 'operator', label: '操作', children: ({ object: '对象组装', input: '等待补充', approval: '等待审批' } as Record<string, string>)[step.operator ?? ''] ?? '操作名称不可用' }] : []),
       { key: 'timeout', label: '超时', children: `${step.timeout_seconds} 秒` },
       { key: 'retry', label: '失败处理', children: step.failure_policy === 'retry' ? `最多重试 ${step.max_retries} 次` : step.failure_policy === 'partial' ? '返回部分结果' : '终止' },
@@ -78,14 +78,14 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
     ]} />
     <Table rowKey="name" pagination={false} size="small" dataSource={Object.entries(step.inputs ?? {}).map(([name, source]) => ({ name, source }))} columns={[
       { title: '输入字段', render: (_, row) => fieldLabel(step.input_schema, row.name) },
-      { title: '来源', render: (_, row) => row.source.source === 'constant' ? `固定值：${JSON.stringify(row.source.value)}` : `${row.source.source === 'input' ? '运行输入' : stepName(row.source.step)} · ${fieldLabel(row.source.source === 'input' ? definition?.input_schema : definition?.steps.find(item => item.key === row.source.step)?.output_schema, row.source.path ?? '')}` },
+      { title: '来源', render: (_, row) => row.source.source === 'constant' ? `固定值：${displayValue(row.source.value, row.name)}` : `${row.source.source === 'input' ? '运行输入' : stepName(row.source.step)} · ${fieldLabel(row.source.source === 'input' ? definition?.input_schema : definition?.steps.find(item => item.key === row.source.step)?.output_schema, row.source.path ?? '')}` },
     ]} />
     <Typography.Text strong>输入结构</Typography.Text><SchemaView value={step.input_schema} label={`${step.name}输入结构`} />
     <Typography.Text strong>输出结构</Typography.Text><SchemaView value={step.output_schema} label={`${step.name}输出结构`} />
   </Space> }))} />
   if (field === 'edges' && Array.isArray(value)) return <Table rowKey={(_, index) => String(index)} size="small" pagination={false} dataSource={value as Definition['edges']} columns={[
     { title: '来源', render: (_, edge) => stepName(edge.source) }, { title: '去向', render: (_, edge) => stepName(edge.target) },
-    { title: '条件', render: (_, edge) => edge.otherwise ? '其余情况' : edge.condition ? `${fieldLabel(definition?.steps.find(step => step.key === edge.source)?.output_schema, edge.condition.path)} ${({ eq: '等于', ne: '不等于', exists: '存在' })[edge.condition.operator]} ${edge.condition.operator === 'exists' ? '' : JSON.stringify(edge.condition.value)}` : '直接进入' },
+    { title: '条件', render: (_, edge) => edge.otherwise ? '其余情况' : edge.condition ? `${fieldLabel(definition?.steps.find(step => step.key === edge.source)?.output_schema, edge.condition.path)} ${({ eq: '等于', ne: '不等于', exists: '存在' })[edge.condition.operator]} ${edge.condition.operator === 'exists' ? '' : displayValue(edge.condition.value, edge.condition.path)}` : '直接进入' },
   ]} />
   return <Typography.Text type="secondary">配置内容暂不可展示</Typography.Text>
 }

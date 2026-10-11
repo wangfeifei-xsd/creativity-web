@@ -1,7 +1,7 @@
 import { Alert, Avatar, Badge, Button, Card, Collapse, Descriptions, Empty, Input, Modal, Segmented, Select, Space, Spin, Tabs, Tag, Typography, theme } from 'antd'
 import { ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined, CheckCircleFilled, CommentOutlined, FileTextOutlined, FormOutlined, PlusOutlined, ThunderboltOutlined, UserOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState, type ComponentRef, type CSSProperties } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useBlocker, useNavigate } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
 import { isAbort, useQuery } from '../../api/useQuery'
@@ -31,10 +31,10 @@ export function AgentAssistance({ agentId, versionId }: { agentId?: string; vers
     <Button icon={<ArrowLeftOutlined aria-hidden />} onClick={() => navigate('/agents')}>返回智能体列表</Button>
     <Alert type="warning" showIcon title="当前智能体或版本不可修改，请返回列表重新选择" />
   </Space>
-  return <AssistanceWorkspace agent={query.data?.agent} base={base} />
+  return <AssistanceWorkspace agent={query.data?.agent} base={base} onReset={agentId ? query.reload : undefined} />
 }
 
-function AssistanceWorkspace({ agent, base }: { agent?: Detail['agent']; base?: Version }) {
+function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']; base?: Version; onReset?: () => void }) {
   const navigate = useNavigate()
   const { token } = theme.useToken()
   const options = useQuery<Options>('/admin/v1/agents/options')
@@ -48,6 +48,9 @@ function AssistanceWorkspace({ agent, base }: { agent?: Detail['agent']; base?: 
   const [saving, setSaving] = useState(false)
   const [pane, setPane] = useState('conversation')
   const busyRef = useRef(false)
+  const leaving = useRef(false)
+  const dirty = messages.length > 0 || !!text
+  const blocker = useBlocker(() => dirty && !leaving.current)
   const pendingRequest = useRef<{ body: string; key: string } | null>(null)
   const composer = useRef<ComponentRef<typeof Input.TextArea>>(null)
   const bottom = useRef<HTMLDivElement>(null)
@@ -90,6 +93,16 @@ function AssistanceWorkspace({ agent, base }: { agent?: Detail['agent']; base?: 
     return () => { controller.abort(); clearTimeout(timer) }
   }, [activeId, retry])
   useEffect(() => { bottom.current?.scrollIntoView({ block: 'nearest' }) }, [messages, sending])
+  useEffect(() => {
+    if (!dirty) return
+    const confirmLeave = (event: BeforeUnloadEvent) => {
+      if (leaving.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', confirmLeave)
+    return () => window.removeEventListener('beforeunload', confirmLeave)
+  }, [dirty])
 
   async function submit() {
     if (busyRef.current || !canSend) return
@@ -109,18 +122,20 @@ function AssistanceWorkspace({ agent, base }: { agent?: Detail['agent']; base?: 
     busyRef.current = true; setSaving(true); setError(undefined)
     try {
       const result = await send<Schema<'AssistanceSaved'>>(`/admin/v1/agents/assistance/runs/${candidate.runId}/apply`, 'POST')
+      leaving.current = true
       navigate(`/agents/${result.agent_id}?edit=${result.version_id}`)
     } catch (failure) { setError(failure) } finally { busyRef.current = false; setSaving(false) }
   }
   function reset() {
-    const clear = () => { setMessages([]); setText(''); setError(undefined); setPollError(undefined); setPane('conversation'); pendingRequest.current = null; composer.current?.focus() }
+    const clear = () => {
+      setMessages([]); setText(''); setError(undefined); setPollError(undefined); setPane('conversation')
+      pendingRequest.current = null; options.reload(); onReset?.(); composer.current?.focus()
+    }
     if (messages.length || text) Modal.confirm({ title: '开始新对话？', content: '当前对话及尚未保存的方案将清除。', okText: '开始新对话', cancelText: '继续当前对话', onOk: clear })
     else clear()
   }
   function back() {
-    const leave = () => navigate(agent ? `/agents/${agent.agent_id}` : '/agents')
-    if (messages.length || text) Modal.confirm({ title: '离开智能协助？', content: '当前对话及尚未保存的方案不会保留。', okText: '离开', cancelText: '继续编辑', onOk: leave })
-    else leave()
+    navigate(agent ? `/agents/${agent.agent_id}` : '/agents')
   }
   const style = {
     '--assist-bg': token.colorBgContainer, '--assist-text': token.colorText, '--assist-muted': token.colorTextSecondary,
@@ -130,6 +145,11 @@ function AssistanceWorkspace({ agent, base }: { agent?: Detail['agent']; base?: 
   } as CSSProperties
 
   return <section className="agent-assistance" style={style} aria-label="智能协助工作区">
+    <Modal open={blocker.state === 'blocked'} title="离开智能协助？" okText="离开" cancelText="继续编辑"
+      okButtonProps={{ disabled: saving }} onOk={() => blocker.state === 'blocked' && blocker.proceed()}
+      onCancel={() => blocker.state === 'blocked' && blocker.reset()}>
+      当前对话及尚未保存的方案不会保留。
+    </Modal>
     <header className="agent-assistance-heading">
       <div className="agent-assistance-heading-title"><Button aria-label={agent ? '返回智能体详情' : '返回智能体列表'} icon={<ArrowLeftOutlined aria-hidden />} onClick={back} disabled={saving} />
         <Typography.Title level={2}>{title}</Typography.Title><Tag icon={<ThunderboltOutlined aria-hidden />}>智能体配置助手</Tag></div>
@@ -207,7 +227,7 @@ function ProposalChanges({ before, after, options }: { before: Definition; after
   const changed = (Object.keys(fields) as (keyof typeof fields)[]).filter(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
   if (!changed.length) return <Empty description="流程配置没有变化" />
   return <Space orientation="vertical" style={{ width: '100%' }}>{changed.map(field => <Card key={field} size="small" title={fields[field]}>
-    {field === 'input_schema' || field === 'output_schema' ? <SchemaComparison before={before[field]} after={after[field]} label={fields[field]} /> : <>
+    {field === 'input_schema' || field === 'output_schema' ? <SchemaComparison before={before[field]} after={after[field]} label={fields[field]} beforeLabel="修改前" afterLabel="修改后" /> : <>
       <Typography.Text strong>修改前</Typography.Text><DifferenceValue field={field} value={before[field]} definition={before} options={options} />
       <Typography.Text strong>修改后</Typography.Text><DifferenceValue field={field} value={after[field]} definition={after} options={options} />
     </>}

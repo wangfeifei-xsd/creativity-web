@@ -2,7 +2,7 @@ import { toolPermissionLabel } from './permissionLabel'
 import { Button, Descriptions, Input, Select, Space, Tabs, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
 import { useSession } from '../../app/workspace/context'
@@ -76,7 +76,8 @@ function ToolDetail({ toolId }: { toolId: string }) {
   const { session } = useSession()
   const query = useQuery<Schema<'ToolDetail'>>(`/admin/v1/tools/${toolId}`)
   const bindings = useQuery<Schema<'BindingOption'>[]>(`/admin/v1/tool-bindings?tool_id=${toolId}`)
-  const [editor, setEditor] = useState<'resource' | 'new' | 'version' | undefined>(() => window.location.hash.includes('edit=1') ? 'version' : undefined)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [editor, setEditor] = useState<'resource' | 'new' | 'version' | undefined>(() => searchParams.get('edit') === '1' ? 'version' : undefined)
   const [activeTab, setActiveTab] = useState('contract')
   const detail = query.data
   const version = detail?.versions.find(v => v.version.version_id === toolId)
@@ -84,6 +85,13 @@ function ToolDetail({ toolId }: { toolId: string }) {
   const navigate = useNavigate()
   const definition = version?.definition
   const binding = bindings.data?.find(b => b.binding.adapter_key === definition?.binding.adapter_key)
+  function closeEditor() {
+    setEditor(undefined)
+    if (searchParams.has('edit')) {
+      const next = new URLSearchParams(searchParams); next.delete('edit')
+      setSearchParams(next, { replace: true })
+    }
+  }
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!detail) return <LoadingState />
   return <PageContainer title={detail.tool.name} actions={<Space wrap><Link to="/tools">返回工具列表</Link>
@@ -121,8 +129,8 @@ function ToolDetail({ toolId }: { toolId: string }) {
       { key: 'test', label: '测试', children: <ToolTestPanel key={`${version.version.version_id}:${version.revision}`} version={version} /> },
       { key: 'calls', label: '调用记录', children: <ToolCalls toolId={toolId} /> },
     ]} /> : <Typography.Paragraph>尚未配置工具</Typography.Paragraph>}
-    {editor === 'resource' && <ToolResourceEditor tool={detail.tool} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
+    {editor === 'resource' && <ToolResourceEditor tool={detail.tool} onClose={closeEditor} onSaved={() => { closeEditor(); query.reload() }} />}
     {(editor === 'new' || editor === 'version') && <ToolVersionEditor tool={detail.tool} version={editor === 'version' ? version : undefined}
-      onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
+      onClose={closeEditor} onSaved={() => { closeEditor(); query.reload() }} />}
   </PageContainer>
 }
