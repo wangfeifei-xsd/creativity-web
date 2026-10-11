@@ -8,7 +8,8 @@ async function loginPage(page: Page, options: { failChallenge?: boolean; failVer
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
     if (path.endsWith('/auth/session')) return route.fulfill({ status: state.authenticated ? 200 : 401, json: state.authenticated ? {
-      user: { user_id: 'test-admin', login_name: 'admin', display_name: '管理员' }, workspace: null, navigation: [], actions: [], expires_at: '2030-01-01T00:00:00Z',
+      user: { user_id: 'test-admin', login_name: 'admin', display_name: '管理员' }, workspace: null, can_access_platform: true,
+      workspace_options: [], default_workspace: null, navigation: [], actions: [], expires_at: '2030-01-01T00:00:00Z',
     } : error('请登录') })
     if (path.endsWith('/captcha/challenges')) {
       state.challenges++
@@ -59,11 +60,11 @@ test('登录必须先验证，键盘调整不会提前提交，成功凭据随�
   await slider.press('Enter')
   await expect(page.getByRole('button', { name: '验证已通过，点击重新验证' })).toBeVisible()
   await page.getByRole('button', { name: '登录', exact: true }).dblclick()
-  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   expect(state.logins).toBe(1)
 })
 
-test('从上一账号的管理地址重新登录后回到首页，不请求旧页面', async ({ page }) => {
+test('从上一账号的管理地址重新登录后回到平台工作台，不请求旧页面', async ({ page }) => {
   const accountRequests: string[] = []
   page.on('request', request => {
     if (new URL(request.url()).pathname.startsWith('/admin/v1/accounts')) accountRequests.push(request.url())
@@ -72,8 +73,8 @@ test('从上一账号的管理地址重新登录后回到首页，不请求旧�
   await verifyWithKeyboard(page)
   await expect(page.getByText('验证已通过', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page).toHaveURL('/creativity/#/')
-  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
+  await expect(page).toHaveURL('/creativity/#/workbench')
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   expect(accountRequests).toEqual([])
 })
 
@@ -128,7 +129,7 @@ test('登录失败后验证码失效，保留输入并可重新验证登录', as
   await verifyWithKeyboard(page)
   await expect(page.getByText('验证已通过', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '登录', exact: true }).click()
-  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
 })
 
 test('更换登录名或凭据超时后需要重新验证', async ({ page }) => {

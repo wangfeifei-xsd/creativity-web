@@ -19,6 +19,9 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const screens = Grid.useBreakpoint()
   const location = useLocation()
   const navigate = useNavigate()
+  const isPlatform = !session.workspace && session.can_access_platform
+  const landingPath = isPlatform ? '/workbench' : '/'
+  const landingLabel = isPlatform ? '工作台' : '首页'
   const entries = resolveNavigation(session.navigation, features)
   const options = [...new Map([
     ...(session.workspace_options ?? []), ...(session.workspace ? [session.workspace] : []),
@@ -48,17 +51,17 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
     { title: isDetail ? <Link to={current.path}>{current.label}</Link> : current.label },
     ...(isDetail ? [{ title: location.pathname === '/agents/assistance' ? new URLSearchParams(location.search).has('agent') ? '智能修改' : '智能创建' : '详情' }] : []),
   ] : [
-    { title: location.pathname === '/' ? '首页' : <Link to="/">首页</Link> },
-    ...(isWorkbench ? [{ title: '工作台' }] : []),
+    { title: location.pathname === landingPath || (isPlatform && isWorkbench) ? landingLabel : <Link to={landingPath}>{landingLabel}</Link> },
+    ...(!isPlatform && isWorkbench ? [{ title: '工作台' }] : []),
   ]
   const selectPage = (path: string) => { navigate(path); setMenuOpen(false) }
-  const brand = <Link className="workspace-brand" to="/" aria-label="Creativity 首页" onClick={() => setMenuOpen(false)}>
+  const brand = <Link className="workspace-brand" to={landingPath} aria-label={`Creativity ${landingLabel}`} onClick={() => setMenuOpen(false)}>
     <span className="workspace-brand-icon"><BrandMark variant="flat" /></span><span>Creativity</span>
   </Link>
   const menu = <nav aria-label="主导航" className="workspace-navigation"><Menu theme="light" mode="inline"
     className="workspace-menu" selectedKeys={current ? [current.path] : isWorkbench ? ['/workbench'] : location.pathname === '/' ? ['/'] : []}
     onClick={({ key }) => selectPage(key)} items={[
-      { key: '/', label: '首页', icon: <HomeOutlined aria-hidden /> },
+      ...(!isPlatform ? [{ key: '/', label: '首页', icon: <HomeOutlined aria-hidden /> }] : []),
       { key: '/workbench', label: '工作台', icon: <AppstoreOutlined aria-hidden /> },
       ...navigationItems(entries),
     ]} /></nav>

@@ -29,6 +29,7 @@ for (const [width, columns] of [[1391, 4], [820, 3], [375, 2], [320, 2]]) {
     await fixture(page)
     await page.setViewportSize({ width, height: 900 })
     await page.goto('#/workbench')
+    await expect(page.getByRole('region', { name: '配置指引', exact: true })).toHaveCount(0)
     const shortcuts = page.getByRole('navigation', { name: '工作台入口' })
     const visible = navigation.slice(0, columns * 2)
     await expect(shortcuts.getByRole('link')).toHaveCount(visible.length)

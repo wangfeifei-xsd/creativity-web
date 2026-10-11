@@ -12,6 +12,7 @@ import { WorkspaceGuide } from './WorkspaceGuide'
 
 export function WorkspaceWorkbench() {
   const { session } = useSession()
+  const isPlatform = !session.workspace && session.can_access_platform
   const { token } = theme.useToken()
   const entries = resolveNavigation(session.navigation, features)
   const screens = Grid.useBreakpoint()
@@ -56,5 +57,5 @@ export function WorkspaceWorkbench() {
       </div>}
     </nav> : <EmptyState message={session.workspace
       ? '暂无可用菜单，请联系管理员' : '尚未分配可用渠道，请联系平台管理员'} />}
-  </PageContainer><WorkspaceGuide entries={entries} hasWorkspace={!!session.workspace} /></div>
+  </PageContainer>{!isPlatform && <WorkspaceGuide entries={entries} hasWorkspace={!!session.workspace} />}</div>
 }

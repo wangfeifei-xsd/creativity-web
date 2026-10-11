@@ -21,7 +21,13 @@ test('基础路径覆盖入口、静态资源、页面刷新和前进后退', as
   expect(response?.ok()).toBe(true)
   expect(response?.request().redirectedFrom()).toBeNull()
   expect(new URL(page.url()).pathname).toBe('/creativity/')
-  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
+  await expect(page).toHaveURL('/creativity/#/workbench')
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: '首页', exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('页面路径')).toHaveText('工作台')
+  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: '配置指引', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Creativity 工作台', exact: true })).toHaveAttribute('href', '#/workbench')
   const modulePaths = await page.locator('script[type="module"][src]').evaluateAll(scripts =>
     scripts.map(script => new URL((script as HTMLScriptElement).src).pathname))
   expect(modulePaths.length).toBeGreaterThan(0)
@@ -32,10 +38,12 @@ test('基础路径覆盖入口、静态资源、页面刷新和前进后退', as
   await page.reload()
   await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
   await page.goBack()
-  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   await page.goForward()
   await expect(page).toHaveURL('/creativity/#/accounts')
   await expect(page.getByRole('heading', { name: '账号管理', exact: true })).toBeVisible()
+  await page.getByRole('link', { name: 'Creativity 工作台', exact: true }).click()
+  await expect(page).toHaveURL('/creativity/#/workbench')
 })
 
 test('开发环境旧入口重定向后保留 Hash 页面', async ({ page }) => {
@@ -73,6 +81,7 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
   await page.goto('#/')
   const header = page.locator('header')
   await expect(header.getByText('平台管理', { exact: true })).toBeVisible()
+  await expect(page).toHaveURL('/creativity/#/workbench')
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
   await page.getByLabel('管理模式', { exact: true }).click()
   const popup = page.locator('.ant-select-dropdown:visible')
@@ -80,6 +89,7 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
   await expect(popup.getByText(a.channel_name, { exact: true })).toHaveCount(0)
   await popup.getByText('渠道管理', { exact: true }).click()
   await expect(header.getByText('渠道管理', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
   await expect(header.getByText(a.channel_name, { exact: true })).toBeVisible()
   expect(switches).toEqual([{ channel_id: a.channel_id, environment: a.environment }])
   await page.getByLabel('切换渠道', { exact: true }).click()
@@ -98,6 +108,12 @@ for (const width of [1365, 375]) test(`管理模式与渠道独立切换，默�
   await expect(header.getByText('平台管理', { exact: true })).toBeVisible()
   await expect(page.getByLabel('切换渠道')).toHaveCount(0)
   await expect(page.getByLabel('切换环境')).toHaveCount(0)
+  await expect(page).toHaveURL('/creativity/#/workbench')
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: '配置指引', exact: true })).toHaveCount(0)
+  if (width < 992) await page.getByRole('button', { name: '打开导航菜单' }).click()
+  await expect(page.getByRole('menuitem', { name: '首页', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('menuitem', { name: '工作台', exact: true })).toHaveClass(/ant-menu-item-selected/)
   expect(platformSwitches).toBe(1)
 })
 
@@ -157,12 +173,15 @@ test('初始化服务故障可重试，不信任本地 Token 或到期时间', a
   await expect(page.getByText('session-request-id', { exact: true })).toHaveCount(0)
   failed = false
   await page.getByRole('button', { name: '重试', exact: true }).click()
-  await expect(page.getByRole('region', { name: '使用流程', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
   expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBe('opaque')
 })
 
 test('侧栏沿用服务端导航，跳转、历史记录与顶部刷新保留当前路径', async ({ page }) => {
   await authenticated(page)
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session,
+    workspace: { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test', environment_name: '测试' },
+  } }))
   let sessionRequests = 0
   page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/auth/session')) sessionRequests++ })
   await page.goto('#/accounts')
