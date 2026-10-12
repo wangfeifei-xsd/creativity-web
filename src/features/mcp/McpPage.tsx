@@ -6,6 +6,7 @@ import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
+import { useSession } from '../../app/workspace/context'
 import { ActionButtons, EditorDialog, ErrorNotice, type Schema } from '../../components/Management'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
@@ -124,6 +125,7 @@ function McpDetail({ id }: { id: string }) {
         { key: 'threshold', label: '连续失败阈值', children: `${connection.health_policy.failure_threshold} 次` },
       ]} /> },
       { key: 'auth', label: '鉴权', children: connection.transport === 'oauth' ? <OAuthPanel connectionId={id} /> : <Flex vertical gap={16}>
+        <CallerBindingInfo />
         <Descriptions column={1} items={[
           { key: 'mode', label: '鉴权方式', children: connection.authentication?.mode === 'client_credentials' ? '服务间鉴权' : 'Bearer Token' },
           ...(connection.authentication?.mode === 'client_credentials' ? [
@@ -197,5 +199,16 @@ function AuthenticationEditor({ connection, onClose, onSaved }: { connection: Sc
       { value: 'client_credentials', label: '服务间鉴权（appId / appSecret）', disabled: connection.transport !== 'streamable_http' },
       { value: 'bearer', label: 'Bearer Token' },
     ]} />
+    {mode === 'client_credentials' && <CallerBindingInfo />}
   </EditorDialog>
+}
+
+function CallerBindingInfo() {
+  const { session } = useSession()
+  const workspace = session.workspace
+  if (!workspace) return null
+  return <Descriptions column={1} size="small" items={[
+    { key: 'channel', label: '调用方渠道标识', children: <Typography.Text copyable style={{ overflowWrap: 'anywhere' }}>{workspace.channel_id}</Typography.Text> },
+    { key: 'environment', label: '调用方环境', children: `${workspace.environment_name}（${workspace.environment}）` },
+  ]} />
 }
