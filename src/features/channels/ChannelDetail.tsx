@@ -1,5 +1,5 @@
 import { send } from '../../api/management'
-import { Button, Descriptions, Space, Tabs, Tag, Typography } from 'antd'
+import { Button, Descriptions, Space, Tabs, Tag } from 'antd'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -69,7 +69,6 @@ function Overview({ channelId }: { channelId: string }) {
   if (!query.data) return <LoadingState />
   const data = query.data
   return <Descriptions bordered column={{ xs: 1, sm: 2 }} items={[
-    { key: 'id', label: '渠道标识', span: 2, children: <Typography.Text copyable style={{ overflowWrap: 'anywhere' }}>{data.channel.channel_id}</Typography.Text> },
     { key: 'owner', label: '负责人', children: data.channel.owner },
     { key: 'created', label: '开通时间', children: formatTimestamp(data.channel.created_at) }, { key: 'retention', label: '数据保存', children: `${data.channel.retention_policy.retention_days} 天` },
     ...([['environments', '环境'], ['clients', '接入服务'], ['active_keys', '有效 Key']] as const).map(([key, label]) => ({ key, label, children: `${data[key]} 个` })),

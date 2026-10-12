@@ -12,7 +12,7 @@ async function fixture(page: Page, content = true) {
     if (path.endsWith('/auth/session')) json = { user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' }, workspace, navigation: [{ navigation_key: 'runs', label: '执行中心' }], actions: [], expires_at: '2030-01-01T00:00:00Z' }
     else if (path.endsWith('/auth/channels')) json = [workspace]
     else if (path === '/admin/v1/runs/options') json = { agents: [{ value: 'agent_a', label: '业务助手' }], keys: [], errors: [] }
-    else if (path === '/admin/v1/runs') json = { items: [{ ...receipt, name: '业务助手', error: null }], next_cursor: null }
+    else if (path === '/admin/v1/runs') json = { items: [{ ...receipt, name: '业务助手', error: null }], next_cursor: null, total: 1 }
     else if (path.endsWith('/detail')) json = content ? detail : { ...detail, content_allowed: false, input: null, result: null, actual_inputs: [], evidence: [], versions: [], actions: [] }
     else if (path.endsWith('/trace')) json = { items: [{ step_id: 'step_a', name: '生成结果', state_label: '已完成', attempts: [{ attempt_id: 'attempt_a', state_label: '失败', kind_label: '模型调用', started_at: receipt.created_at, error: { message: '连接中断' } }, { attempt_id: 'attempt_b', state_label: '成功', kind_label: '模型调用', started_at: receipt.created_at, error: null }] }], next_sequence: null }
     else if (path.endsWith('/rerun')) {
@@ -23,6 +23,62 @@ async function fixture(page: Page, content = true) {
     await route.fulfill({ json })
   })
 }
+
+test('运行记录分页支持跳页、切换条数、筛选重置和空结果', async ({ page }, testInfo) => {
+  await fixture(page)
+  const records = Array.from({ length: 63 }, (_, index) => ({
+    ...receipt, run_id: `run_${63 - index}`, name: `任务 ${63 - index}`, error: null,
+    state: index < 3 ? 'FAILED' : 'SUCCEEDED', state_label: index < 3 ? '失败' : '已完成',
+    created_at: new Date(Date.parse(receipt.created_at) - index * 60000).toISOString(),
+  }))
+  const requests: URLSearchParams[] = []
+  await page.route('**/admin/v1/runs?*', async route => {
+    const params = new URL(route.request().url()).searchParams
+    requests.push(params)
+    expect(params.has('cursor')).toBe(false)
+    const filtered = records.filter(row => !params.get('state') || row.state === params.get('state'))
+    const offset = Number(params.get('offset'))
+    const limit = Number(params.get('limit'))
+    await route.fulfill({ json: { items: filtered.slice(offset, offset + limit), total: filtered.length, next_cursor: null } })
+  })
+  await page.goto('#/runs')
+  const rows = page.locator('.ant-table-tbody .ant-table-row')
+  const pager = page.locator('.ant-pagination')
+  await expect(rows).toHaveCount(20)
+  await expect(rows.first()).toContainText('任务 63')
+  await expect(pager).toContainText('共 63 条')
+  await pager.getByTitle('2', { exact: true }).click()
+  await expect(rows.first()).toContainText('任务 43')
+  expect(requests.at(-1)?.get('offset')).toBe('20')
+  await pager.getByRole('combobox').click()
+  await page.getByText('10 条/页', { exact: true }).click()
+  await expect(rows).toHaveCount(10)
+  await expect(rows.first()).toContainText('任务 63')
+  expect(requests.at(-1)?.get('offset')).toBe('0')
+  const jumper = pager.locator('.ant-pagination-options-quick-jumper input')
+  await jumper.fill('7')
+  await jumper.press('Enter')
+  await expect(rows).toHaveCount(3)
+  await expect(rows.first()).toContainText('任务 3')
+  expect(requests.at(-1)?.get('offset')).toBe('60')
+  await page.getByLabel('状态', { exact: true }).click()
+  await page.getByText('失败', { exact: true }).last().click()
+  await page.getByRole('button', { name: '筛选', exact: true }).click()
+  await expect(pager).toContainText('共 3 条')
+  await expect(rows.first()).toContainText('任务 63')
+  expect(requests.at(-1)?.get('offset')).toBe('0')
+  expect(requests.at(-1)?.get('limit')).toBe('10')
+  await page.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(pager).toContainText('共 3 条')
+  expect(requests.at(-1)?.get('state')).toBe('FAILED')
+  await page.screenshot({ path: testInfo.outputPath('runs-pagination.png'), fullPage: true, animations: 'disabled' })
+  await page.getByLabel('状态', { exact: true }).click()
+  await page.getByText('执行中', { exact: true }).click()
+  await page.getByRole('button', { name: '筛选', exact: true }).click()
+  await expect(rows).toHaveCount(0)
+  await expect(page.locator('.ant-empty-description')).toHaveText('暂无数据')
+  await expect(pager).toHaveCount(0)
+})
 
 test('执行中心展示名称、独立尝试、部分业务结果和费用完整性', async ({ page }) => {
   await fixture(page)

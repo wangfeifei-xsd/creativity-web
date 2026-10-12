@@ -10327,6 +10327,11 @@ export interface components {
             items: components["schemas"]["RunSummary"][];
             /** Next Cursor */
             next_cursor: string | null;
+            /**
+             * Total
+             * @description 偏移分页时返回符合筛选与权限的总条数
+             */
+            total?: number | null;
         };
         /**
          * RunRequest
@@ -43062,6 +43067,7 @@ export interface operations {
                 error_code?: string | null;
                 key_id?: string | null;
                 limit?: number;
+                offset?: number | null;
                 purpose?: string | null;
                 start_at?: string | null;
                 state?: string | null;

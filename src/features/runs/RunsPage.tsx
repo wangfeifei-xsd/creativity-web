@@ -1,5 +1,5 @@
 import { DateTimeInput } from '../../components/DateTimeInput'
-import { Button, Form, Input, Select, Space } from 'antd'
+import { Button, Form, Input, Select } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -16,14 +16,15 @@ export function RunsPage() {
 }
 function RunList() {
   const [filters, setFilters] = useState<Record<string, string>>({})
-  const [cursors, setCursors] = useState<string[]>([])
-  const params = new URLSearchParams({ ...filters, limit: '30', ...(cursors.length ? { cursor: cursors.at(-1)! } : {}) })
-  const query = useQuery<{ items: Schema<'RunSummary'>[]; next_cursor: string | null }>(`/admin/v1/runs?${params}`)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const params = new URLSearchParams({ ...filters, limit: String(pageSize), offset: String((page - 1) * pageSize) })
+  const query = useQuery<Schema<'RunList'>>(`/admin/v1/runs?${params}`)
   const options = useQuery<Record<'agents' | 'keys' | 'errors', { value: string; label: string }[]>>('/admin/v1/runs/options')
   return <PageContainer title="执行中心" actions={<Button onClick={query.reload}>刷新</Button>}>
     <Form layout="inline" style={{ marginBottom: 20 }} onFinish={(values: Record<string, string>) => {
       setFilters(Object.fromEntries(Object.entries(values).filter(([, v]) => v).map(([k, v]) => [k, k.endsWith('_at') ? new Date(v).toISOString() : v])))
-      setCursors([])
+      setPage(1)
     }}>
       <Form.Item label="状态" name="state"><Select allowClear style={{ width: 130 }} options={Object.entries({ QUEUED: '排队中', RUNNING: '执行中', CANCEL_REQUESTED: '取消中', SUCCEEDED: '已完成', FAILED: '失败', CANCELLED: '已取消', TIMED_OUT: '已超时' }).map(([value, label]) => ({ value, label }))} /></Form.Item>
       <Form.Item label="用途" name="purpose"><Select allowClear style={{ width: 120 }} options={[{ value: 'production', label: '正式调用' }, { value: 'debug', label: '调试' }, { value: 'evaluation', label: '评测' }]} /></Form.Item>
@@ -37,13 +38,17 @@ function RunList() {
       <Form.Item><Button htmlType="submit">筛选</Button></Form.Item>
     </Form>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <>
-      <Table rowKey="run_id" pagination={false} dataSource={query.data.items} scroll={{ x: 700 }} columns={[
+      <Table rowKey="run_id" pagination={{ current: page, pageSize, total: query.data.total ?? undefined,
+        showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], showQuickJumper: true,
+        showTotal: total => `共 ${total} 条`, onChange: (nextPage, nextSize) => {
+          setPage(nextSize === pageSize ? nextPage : 1)
+          setPageSize(nextSize)
+        } }} dataSource={query.data.items} scroll={{ x: 700 }} columns={[
         { title: '任务', render: (_, row) => <Link to={`/runs/${row.run_id}`}>{row.name}</Link> },
         { title: '状态', dataIndex: 'state_label' },
         { title: '发起时间', render: (_, row) => formatTimestamp(row.created_at) },
         { title: '失败原因', render: (_, row) => row.error?.message ?? '—' },
-      ]} /><Space style={{ marginTop: 16 }}><Button disabled={!cursors.length} onClick={() => setCursors(v => v.slice(0, -1))}>上一页</Button>
-        <Button disabled={!query.data.next_cursor} onClick={() => setCursors(v => [...v, query.data!.next_cursor!])}>下一页</Button></Space>
+      ]} />
     </>}
   </PageContainer>
 }
