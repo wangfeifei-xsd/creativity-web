@@ -33,10 +33,5 @@ if [[ "$pnpm_version" != "$required_pnpm_version" ]]; then
     exit 1
 fi
 
-if [[ ! -f .env ]]; then
-    (umask 077 && cp .env.example .env)
-    printf '%s\n' '已从 .env.example 创建本地配置 .env'
-fi
-
 pnpm install --frozen-lockfile
 exec pnpm dev "$@"

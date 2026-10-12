@@ -14,7 +14,7 @@ playwright/.cache/
 # 本地配置与日志
 .env
 .env.*
-!.env.example
+!.env.development
 .logs/
 *.log
 .idea/
