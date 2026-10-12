@@ -140,7 +140,7 @@ test('定时运行按时区保存，批量失败保留条目并重用幂等键',
   let scheduleSaved = false
   await page.route('**/admin/v1/schedules', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: [] })
-    expect(route.request().postDataJSON()).toEqual({ name: '每日报告', request: { agent_code: 'report', input: {} }, timezone: 'Asia/Shanghai', daily_at: '09:00', interval_seconds: null })
+    expect(route.request().postDataJSON()).toEqual({ name: '每日报告', request: { agent_code: 'report', input: {}, delivery: 'async' }, timezone: 'Asia/Shanghai', daily_at: '09:00', interval_seconds: null })
     scheduleSaved = true
     await route.fulfill({ json: {} })
   })
@@ -176,6 +176,62 @@ test('定时运行按时区保存，批量失败保留条目并重用幂等键',
   await expect(batch.getByLabel('运行条目')).toHaveValue(items)
 })
 
+test('定时计划回填配置，编辑失败保留输入，保存不改变暂停状态', async ({ page }) => {
+  await fixture(page)
+  await page.route('**/admin/v1/agents?published_only=true', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }, { agent_id: 'review', agent_code: 'review', name: '订单检查' }], actions: [] } }))
+  let schedule = { id: 'schedule_a', name: '订单协助巡检', revision: 7, state: 'PAUSED', state_label: '暂停', next_at: '2026-10-12T01:30:00Z', spec: { name: '订单协助巡检', request: { agent_code: 'report', input: { request: '巡检' }, delivery: 'async', conversation_id: null }, timezone: 'Asia/Shanghai', interval_seconds: 60 as number | null, daily_at: null as string | null } }
+  let writes = 0
+  await page.route('**/admin/v1/schedules', route => {
+    expect(route.request().method()).toBe('GET')
+    return route.fulfill({ json: [schedule] })
+  })
+  await page.route('**/admin/v1/schedules/schedule_a', async route => {
+    writes++
+    expect(route.request().method()).toBe('PUT')
+    const body = route.request().postDataJSON()
+    expect(body).toEqual({ revision: 7, name: '每日订单检查', request: { agent_code: 'review', input: { request: '检查新订单' }, delivery: 'async', conversation_id: null }, timezone: 'America/New_York', daily_at: '08:30', interval_seconds: null })
+    if (writes === 1) return route.fulfill({ status: 503, json: { error: { code: 'DEPENDENCY_UNAVAILABLE', message: '暂时无法保存', fields: [] } } })
+    const { revision, ...spec } = body
+    schedule = { ...schedule, name: spec.name, spec, revision: revision + 1 }
+    return route.fulfill({ json: schedule })
+  })
+  await page.goto('#/integrations?tab=automation&section=schedules')
+  await page.getByRole('button', { name: '编辑', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '编辑定时计划' })
+  await expect(dialog.getByLabel('计划名称')).toHaveValue('订单协助巡检')
+  await expect(dialog.getByText('通用报告', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('运行输入')).toHaveValue(JSON.stringify({ request: '巡检' }, null, 2))
+  await expect(dialog.getByLabel('间隔（秒）')).toHaveValue('60')
+  await expect(dialog.getByLabel('时区')).toHaveValue('Asia/Shanghai')
+  await dialog.getByLabel('计划名称').fill('每日订单检查')
+  await dialog.getByLabel('智能体', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('订单检查', { exact: true }).click()
+  await dialog.getByLabel('运行输入').fill('{"request":"检查新订单"}')
+  await dialog.getByLabel('时区').fill('America/New_York')
+  await dialog.getByLabel('周期', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('每日', { exact: true }).click()
+  await dialog.getByLabel('本地时间').fill('08:30')
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog.getByText('暂时无法保存', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('计划名称')).toHaveValue('每日订单检查')
+  await expect(dialog.getByLabel('运行输入')).toHaveValue('{"request":"检查新订单"}')
+  await dialog.getByRole('button', { name: '确定', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('cell', { name: '每日订单检查', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '暂停', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '每日 08:30', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '编辑', exact: true }).click()
+  await expect(dialog.getByLabel('本地时间')).toHaveValue('08:30')
+  await expect(dialog.getByLabel('时区')).toHaveValue('America/New_York')
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
+  await page.getByRole('button', { name: '新增计划', exact: true }).click()
+  const create = page.getByRole('dialog', { name: '新增定时计划' })
+  await expect(create.getByLabel('计划名称')).toBeEmpty()
+  await expect(create.getByLabel('运行输入')).toHaveValue('{}')
+  await expect(create.getByLabel('时区')).toHaveValue('Asia/Shanghai')
+  expect(writes).toBe(2)
+})
+
 test('缺少运行授权时禁用运行操作且不请求运行目录', async ({ page }) => {
   await fixture(page)
   await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: {
@@ -183,6 +239,7 @@ test('缺少运行授权时禁用运行操作且不请求运行目录', async ({
     navigation: [{ navigation_key: 'integrations', label: '业务接入' }],
     actions: [action('integration:manage', '管理业务接入')], expires_at: '2030-01-01T00:00:00Z',
   } }))
+  await page.route('**/admin/v1/schedules', route => route.fulfill({ json: [{ id: 'schedule_a', name: '暂停计划', revision: 1, state: 'PAUSED', state_label: '暂停', next_at: null, spec: { timezone: 'Asia/Shanghai', interval_seconds: 60 } }] }))
   const deniedReads: string[] = []
   page.on('request', request => {
     if (/\/(run-subscription-options|batches)(\?|$)/.test(request.url())) deniedReads.push(request.url())
@@ -190,6 +247,8 @@ test('缺少运行授权时禁用运行操作且不请求运行目录', async ({
   await page.goto('#/integrations')
   await page.getByRole('tab', { name: '运行与事件', exact: true }).click()
   await expect(page.getByRole('button', { name: '新增计划', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '编辑', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '启用', exact: true })).toBeDisabled()
   await expect(page.getByRole('tab', { name: '批量运行', exact: true })).toHaveAttribute('aria-disabled', 'true')
   await page.getByRole('tab', { name: '事件投递', exact: true }).click()
   await expect(page.getByRole('button', { name: '新增端点', exact: true })).toBeVisible()
