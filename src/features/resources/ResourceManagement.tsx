@@ -1,4 +1,4 @@
-import { App, Button, Drawer, Space, Tabs, Typography } from 'antd'
+import { App, Button, Drawer, Tabs, Typography } from 'antd'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { send } from '../../api/management'
@@ -13,7 +13,6 @@ import { type Kind, type Summary } from './useResourceSummaries'
 export function ResourceActions({ kind, summary, onEdit, onChanged }: { kind: Kind; summary?: Summary; onEdit: () => void; onChanged: () => void }) {
   const { modal, message } = App.useApp()
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<unknown>()
   async function mutate(operation: 'publish' | 'unpublish' | 'delete') {
     if (!summary || busy) return
     const label = { publish: '发布', unpublish: '下架', delete: '删除' }[operation]
@@ -23,17 +22,16 @@ export function ResourceActions({ kind, summary, onEdit, onChanged }: { kind: Ki
       confirmUsed = await modal.confirm({ title: `再次确认删除“${summary.name}”`, content: `该资源曾被使用 ${summary.usage_count} 次，删除后无法恢复，是否继续？`, okText: '确认删除', cancelText: '取消', okButtonProps: { danger: true } })
       if (!confirmUsed) return
     }
-    setBusy(true); setError(undefined)
+    setBusy(true)
     try {
       await send(`/admin/v1/resource-management/${kind}/${summary.resource_id}/${operation}`, 'POST', { revision: summary.revision, configuration_revision: summary.configuration_revision, confirm_used: confirmUsed })
       void message.success(`${label}成功`); onChanged()
-    } catch (failure) { setError(failure) }
+    } catch (failure) {
+      modal.error({ title: `${label}失败`, content: failure instanceof Error ? failure.message : '操作失败，请稍后重试', okText: '知道了' })
+    }
     finally { setBusy(false) }
   }
-  return <Space orientation="vertical" size={0}>
-    {summary ? <ActionButtons actions={summary.actions} disabled={busy} handlers={{ edit: onEdit, publish: () => void mutate('publish'), unpublish: () => void mutate('unpublish'), delete: () => void mutate('delete') }} /> : <Typography.Text type="secondary">加载操作中</Typography.Text>}
-    <ErrorNotice error={error} />
-  </Space>
+  return summary ? <ActionButtons actions={summary.actions} disabled={busy} handlers={{ edit: onEdit, publish: () => void mutate('publish'), unpublish: () => void mutate('unpublish'), delete: () => void mutate('delete') }} /> : <Typography.Text type="secondary">加载操作中</Typography.Text>
 }
 
 export function ResourceRecords({ kind, summary, type }: { kind: Kind; summary?: Summary; type: 'references' | 'uses' }) {
@@ -60,4 +58,3 @@ function RecordsDrawer({ kind, summary, initial, onClose }: { kind: Kind; summar
     ]} />
   </Drawer>
 }
-
