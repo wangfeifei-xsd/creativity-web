@@ -6,8 +6,8 @@ import { type Schema } from '../../components/Management'
 import { useQuery } from '../../api/useQuery'
 import { RebindErrorNotice } from './RebindErrorNotice'
 
-export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: {
-  id: string; snapshot: Schema<'McpDiscovery'>; tool: Schema<'RemoteTool'>; targets: Schema<'McpImport'>[]; onClose: () => void; onSaved: () => void
+export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved, onLatest }: {
+  id: string; snapshot: Schema<'McpDiscovery'>; tool: Schema<'RemoteTool'>; targets: Schema<'McpImport'>[]; onClose: () => void; onSaved: () => void; onLatest: () => void
 }) {
   const { session } = useSession()
   const [form] = Form.useForm()
@@ -37,7 +37,7 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
   }
   return <Modal open title={targetId ? '重新绑定工具' : '导入本地工具'} width={targetId ? 880 : 660} onCancel={onClose} closable={!busy} maskClosable={!busy}
     footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button><Button type="primary" loading={busy} disabled={!!targetId && !target.data} onClick={() => form.submit()}>{targetId ? '重新绑定' : '导入工具'}</Button></Space>}>
-    <RebindErrorNotice error={error ?? target.error} />
+    <RebindErrorNotice error={error ?? target.error} onLatest={onLatest} />
     <Form form={form} layout="vertical" disabled={busy} onFinish={submit} onValuesChange={() => setError(undefined)} initialValues={{ name: tool.title ?? '', description: tool.description,
       timeout_seconds: 10, max_result_size: 262144, subject_required: true,
       output_schema: tool.output_schema ? JSON.stringify(tool.output_schema, null, 2) : '',

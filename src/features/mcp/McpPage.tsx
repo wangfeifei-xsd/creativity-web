@@ -87,6 +87,7 @@ function McpDetail({ id }: { id: string }) {
       const result = await send<Schema<'McpCheck'> | Schema<'McpDiscovery'> | Schema<'McpConnection'>>(`${base}/${id}/${action}`, 'POST',
         ['enable', 'disable'].includes(action) ? { revision: detail.connection.revision } : undefined)
       if ('check_id' in result) setFeedback(result)
+      if ('discovery_id' in result) setSelected(result.discovery_id)
       query.reload(); impact.reload()
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
@@ -171,7 +172,8 @@ function McpDetail({ id }: { id: string }) {
     {editor === 'connection' && <ConnectionEditor connection={connection} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
     {editor === 'credential' && <AuthenticationEditor connection={connection}
       onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} />}
-    {importing && snapshot && <ImportDialog id={id} snapshot={snapshot} tool={importing} targets={detail.imports} onClose={() => setImporting(undefined)} onSaved={() => { setImporting(undefined); query.reload() }} />}
+    {importing && snapshot && <ImportDialog id={id} snapshot={snapshot} tool={importing} targets={detail.imports} onClose={() => setImporting(undefined)} onSaved={() => { setImporting(undefined); query.reload() }}
+      onLatest={() => { setImporting(undefined); setSelected(undefined); query.reload(); impact.reload() }} />}
   </PageContainer>
 }
 
