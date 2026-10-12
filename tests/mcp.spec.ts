@@ -109,3 +109,50 @@ test('身份复核工具只能进入复核配置，不向模型导入', async ({
   await expect(page.getByRole('button', { name: '导入工具', exact: true })).toHaveCount(0)
   await expect(page.getByRole('link', { name: '配置主体复核', exact: true })).toBeVisible()
 })
+
+for (const mobile of [false, true]) test(`重新绑定显示原绑定的字段差异并清除过期错误（${mobile ? '窄屏' : '桌面'}）`, async ({ page }) => {
+  await fixture(page)
+  if (mobile) await page.setViewportSize({ width: 390, height: 844 })
+  const mappings = ['目录查询', '备用目录'].map((name, index) => ({
+    name, remote_tool_name: remote.name, local_tool_id: `tool_${index}`, import_id: `import_${index}`,
+    discovery_id: 'discovery_old', schema_hash: 'b'.repeat(64),
+  }))
+  await page.route('**/admin/v1/mcp-connections/mcp_a', route => route.fulfill({ json: { ...detail, imports: mappings } }))
+  await page.route('**/discoveries/discovery_a/diff', route => route.fulfill({ json: {
+    discovery_id: 'discovery_a', previous_discovery_id: 'discovery_previous', items: [],
+  } }))
+  await page.route('**/admin/v1/tools/tool_*', route => route.fulfill({ json: {
+    tool: { name: '目录查询', description: '查询授权目录', owner: '业务负责人' },
+    versions: [{ definition: { input_schema: remote.input_schema, output_schema: remote.output_schema,
+      effect_type: 'READ_ONLY', required_scopes: ['run:create'], timeout_seconds: 10, max_result_size: 2048,
+      subject_requirements: { required: true } } }],
+  } }))
+  await page.route('**/mcp_a/imports', async route => {
+    expect(route.request().postDataJSON().target_tool_id).toBe('tool_0')
+    await route.fulfill({ status: 409, json: { request_id: 'request_diff', error: {
+      code: 'MCP_TOOL_CHANGED', message: '无法重新绑定：本地工具与本次发现的工具契约不一致', fields: [
+        { path: ['remote_input_schema', 'properties', 'limit', 'type'], message: '原值："integer"\n新值："string"' },
+        { path: ['output_schema', 'required'], message: '原值：["items"]\n新值：["items", "total"]' },
+        { path: ['annotations', 'readOnlyHint'], message: '原值：true\n新值：false' },
+      ],
+    } } })
+  })
+  await page.goto('#/mcp-connections/mcp_a')
+  await page.getByRole('tab', { name: '远程工具' }).click()
+  await expect(page.getByRole('columnheader', { name: '相较上次发现' })).toBeVisible()
+  await expect(page.getByText('无变化', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '导入工具' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('目标工具').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('目录查询', { exact: true }).click()
+  await dialog.getByRole('button', { name: '重新绑定', exact: true }).click()
+  await expect(dialog.getByText('/properties/limit/type', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('原值："integer"\n新值："string"', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('工具行为声明 · 只读', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('原值来自本地工具及其原绑定定义，新值来自本次选择的发现快照。')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(mobile ? 390 : 1280)
+  await page.screenshot({ path: test.info().outputPath('mcp-rebind-differences.png'), fullPage: true, animations: 'disabled' })
+  await dialog.getByLabel('目标工具').click()
+  await page.locator('.ant-select-dropdown:visible').getByText('备用目录', { exact: true }).click()
+  await expect(dialog.getByRole('alert')).toHaveCount(0)
+})

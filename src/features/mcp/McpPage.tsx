@@ -147,7 +147,7 @@ function McpDetail({ id }: { id: string }) {
           { title: '工具名称', render: (_, row) => detail.imports.find(item => item.remote_tool_name === row.name)?.name ?? row.title ?? '待补充显示名称' },
           { title: '描述', dataIndex: 'description', ellipsis: true },
           { title: '用途', render: (_, row) => row.purpose === 'subject_review' ? '主体复核' : '业务工具' },
-          { title: '变化', render: (_, row) => diff.data ? diff.data.items.find(item => item.remote_tool_name === row.name)?.labels.join('、') ?? '无变化' : diff.error ? '差异不可用' : '差异待加载' },
+          { title: '相较上次发现', render: (_, row) => diff.data ? diff.data.items.find(item => item.remote_tool_name === row.name)?.labels.join('、') ?? '无变化' : diff.error ? '差异不可用' : '差异待加载' },
           { title: '本地工具', render: (_, row) => { const imported = detail.imports.find(item => item.discovery_id === snapshot?.discovery_id && item.remote_tool_name === row.name)
             ?? detail.imports.find(item => item.remote_tool_name === row.name && item.schema_hash === row.schema_hash)
             return imported ? <Link to={`/tools/${imported.local_tool_id}`}>查看本地工具</Link> : '未导入' } },

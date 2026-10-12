@@ -2,8 +2,9 @@ import { Button, Form, Input, InputNumber, Modal, Select, Space, Switch, Typogra
 import { useState } from 'react'
 import { send } from '../../api/management'
 import { useSession } from '../../app/workspace/context'
-import { ErrorNotice, type Schema } from '../../components/Management'
+import { type Schema } from '../../components/Management'
 import { useQuery } from '../../api/useQuery'
+import { RebindErrorNotice } from './RebindErrorNotice'
 
 export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: {
   id: string; snapshot: Schema<'McpDiscovery'>; tool: Schema<'RemoteTool'>; targets: Schema<'McpImport'>[]; onClose: () => void; onSaved: () => void
@@ -34,10 +35,10 @@ export function ImportDialog({ id, snapshot, tool, targets, onClose, onSaved }: 
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
   }
-  return <Modal open title={targetId ? '重新绑定工具' : '导入本地工具'} width={660} onCancel={onClose} closable={!busy} maskClosable={!busy}
+  return <Modal open title={targetId ? '重新绑定工具' : '导入本地工具'} width={targetId ? 880 : 660} onCancel={onClose} closable={!busy} maskClosable={!busy}
     footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button><Button type="primary" loading={busy} disabled={!!targetId && !target.data} onClick={() => form.submit()}>{targetId ? '重新绑定' : '导入工具'}</Button></Space>}>
-    <ErrorNotice error={error ?? target.error} />
-    <Form form={form} layout="vertical" disabled={busy} onFinish={submit} initialValues={{ name: tool.title ?? '', description: tool.description,
+    <RebindErrorNotice error={error ?? target.error} />
+    <Form form={form} layout="vertical" disabled={busy} onFinish={submit} onValuesChange={() => setError(undefined)} initialValues={{ name: tool.title ?? '', description: tool.description,
       timeout_seconds: 10, max_result_size: 262144, subject_required: true,
       output_schema: tool.output_schema ? JSON.stringify(tool.output_schema, null, 2) : '',
     }}>
