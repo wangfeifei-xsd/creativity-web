@@ -13,8 +13,8 @@ export function IntegrationsPage() {
   const canManageKeys = session.actions.some(action => action.action_key === 'key:manage')
   const items = [
     ...(canManage ? [
-      { key: 'review', label: '当前主体复核', children: <SubjectReviews /> },
       { key: 'automation', label: '运行与事件', children: <Automation /> },
+      { key: 'review', label: '当前主体复核', children: <SubjectReviews /> },
     ] : []),
     ...(canManageKeys ? [{ key: 'delegation', label: '身份委托', children: <DelegationKeys /> }] : []),
   ]

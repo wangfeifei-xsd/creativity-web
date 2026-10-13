@@ -15,7 +15,7 @@ import { useQuery } from '../../api/useQuery'
 import { ErrorNotice, type Schema } from '../../components/Management'
 import { useSession } from '../../app/workspace/context'
 
-type Schedule = { id: string; name: string; revision: number; state: string; state_label: string; next_at: string; spec: Schema<'ScheduleCreate'> }
+type Schedule = { id: string; name: string; revision: number; state: string; state_label: string; next_at: string; consecutive_failures: number; last_error: { message: string; run_id?: string } | null; spec: Schema<'ScheduleCreate'> }
 type Endpoint = { id: string; name: string; url: string; events: string[]; client_ids: string[]; revision: number; state: string; state_label: string }
 type Delivery = { id: string; endpoint_name?: string; revision: number; state: string; state_label: string; attempts: number; next_at: string; error?: { message: string }; http_status?: number }
 type Batch = { batch_id: string; name: string; revision: number; state_label: string; items: { item_id: string; event_id: string; revision: number; state: string; state_label: string; run_id?: string; error?: { message: string } }[] }
@@ -40,7 +40,7 @@ function Schedules() {
   const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents?published_only=true')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [editing, setEditing] = useState<Schedule>()
-  const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number }>()
+  const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number; failure_threshold: number }>()
   const mode = Form.useWatch('mode', form)
   const agentOptions = agents.data?.items.map(a => ({ value: a.agent_code, label: a.name })) ?? []
   if (editing && !agentOptions.some(a => a.value === editing.spec.request.agent_code)) {
@@ -48,22 +48,24 @@ function Schedules() {
   }
   function edit(row?: Schedule) {
     setError(undefined); setEditing(row); form.resetFields()
-    if (row) form.setFieldsValue({ name: row.name, agent: row.spec.request.agent_code, input: JSON.stringify(row.spec.request.input, null, 2), timezone: row.spec.timezone, mode: row.spec.interval_seconds != null ? 'interval' : 'daily', daily: row.spec.daily_at ?? '09:00', interval: row.spec.interval_seconds ?? 3600 })
+    if (row) form.setFieldsValue({ name: row.name, agent: row.spec.request.agent_code, input: JSON.stringify(row.spec.request.input, null, 2), timezone: row.spec.timezone, mode: row.spec.interval_seconds != null ? 'interval' : 'daily', daily: row.spec.daily_at ?? '09:00', interval: row.spec.interval_seconds ?? 3600, failure_threshold: row.spec.failure_threshold ?? 3 })
     setOpen(true)
   }
   return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space wrap size={12} style={{ display: 'flex', marginBottom: 16 }}><Button type="primary" disabled={busy || !canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => edit()}>新增计划</Button><Button disabled={busy} onClick={() => { setError(undefined); query.reload() }}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label', render: (label: string) => <StatusTag label={label} /> },
       { title: '周期', render: (_, r) => r.spec.interval_seconds ? `每 ${r.spec.interval_seconds} 秒` : `每日 ${r.spec.daily_at}` },
-      { title: '时区', render: (_, r) => r.spec.timezone }, { title: '下次运行', render: (_, r) => formatTimestamp(r.next_at, r.spec.timezone) },
-      { title: '操作', render: (_, r) => <Space><Button disabled={busy || !canRun} onClick={() => edit(r)}>编辑</Button><Button disabled={busy || (!canRun && r.state !== 'ACTIVE')} onClick={async () => { setBusy(true); setError(undefined); try { await send(`/admin/v1/schedules/${r.id}`, 'PATCH', { revision: r.revision, active: r.state !== 'ACTIVE' }); query.reload() } catch (e) { setError(e); query.reload() } finally { setBusy(false) } }}>{r.state === 'ACTIVE' ? '暂停' : '启用'}</Button></Space> },
+      { title: '时区', render: (_, r) => r.spec.timezone }, { title: '下次运行', render: (_, r) => r.state === 'ACTIVE' ? formatTimestamp(r.next_at, r.spec.timezone) : '已暂停' },
+      { title: '连续失败', render: (_, r) => r.consecutive_failures == null ? '未提供' : `${r.consecutive_failures} / ${r.spec.failure_threshold ?? 3} 次` },
+      { title: '最近失败原因', width: 300, render: (_, r) => r.last_error?.message ?? '—' },
+      { title: '操作', render: (_, r) => <Space wrap>{r.last_error?.run_id && <Link to={`/runs/${r.last_error.run_id}`}>查看失败运行</Link>}<Button disabled={busy || !canRun} onClick={() => edit(r)}>编辑</Button><Button disabled={busy || (!canRun && r.state !== 'ACTIVE')} onClick={async () => { setBusy(true); setError(undefined); try { await send(`/admin/v1/schedules/${r.id}`, 'PATCH', { revision: r.revision, active: r.state !== 'ACTIVE' }); query.reload() } catch (e) { setError(e); query.reload() } finally { setBusy(false) } }}>{r.state === 'ACTIVE' ? '暂停' : '启用'}</Button></Space> },
     ]} />
     <Modal open={open} title={editing ? '编辑定时计划' : '新增定时计划'} onCancel={() => { if (!busy) setOpen(false) }} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy || !canRun }} cancelButtonProps={{ disabled: busy }}>
       <ErrorNotice error={error ?? agents.error} />
-      <Form name="schedule" form={form} layout="vertical" disabled={busy} initialValues={{ input: '{}', timezone: 'Asia/Shanghai', mode: 'daily', daily: '09:00', interval: 3600 }} onFinish={async v => {
+      <Form name="schedule" form={form} layout="vertical" disabled={busy} initialValues={{ input: '{}', timezone: 'Asia/Shanghai', mode: 'daily', daily: '09:00', interval: 3600, failure_threshold: 3 }} onFinish={async v => {
         if (busy) return; clearFormErrors(form); setBusy(true); setError(undefined)
         try {
-          const body: Schema<'ScheduleCreate'> = { name: v.name, request: { ...editing?.spec.request, agent_code: v.agent, input: jsonObject(v.input), delivery: editing?.spec.request.delivery ?? 'async' }, timezone: v.timezone, daily_at: v.mode === 'daily' ? v.daily : null, interval_seconds: v.mode === 'interval' ? v.interval : null }
+          const body: Schema<'ScheduleCreate'> = { name: v.name, request: { ...editing?.spec.request, agent_code: v.agent, input: jsonObject(v.input), delivery: editing?.spec.request.delivery ?? 'async' }, timezone: v.timezone, daily_at: v.mode === 'daily' ? v.daily : null, interval_seconds: v.mode === 'interval' ? v.interval : null, failure_threshold: v.failure_threshold }
           await send(editing ? `/admin/v1/schedules/${editing.id}` : '/admin/v1/schedules', editing ? 'PUT' : 'POST', editing ? { ...body, revision: editing.revision } : body)
           setOpen(false); query.reload()
         } catch (e) {
@@ -75,6 +77,7 @@ function Schedules() {
         <Form.Item name="agent" label="智能体" rules={[{ required: true }]}><Select loading={!agents.data && !agents.error} options={agentOptions} /></Form.Item>
         <Form.Item name="input" label="运行输入" rules={[{ required: true }, { validator: async (_, value) => { jsonObject(value) } }]}><Input.TextArea rows={4} /></Form.Item>
         <Form.Item name="timezone" label="时区" rules={[{ required: true }, { validator: async (_, value) => { if (value) { try { new Intl.DateTimeFormat('zh-CN', { timeZone: value }) } catch { throw new Error('请输入有效时区，例如 Asia/Shanghai') } } } }]}><Input /></Form.Item>
+        <Form.Item name="failure_threshold" label="连续失败自动停止（次）" extra="受理失败、执行失败或超时计入；成功后清零，达到次数自动暂停，手动启用后重新计数。" rules={[{ required: true, message: '请填写连续失败次数' }]}><InputNumber min={1} max={100} precision={0} /></Form.Item>
         <Form.Item name="mode" label="周期"><Select options={[{ value: 'daily', label: '每日' }, { value: 'interval', label: '固定间隔' }]} /></Form.Item>
         {mode === 'daily' ? <Form.Item name="daily" label="本地时间" rules={[{ required: true, message: '请输入本地时间' }, { pattern: /^([01]\d|2[0-3]):[0-5]\d$/, message: '请输入时:分' }]}><Input /></Form.Item> : <Form.Item name="interval" label="间隔（秒）" rules={[{ required: true }]}><InputNumber min={60} max={2592000} /></Form.Item>}
       </Form>

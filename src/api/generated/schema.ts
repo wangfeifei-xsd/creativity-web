@@ -10411,6 +10411,11 @@ export interface components {
         ScheduleCreate: {
             /** Daily At */
             daily_at?: string | null;
+            /**
+             * Failure Threshold
+             * @default 3
+             */
+            failure_threshold: number;
             /** Interval Seconds */
             interval_seconds?: number | null;
             /** Name */
@@ -10426,6 +10431,11 @@ export interface components {
         ScheduleUpdate: {
             /** Daily At */
             daily_at?: string | null;
+            /**
+             * Failure Threshold
+             * @default 3
+             */
+            failure_threshold: number;
             /** Interval Seconds */
             interval_seconds?: number | null;
             /** Name */

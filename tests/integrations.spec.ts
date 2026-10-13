@@ -86,7 +86,8 @@ test('业务接入只展示当前功能，独立委托配置不再请求旧接�
     if (/\/admin\/v1\/(integrations|integration-credentials)(\/|\?|$)/.test(request.url())) legacyRequests.push(request.url())
   })
   await page.goto('#/integrations')
-  await expect(page.getByRole('tab')).toHaveText(['当前主体复核', '运行与事件', '身份委托'])
+  await expect(page.getByRole('tablist').first().getByRole('tab')).toHaveText(['运行与事件', '当前主体复核', '身份委托'])
+  await expect(page.getByRole('tab', { name: '运行与事件', exact: true })).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByRole('button', { name: '新建连接' })).toHaveCount(0)
   await page.getByRole('tab', { name: '身份委托', exact: true }).click()
   await page.getByRole('button', { name: '创建委托密钥' }).click()
@@ -115,6 +116,7 @@ test('主体复核从 MCP 发现绑定，保存不含用户或数据域覆盖', 
     await route.fulfill({ json: [] })
   })
   await page.goto('#/integrations')
+  await page.getByRole('tab', { name: '当前主体复核', exact: true }).click()
   await page.getByRole('button', { name: '配置主体复核', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('接入服务', { exact: true }).click()
@@ -140,7 +142,7 @@ test('定时运行按时区保存，批量失败保留条目并重用幂等键',
   let scheduleSaved = false
   await page.route('**/admin/v1/schedules', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: [] })
-    expect(route.request().postDataJSON()).toEqual({ name: '每日报告', request: { agent_code: 'report', input: {}, delivery: 'async' }, timezone: 'Asia/Shanghai', daily_at: '09:00', interval_seconds: null })
+    expect(route.request().postDataJSON()).toEqual({ name: '每日报告', request: { agent_code: 'report', input: {}, delivery: 'async' }, timezone: 'Asia/Shanghai', daily_at: '09:00', interval_seconds: null, failure_threshold: 3 })
     scheduleSaved = true
     await route.fulfill({ json: {} })
   })
@@ -189,7 +191,7 @@ test('定时计划回填配置，编辑失败保留输入，保存不改变暂�
     writes++
     expect(route.request().method()).toBe('PUT')
     const body = route.request().postDataJSON()
-    expect(body).toEqual({ revision: 7, name: '每日订单检查', request: { agent_code: 'review', input: { request: '检查新订单' }, delivery: 'async', conversation_id: null }, timezone: 'America/New_York', daily_at: '08:30', interval_seconds: null })
+    expect(body).toEqual({ revision: 7, name: '每日订单检查', request: { agent_code: 'review', input: { request: '检查新订单' }, delivery: 'async', conversation_id: null }, timezone: 'America/New_York', daily_at: '08:30', interval_seconds: null, failure_threshold: 5 })
     if (writes === 1) return route.fulfill({ status: 503, json: { error: { code: 'DEPENDENCY_UNAVAILABLE', message: '暂时无法保存', fields: [] } } })
     const { revision, ...spec } = body
     schedule = { ...schedule, name: spec.name, spec, revision: revision + 1 }
@@ -203,6 +205,8 @@ test('定时计划回填配置，编辑失败保留输入，保存不改变暂�
   await expect(dialog.getByLabel('运行输入')).toHaveValue(JSON.stringify({ request: '巡检' }, null, 2))
   await expect(dialog.getByLabel('间隔（秒）')).toHaveValue('60')
   await expect(dialog.getByLabel('时区')).toHaveValue('Asia/Shanghai')
+  await expect(dialog.getByLabel('连续失败自动停止（次）')).toHaveValue('3')
+  await dialog.getByLabel('连续失败自动停止（次）').fill('5')
   await dialog.getByLabel('计划名称').fill('每日订单检查')
   await dialog.getByLabel('智能体', { exact: true }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('订单检查', { exact: true }).click()
@@ -214,6 +218,7 @@ test('定时计划回填配置，编辑失败保留输入，保存不改变暂�
   await dialog.getByRole('button', { name: '确定', exact: true }).click()
   await expect(dialog.getByText('暂时无法保存', { exact: true })).toBeVisible()
   await expect(dialog.getByLabel('计划名称')).toHaveValue('每日订单检查')
+  await expect(dialog.getByLabel('连续失败自动停止（次）')).toHaveValue('5')
   await expect(dialog.getByLabel('运行输入')).toHaveValue('{"request":"检查新订单"}')
   await dialog.getByRole('button', { name: '确定', exact: true }).click()
   await expect(dialog).not.toBeVisible()
@@ -256,4 +261,24 @@ test('缺少运行授权时禁用运行操作且不请求运行目录', async ({
   await page.getByRole('button', { name: '新增告警', exact: true }).click()
   await expect(page.getByLabel('调用服务', { exact: true })).toBeDisabled()
   expect(deniedReads).toEqual([])
+})
+
+test('自动暂停展示阈值、原因和关联运行，启用后清零', async ({ page }) => {
+  await fixture(page)
+  let schedule = { id: 'schedule_failed', name: '失败保护计划', revision: 2, state: 'PAUSED', state_label: '失败自动暂停', next_at: '2026-10-13T08:30:00Z', consecutive_failures: 3, last_error: { message: '连续失败 3 次，已自动暂停。最近原因：模型请求参数不正确：max_tokens 超出上限', run_id: 'run_failed' } as { message: string; run_id: string } | null, spec: { name: '失败保护计划', request: { agent_code: 'report', input: {} }, timezone: 'Asia/Shanghai', interval_seconds: 60, failure_threshold: 3 } }
+  await page.route('**/admin/v1/schedules', route => route.fulfill({ json: [schedule] }))
+  await page.route('**/admin/v1/schedules/schedule_failed', async route => {
+    expect(route.request().postDataJSON()).toEqual({ revision: 2, active: true })
+    schedule = { ...schedule, state: 'ACTIVE', state_label: '启用', consecutive_failures: 0, last_error: null, revision: 3 }
+    await route.fulfill({ json: schedule })
+  })
+  await page.goto('#/integrations?tab=automation&section=schedules')
+  await expect(page.getByRole('cell', { name: '失败自动暂停', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '3 / 3 次', exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '已暂停', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: '查看失败运行' })).toHaveAttribute('href', '#/runs/run_failed')
+  await expect(page.getByText('连续失败 3 次，已自动暂停。最近原因：模型请求参数不正确：max_tokens 超出上限')).toBeVisible()
+  await page.getByRole('button', { name: '启用', exact: true }).click()
+  await expect(page.getByRole('cell', { name: '0 / 3 次', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: '查看失败运行' })).toHaveCount(0)
 })

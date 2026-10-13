@@ -274,3 +274,15 @@ test('连续补充按本次输入结构重置表单，显式否值与零值可�
   await page.getByRole('button', { name: '提交并继续', exact: true }).click()
   await expect.poll(() => interruption).toBe(3)
 })
+
+test('模型失败显示具体原因并在排障详情提供上游请求编号', async ({ page }) => {
+  await fixture(page)
+  const error = { code: 'MODEL_INPUT_INVALID', message: '模型请求参数不正确（HTTP 400）：max_tokens must be at most 8192', stage: 'execution', retryable: false, request_id: 'request_a' }
+  await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: { ...detail, state: 'FAILED', state_label: '失败', error, result: null } }))
+  await page.route('**/admin/v1/runs/run_a/trace', route => route.fulfill({ json: { items: [{ step_id: 'step_a', name: '生成结果', state_label: '失败', attempts: [{ attempt_id: 'attempt_a', source_request_id: 'upstream-request-123', state_label: '失败', kind_label: '模型调用', started_at: receipt.created_at, error }] }], next_sequence: null } }))
+  await page.goto('#/runs/run_a')
+  await expect(page.locator('.ant-alert')).toContainText(error.message)
+  await expect(page.locator('.ant-timeline')).toContainText(error.message)
+  await page.getByText('排障详情', { exact: true }).click()
+  await expect(page.getByText('上游请求编号：upstream-request-123', { exact: true })).toBeVisible()
+})

@@ -9,16 +9,16 @@ import { ActionButtons, ErrorNotice, type Schema } from '../Management'
 import { ContentDeletion } from '../ContentDeletion'
 import { DeletionSteps } from '../DeletionSteps'
 import { ErrorState, LoadingState } from '../States'
+import { StructuredContent } from '../StructuredContent'
 import { Interruption } from './Interruption'
 
 export type RunDetail = Schema<'RunDetail'>
 
-type Attempt = { attempt_id: string; state_label: string; kind_label: string; started_at: string; finished_at: string | null; error: { message: string } | null }
+type Attempt = { attempt_id: string; source_request_id?: string | null; state_label: string; kind_label: string; started_at: string; finished_at: string | null; error: { message: string } | null }
 type Step = { step_id: string; name: string; state_label: string; attempts: Attempt[] }
 type Trace = { items: Step[]; next_sequence: number | null }
 const terminal = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT'])
 const businessLabels: Record<string, string> = { COMPLETED: '已完成', NEEDS_INPUT: '待补充信息', NO_MATCH: '暂无匹配', INSUFFICIENT_DATA: '信息不足', PARTIAL: '部分完成' }
-function pretty(value: unknown) { return JSON.stringify(value, null, 2) }
 
 async function readRun(runId: string, signal?: AbortSignal): Promise<[RunDetail, Trace]> {
   const [value, timeline] = await Promise.all([
@@ -138,7 +138,7 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
     {detail.content_allowed && ['WAITING_INPUT', 'WAITING_APPROVAL'].includes(detail.state) && <Interruption runId={runId} snapshot={detail} onResumed={refresh} />}
     {!detail.content_allowed && <Alert type="info" title="当前权限可查看执行轨迹，输入输出未授权" />}
     {result?.result && <><Typography.Text strong>{businessLabels[result.result.business_status] ?? '业务结果'}</Typography.Text>
-      <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>{pretty(result.result.data)}</pre>
+      <StructuredContent label="运行结果" value={result.result.data} />
       {[...new Set(result.result.warnings)].map(warning => <Alert key={warning} type="warning" title={warning} />)}</>}
     {detail.content_allowed && detail.state !== 'SUCCEEDED' && (partial || storedPartial?.text) && <Collapse items={[{ key: 'partial', label: '部分内容（尚未通过结果校验）', children:
       <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{partial || storedPartial?.text}</pre> }]} />}
@@ -163,14 +163,14 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
       { key: 'resource-uses', label: '资源使用', children: detail.resource_uses?.length
         ? detail.resource_uses.map((resource, index) => <div key={index}>{String(resource.type)}：{String(resource.name)}{resource.deleted ? '（已删除）' : ''} · {formatTimestamp(String(resource.used_at))}</div>)
         : <Typography.Text type="secondary">暂无资源使用记录</Typography.Text> },
-      ...(detail.content_allowed ? [{ key: 'input', label: '输入与配置快照', children: <><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(detail.input)}</pre>{detail.versions.map(v => <div key={v.version_id}>{v.name}</div>)}</> }] : []),
-      ...(detail.content_allowed && detail.actual_inputs?.length ? [{ key: 'actual', label: '实际输入与加载记录', children: detail.actual_inputs.map((entry, index) => <div key={index}><Typography.Text strong>{entry.name}</Typography.Text><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pretty(entry.value)}</pre></div>) }] : []),
+      ...(detail.content_allowed ? [{ key: 'input', label: '输入与配置快照', children: <><StructuredContent label="输入与配置快照内容" value={detail.input} />{detail.versions.map(v => <div key={v.version_id}>{v.name}</div>)}</> }] : []),
+      ...(detail.content_allowed && detail.actual_inputs?.length ? [{ key: 'actual', label: '实际输入与加载记录', children: <Space orientation="vertical" size="large" style={{ width: '100%' }}>{detail.actual_inputs.map((entry, index) => <Space orientation="vertical" key={index} style={{ width: '100%' }}><Typography.Text strong>{entry.name}</Typography.Text><StructuredContent label={`${entry.name}实际输入 ${index + 1}`} value={entry.value} /></Space>)}</Space> }] : []),
       ...(detail.content_allowed && detail.evidence?.length ? [{ key: 'evidence', label: '工具证据', children: detail.evidence.map((entry, index) => <Descriptions key={index} items={[
         { key: 'title', label: '来源', children: entry.title || '名称未提供' },
         { key: 'observed', label: '观测时间', children: formatTimestamp(entry.observed_at) },
         { key: 'version', label: '来源版本', children: entry.source_version },
       ]} />) }] : []),
-      { key: 'diagnostics', label: '排障详情', children: <><Typography.Paragraph copyable>{runId}</Typography.Paragraph>{trace?.items.map(step => <div key={step.step_id}><Typography.Text copyable>{step.step_id}</Typography.Text>{step.attempts.map(a => <Typography.Paragraph key={a.attempt_id} copyable>{a.attempt_id}</Typography.Paragraph>)}</div>)}</> },
+      { key: 'diagnostics', label: '排障详情', children: <><Typography.Paragraph copyable>{runId}</Typography.Paragraph>{trace?.items.map(step => <div key={step.step_id}><Typography.Text copyable>{step.step_id}</Typography.Text>{step.attempts.map(a => <div key={a.attempt_id}><Typography.Paragraph copyable>调用编号：{a.attempt_id}</Typography.Paragraph>{a.source_request_id && <Typography.Paragraph copyable>上游请求编号：{a.source_request_id}</Typography.Paragraph>}{a.error && <Typography.Paragraph style={{ overflowWrap: 'anywhere' }}>{a.error.message}</Typography.Paragraph>}</div>)}</div>)}</> },
     ]} />
   </Space>
 }
