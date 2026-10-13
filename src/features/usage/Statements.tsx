@@ -22,7 +22,7 @@ export function Statements() {
   const [selected, setSelected] = useState<string>(), [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const detail = useQuery<Detail>(selected ? `/admin/v1/provider-statements/${selected}` : null)
   const [form] = Form.useForm<{ name: string; version: string; connection_id: string; currency: string; start_at: string; end_at: string; lines: string }>()
-  return <><ErrorNotice error={(open ? undefined : error) ?? query.error ?? connections.error} /><Space>{session.actions.some(a => a.action_key === 'budget:manage') && <Button type="primary" onClick={() => { setError(undefined); setOpen(true) }}>导入供应商账单</Button>}<Button onClick={query.reload}>刷新</Button></Space>
+  return <><ErrorNotice error={(open ? undefined : error) ?? query.error ?? connections.error} /><Space wrap size={12} style={{ display: 'flex', marginBottom: 16 }}>{session.actions.some(a => a.action_key === 'budget:manage') && <Button type="primary" onClick={() => { setError(undefined); setOpen(true) }}>导入供应商账单</Button>}<Button onClick={query.reload}>刷新</Button></Space>
     <Table rowKey="id" dataSource={query.data} columns={[{ title: '来源', dataIndex: 'name' }, { title: '版本', dataIndex: 'version' }, { title: '币种', dataIndex: 'currency' }, { title: '开始时间', render: (_, r) => formatTimestamp(r.start_at) }, { title: '结束时间', render: (_, r) => formatTimestamp(r.end_at) }, { title: '操作', render: (_, r) => <Button onClick={() => setSelected(r.id)}>核查</Button> }]} />
     <Modal open={open} title="导入规范账单" width={720} onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ 'aria-label': '确定', disabled: busy }}>
       <ErrorNotice error={error} />
@@ -47,7 +47,7 @@ export function Statements() {
         <Form.Item name="version" label="来源版本" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>
         <Form.Item name="connection_id" label="模型连接" rules={[{ required: true }]}><Select options={connections.data?.map(c => ({ value: c.connection_id, label: c.name }))} /></Form.Item>
         <Form.Item name="currency" label="币种" rules={[{ required: true }, { pattern: /^[A-Z]{3}$/, message: '请输入三位币种代码' }]}><Input maxLength={3} /></Form.Item>
-        <Space><Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item><Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item></Space>
+        <div className="management-form-grid" style={{ marginBottom: 20 }}><Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item><Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item></div>
         <Upload accept="application/json,.json" showUploadList={false} beforeUpload={file => { setError(undefined); if (file.size > 1048576) { setError(new Error('账单文件不能超过 1 MiB')); return false } void file.text().then(text => { parseJson(text, []); form.setFieldValue('lines', text) }).catch(setError); return false }}><Button>读取 JSON 明细</Button></Upload>
         <Form.Item name="lines" label="规范明细" rules={[{ required: true }]}><Input.TextArea rows={6} /></Form.Item>
         <Typography.Text>每行包含 line_id、request_id、occurred_at 和十进制字符串 amount，最多 1000 行。</Typography.Text>

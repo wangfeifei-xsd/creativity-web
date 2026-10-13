@@ -69,7 +69,7 @@ function Workbench({ current, prompt, onChanged, activeTab, onTabChange }: {
     } catch (error) { setError(errorText(error)) }
     finally { setBusy(false) }
   }
-  const controls = <Space wrap>{editable && <Button type="primary" loading={busy} onClick={() => void save()}>保存</Button>}
+  const controls = <Space wrap size={12}>{editable && <Button type="primary" loading={busy} onClick={() => void save()}>保存</Button>}
     {current.actions.some(action => action.action_key === 'data:export') && <><Button loading={busy} onClick={() => void download('json')}>导出结构化配置</Button><Button loading={busy} onClick={() => void download('text')}>导出文本</Button></>}</Space>
   return <Space orientation="vertical" style={{ width: '100%' }}>
     {error && <Alert type="error" title={error} />}
@@ -81,8 +81,8 @@ function Workbench({ current, prompt, onChanged, activeTab, onTabChange }: {
     </>} />}
     <Form component={false} form={form} initialValues={editorValues(contentOf(current))} layout="vertical">
       <Tabs activeKey={activeTab} onChange={onTabChange} items={[
-        { key: 'edit', label: '编辑', forceRender: true, children: <Space orientation="vertical" style={{ width: '100%' }}>{controls}<TemplateFields editable={editable} /></Space> },
-        { key: 'variables', label: '变量', forceRender: true, children: <Space orientation="vertical" style={{ width: '100%' }}>{controls}<VariableFields editable={editable} /></Space> },
+        { key: 'edit', label: '编辑', forceRender: true, children: <Space orientation="vertical" size="middle" style={{ width: '100%' }}>{controls}<TemplateFields editable={editable} /></Space> },
+        { key: 'variables', label: '变量', forceRender: true, children: <Space orientation="vertical" size="middle" style={{ width: '100%' }}>{controls}<VariableFields editable={editable} /></Space> },
         { key: 'preview', label: '预览', children: <PromptPreview version={current} /> },
         { key: 'debug', label: '调试', children: <PromptDebug version={current} /> },
         { key: 'experiments', label: '实验', children: <PromptExperiments promptId={prompt.prompt_id} /> },

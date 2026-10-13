@@ -40,14 +40,15 @@ function editorField(path: string): keyof Values {
   return aliases[field] ?? field as keyof Values
 }
 
-export function AgentEditor({ options, version, name, initialIssues = [], initialFocus, onClose, onSaved }: {
-  options: Options; version?: Version; name?: string; initialIssues?: FlowIssue[]; initialFocus?: FlowIssue; onClose: () => void; onSaved: (detail?: Detail) => void
+export function AgentEditor({ options, version, name, initialIssues = [], initialFocus, initialSection, onClose, onSaved }: {
+  options: Options; version?: Version; name?: string; initialIssues?: FlowIssue[]; initialFocus?: FlowIssue; initialSection?: number; onClose: () => void; onSaved: (detail?: Detail) => void
 }) {
   const initial = version?.definition ?? options.templates[0].definition
   const [definition, setDefinition] = useState<Definition>(initial)
   const [form] = Form.useForm<Values>()
   const [step, setStep] = useState(() => {
     if (!version) return 0
+    if (!initialFocus && initialSection !== undefined) return initialSection
     if (!initialFocus || /^(steps|edges|start_step)(\.|$)/.test(initialFocus.path ?? '')) return 2
     const section = stepFields.findIndex(names => names.includes(editorField(initialFocus.path ?? '')))
     return section < 0 ? 2 : section
@@ -216,10 +217,10 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
       </AgentSection></div>
       <div hidden={step !== 4} className="agent-editor-section agent-policy-editor"><AgentSection title="运行预算" icon={<ClockCircleOutlined aria-hidden />}><div className="agent-form-grid">
         {([
-          ['deadline_seconds', '运行限时（秒）', 1, 3600], ['loop_timeout_seconds', '循环限时（秒）', 1, 3600], ['token_limit', 'Token 上限（个）', 1, 1000000],
+          ['deadline_seconds', '运行限时（秒）', 1, 3600], ['loop_timeout_seconds', '循环限时（秒）', 1, 3600], ['token_limit', '单次运行 Token 上限', 1, 1000000],
           ['context_limit', '上下文上限（Token）', 1, 1000000], ['max_model_rounds', '模型轮数上限（次）', 1, 100], ['max_tool_calls', '工具调用上限（次）', 0, 100],
           ['max_iterations', '循环上限（次）', 1, 100], ['output_repair_attempts', '输出修复上限（次）', 0, 2],
-        ] as const).map(([name, label, min, max]) => <Form.Item key={name} name={name} label={label}><InputNumber min={min} max={max} precision={0} style={{ width: '100%' }} /></Form.Item>)}
+        ] as const).map(([name, label, min, max]) => <Form.Item key={name} name={name} label={label} extra={name === 'token_limit' ? '平台对一次运行内所有模型调用的总额度（Token），包含输入、输出及重试。调用前按输入保守预估量与最大输出预留额度。' : undefined}><InputNumber min={min} max={max} precision={0} style={{ width: '100%' }} /></Form.Item>)}
         <Form.Item name="amount" label="费用上限"><InputNumber stringMode min="0.00000001" precision={8} style={{ width: '100%' }} /></Form.Item>
         <Form.Item name="currency" label="币种"><Select options={[{ value: 'CNY', label: '人民币' }, { value: 'USD', label: '美元' }]} /></Form.Item>
         </div></AgentSection><AgentSection title="会话与记忆" icon={<MessageOutlined aria-hidden />}><Form.Item name="conversation_enabled" label="启用会话" valuePropName="checked"><Switch /></Form.Item>

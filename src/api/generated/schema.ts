@@ -10188,6 +10188,7 @@ export interface components {
              */
             deadline: string;
             error: components["schemas"]["RunError"] | null;
+            error_guidance?: components["schemas"]["RunErrorGuidance"] | null;
             /** Events Url */
             events_url: string;
             /** Evidence */
@@ -10238,6 +10239,15 @@ export interface components {
             retryable: boolean;
             /** Stage */
             stage: string;
+        };
+        /** RunErrorGuidance */
+        RunErrorGuidance: {
+            /** Configuration Label */
+            configuration_label?: string | null;
+            /** Configuration Path */
+            configuration_path?: string | null;
+            /** Description */
+            description: string;
         };
         /** RunEvent */
         RunEvent: {

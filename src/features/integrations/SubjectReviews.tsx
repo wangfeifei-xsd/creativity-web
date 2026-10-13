@@ -13,8 +13,8 @@ const base = '/admin/v1/subject-review-bindings'
 export function SubjectReviews() {
   const query = useQuery<Schema<'SubjectReviewView'>[]>(base)
   const [editing, setEditing] = useState<Schema<'SubjectReviewView'> | 'new'>()
-  return <Space orientation="vertical" style={{ width: '100%' }}>
-    <Space><Button type="primary" onClick={() => setEditing('new')}>配置主体复核</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+    <Space wrap size={12}><Button type="primary" onClick={() => setEditing('new')}>配置主体复核</Button><Button onClick={query.reload}>刷新</Button></Space>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
       <Table rowKey="binding_id" dataSource={query.data} scroll={{ x: 700 }} columns={[
         { title: '接入服务', dataIndex: 'client_name' },

@@ -80,6 +80,38 @@ test('运行记录分页支持跳页、切换条数、筛选重置和空结果',
   await expect(pager).toHaveCount(0)
 })
 
+test('本地 Token 限额错误展示计算依据和配置入口', async ({ page }, testInfo) => {
+  await fixture(page)
+  await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: {
+    ...detail, state: 'FAILED', state_label: '失败', purpose_label: '正式调用',
+    result: { ...result, state: 'FAILED', result: null, usage_summary: { attempt_count: 0, input_tokens: null, output_tokens: null, complete: true, unpriced_count: 0, amounts: {} } },
+    error: { code: 'RUN_TOKEN_LIMIT', message: '本地智能体“业务助手”的单次运行 Token 上限为 96,000 Token。本次输入保守预估 86,713、最大输出预留 16,384，加上此前已用或预占的 0，合计 103,097 Token，超出上限 7,097 Token；本次模型请求未发送。' },
+    error_guidance: { description: '输入为调用前的保守预估，不代表模型实际消耗。修改位置：智能体 → 业务助手 → 选择草稿 → 编辑配置 → 运行策略 → 单次运行 Token 上限。已发布版本需新增草稿；也可减少输入或调低模型的最大输出 Token。保存后调试；正式调用需发布到原运行所在环境，再重新执行。', configuration_path: '/agents/agent_a?version=published_a&tab=limits', configuration_label: '查看智能体运行限制' },
+  } }))
+  await page.route('**/admin/v1/runs/run_a/trace**', route => route.fulfill({ json: { items: [], next_sequence: null } }))
+  await page.goto('#/runs/run_a')
+  await expect(page.getByText(/本地智能体“业务助手”的单次运行 Token 上限为 96,000/)).toBeVisible()
+  await expect(page.getByText(/正式调用需发布到原运行所在环境/)).toBeVisible()
+  await expect(page.getByRole('link', { name: '查看智能体运行限制' })).toHaveAttribute('href', '#/agents/agent_a?version=published_a&tab=limits')
+  await page.screenshot({ path: testInfo.outputPath('token-limit-guidance.png'), fullPage: true })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('link', { name: '查看智能体运行限制' })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await page.screenshot({ path: testInfo.outputPath('token-limit-guidance-mobile.png'), fullPage: true })
+})
+
+test('没有配置权限时显示管理员处理说明并隐藏入口', async ({ page }) => {
+  await fixture(page, false)
+  await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: {
+    ...detail, state: 'FAILED', state_label: '失败', content_allowed: false, input: null, actual_inputs: [], result: null,
+    error: { code: 'RUN_TOKEN_LIMIT', message: '本次请求被本地智能体的单次运行 Token 上限拦截。' },
+    error_guidance: { description: '当前无法打开该智能体配置，请联系渠道管理员处理。', configuration_path: null, configuration_label: null },
+  } }))
+  await page.goto('#/runs/run_a')
+  await expect(page.getByText(/请联系渠道管理员处理/)).toBeVisible()
+  await expect(page.getByRole('link', { name: '查看智能体运行限制' })).toHaveCount(0)
+})
+
 test('执行中心展示名称、独立尝试、部分业务结果和费用完整性', async ({ page }) => {
   await fixture(page)
   await page.goto('#/runs')

@@ -64,12 +64,12 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const closeVersionEditor = () => { setSearchParams({}, { replace: true }); setInitialFocus(undefined); setEditor(undefined) }
   const [editor, setEditor] = useState<'resource' | 'new' | 'release' | 'offline' | 'emergency_stop' | 'enable'>()
   const [validation, setValidation] = useState<Schema<'AgentValidation'>>()
-  const [tab, setTab] = useState('flow')
+  const [tab, setTab] = useState(() => searchParams.get('tab') === 'limits' ? 'limits' : 'flow')
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const reload = () => { setError(undefined); setValidation(undefined); query.reload(); options.reload() }
   const detail = query.data
-  const version = detail?.versions.find(v => v.version_id === (editVersion ?? selected)) ?? detail?.versions.filter(v => v.status.value === 'DRAFT').at(-1) ?? detail?.versions.at(-1)
+  const version = detail?.versions.find(v => v.version_id === (editVersion ?? selected ?? searchParams.get('version'))) ?? detail?.versions.filter(v => v.status.value === 'DRAFT').at(-1) ?? detail?.versions.at(-1)
   const saved = () => { closeVersionEditor(); setValidation(undefined); query.reload(); options.reload() }
   async function validate() {
     if (!version) return
@@ -89,8 +89,8 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const validationIssues = validation?.checks.flatMap(check => check.issues ?? []) ?? []
   if (editVersion && version?.version_id === editVersion && options.data && version.actions.some(action => action.action_key === 'edit')) return <AgentEditor key={version.version_id}
     options={options.data} version={version} name={detail.agent.name} initialIssues={validationIssues.filter(issue => /^(steps|edges|start_step)(\.|$)/.test(issue.path ?? ''))}
-    initialFocus={initialFocus} onClose={closeVersionEditor} onSaved={saved} />
-  const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id }) }
+    initialFocus={initialFocus} initialSection={searchParams.get('section') === 'limits' ? 4 : undefined} onClose={closeVersionEditor} onSaved={saved} />
+  const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id, ...(!issue && tab === 'limits' ? { section: 'limits' } : {}) }) }
   return <AgentWorkspace className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents"><ArrowLeftOutlined aria-hidden /> 返回智能体列表</Link><Button icon={<ReloadOutlined aria-hidden />} onClick={reload}>刷新</Button>
     {detail.agent.actions.some(action => action.action_key === 'edit') && <Button icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate(`/agents/assistance?${new URLSearchParams({ agent: agentId, ...(version ? { version: version.version_id } : {}) })}`)}>智能修改</Button>}
     <ActionButtons actions={detail.agent.actions} icons={{ edit: <EditOutlined aria-hidden />, create_version: <PlusOutlined aria-hidden />, offline: <PoweroffOutlined aria-hidden />, emergency_stop: <PauseCircleOutlined aria-hidden />, enable: <PlayCircleOutlined aria-hidden /> }} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
@@ -142,7 +142,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
       { key: 'limits', label: '运行限制', children: <div className="agent-two-columns">
         <AgentSection title="运行预算" icon={<ClockCircleOutlined aria-hidden />}><AgentValues className="is-rows" items={[
           { label: '运行限时', value: `${definition.limits.deadline_seconds} 秒` },
-          { label: 'Token 上限', value: `${definition.limits.token_limit} 个` },
+          { label: '单次运行 Token 上限', value: `${definition.limits.token_limit} Token` },
           { label: '上下文上限', value: `${definition.context.context_limit} Token` },
           { label: '费用上限', value: definition.limits.cost_limit ? formatAmount(definition.limits.cost_limit.amount, definition.limits.cost_limit.currency) : '未设置' },
         ]} /></AgentSection>

@@ -33,8 +33,8 @@ export function PricePanel({ options }: { options?: UsageOptions }) {
       setEditing(false); query.reload()
     } catch (failure) { setError(failure) } finally { setBusy(false) }
   }
-  return <Space orientation="vertical" style={{ width: '100%' }}>
-    <Space><Button onClick={query.reload}>刷新</Button>{session.actions.some(a => a.action_key === 'model:manage') && <Button type="primary" onClick={() => { setEditing(true); setError(undefined); form.resetFields() }}>新增价格版本</Button>}</Space>
+  return <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+    <Space wrap size={12}><Button onClick={query.reload}>刷新</Button>{session.actions.some(a => a.action_key === 'model:manage') && <Button type="primary" onClick={() => { setEditing(true); setError(undefined); form.resetFields() }}>新增价格版本</Button>}</Space>
     <ErrorNotice error={query.error} />
     <Table<Price> rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '模型', render: (_, r) => options?.models.find(m => m.value === r.model_id)?.label ?? '名称不可用' },

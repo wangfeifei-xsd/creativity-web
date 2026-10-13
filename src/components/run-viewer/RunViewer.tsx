@@ -131,7 +131,10 @@ function RunContent({ runId, onCompleted }: { runId: string; onCompleted?: () =>
       { key: 'deadline', label: '截止时间', children: formatTimestamp(detail.deadline) },
       { key: 'completed', label: '结束时间', children: detail.completed_at ? formatTimestamp(detail.completed_at) : '尚未结束' },
     ]} />
-    {detail.error && <Alert type="error" title={detail.error.message} />}
+    {detail.error && <Alert type="error" title={detail.error.message} description={detail.error_guidance && <Space orientation="vertical">
+      <Typography.Text>{detail.error_guidance.description}</Typography.Text>
+      {detail.error_guidance.configuration_path && <Link to={detail.error_guidance.configuration_path}>{detail.error_guidance.configuration_label}</Link>}
+    </Space>} />}
     {detail.content_allowed && ['WAITING_INPUT', 'WAITING_APPROVAL'].includes(detail.state) && <Interruption runId={runId} snapshot={detail} onResumed={refresh} />}
     {!detail.content_allowed && <Alert type="info" title="当前权限可查看执行轨迹，输入输出未授权" />}
     {result?.result && <><Typography.Text strong>{businessLabels[result.result.business_status] ?? '业务结果'}</Typography.Text>

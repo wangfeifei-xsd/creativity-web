@@ -56,7 +56,7 @@ function Tests({ modelId, onVerified }: { modelId: string; onVerified: () => voi
     const timer = setInterval(query.reload, 3000)
     return () => clearInterval(timer)
   }, [active, query.reload])
-  return <Space orientation="vertical" style={{ width: '100%' }}><Space><Button onClick={() => setOpen(true)}>能力验证</Button><Button onClick={query.reload}>刷新</Button></Space>
+  return <Space orientation="vertical" size="middle" style={{ width: '100%' }}><Space wrap size={12}><Button onClick={() => setOpen(true)}>能力验证</Button><Button onClick={query.reload}>刷新</Button></Space>
     {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} expandable={{ expandedRowRender: t => <>{t.run_id && <RunViewer key={t.run_id} runId={t.run_id} onCompleted={query.reload} />}<Table pagination={false} rowKey="case" dataSource={t.results} columns={[
       { title: '用例', render: (_, r) => cases.data?.find(c => c.case === r.case)?.name ?? '名称不可用' }, { title: '结果', render: (_, r) => <StatusTag label={r.passed ? '通过' : '未通过'} /> },
       { title: '原因', render: (_, r) => r.reason ?? '无' }, { title: '尝试次数', render: (_, r) => r.attempt_ids.length },
@@ -80,7 +80,7 @@ function Prices({ model }: { model: Schema<'ModelView'> }) {
   const query = useQuery<Schema<'PriceVersionView'>[]>(`/admin/v1/models/${model.id}/price-versions`)
   const [open, setOpen] = useState(false)
   const dimensions = ['input', 'output', ...Object.keys(model.usage_subsets)]
-  return <Space orientation="vertical" style={{ width: '100%' }}><Button onClick={() => setOpen(true)}>新增价格版本</Button>
+  return <Space orientation="vertical" size="middle" style={{ width: '100%' }}><Button onClick={() => setOpen(true)}>新增价格版本</Button>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : query.data.length === 0 ? <Alert type="info" title="未定价" /> : <Table rowKey="id" dataSource={query.data} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '币种', dataIndex: 'currency' }, { title: '生效时间', render: (_, p) => formatTimestamp(p.effective_at) }, { title: '来源', dataIndex: 'source' },
       { title: '价格', render: (_, p) => <Space orientation="vertical">{p.items.map(i => <span key={i.dimension}>{dimensionNames[i.dimension] ?? '其他计量'}：{i.amount} {p.currency} / {i.per_units.toLocaleString()} Token</span>)}</Space> },
@@ -105,7 +105,7 @@ function Grants({ modelId }: { modelId: string }) {
   const options = useQuery<Schema<'AccessOptions'>>(channelId ? `/admin/v1/channels/${channelId}/access-options` : null)
   const [editor, setEditor] = useState<{ grant?: Schema<'GrantView'>; revoke?: boolean }>()
   const [grantee, setGrantee] = useState('account')
-  return <Space orientation="vertical" style={{ width: '100%' }}><ActionButtons actions={session.actions} handlers={{ 'grant:manage': () => { setGrantee('account'); setEditor({}) } }} />
+  return <Space orientation="vertical" size="middle" style={{ width: '100%' }}><ActionButtons actions={session.actions} handlers={{ 'grant:manage': () => { setGrantee('account'); setEditor({}) } }} />
     {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="grant_id" dataSource={query.data} columns={[
       { title: '授权对象', render: (_, g) => g.grantee_name ?? '名称不可用' }, { title: '授权来源', render: (_, g) => g.resource_name ?? '名称不可用' },
       { title: '实际授权', render: (_, g) => g.action_names.join('、') },

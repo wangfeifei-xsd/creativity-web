@@ -36,6 +36,24 @@ async function fixture(page: Page) {
   })
 }
 
+test('运行限制直达选择原运行版本，编辑草稿直接定位运行策略', async ({ page }) => {
+  await fixture(page)
+  const published = { ...version, version_id: 'published_a', version_label: '运行使用版本', status: { value: 'PUBLISHED', label: '已发布', tone: 'success' }, actions: [], definition: { ...definition, limits: { ...definition.limits, token_limit: 96000 } } }
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [published, version] } }))
+  await page.goto('#/agents/agent_a?version=published_a&tab=limits')
+  await expect(page.getByRole('tab', { name: '运行限制', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByText('96000 Token', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '编辑配置', exact: true })).toHaveCount(0)
+  await page.getByRole('combobox', { name: '智能体版本' }).click()
+  await page.getByText('初始草稿 · 草稿', { exact: true }).click()
+  await page.getByRole('button', { name: '编辑配置', exact: true }).click()
+  await expect(page.getByRole('tab', { name: '运行策略', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByLabel('单次运行 Token 上限', { exact: true })).toHaveValue('16000')
+  await expect(page.getByText(/包含输入、输出及重试/)).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('tab', { name: '运行策略', exact: true })).toHaveAttribute('aria-selected', 'true')
+})
+
 const assistedProposal = { agent_code: 'business_task', name: '咨询摘要助手', description: '整理咨询要点', owner: '客服团队', version_label: '智能协助草稿',
   definition: { ...definition, instructions: '总结咨询问题并列出待办事项。' } }
 async function assistanceFixture(page: Page) {

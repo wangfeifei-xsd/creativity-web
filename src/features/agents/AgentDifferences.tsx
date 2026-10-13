@@ -47,7 +47,7 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
     </Space>
   }
   if (field === 'limits' && isObject(value)) return <Descriptions size="small" column={1} items={[
-    ...Object.entries({ deadline_seconds: ['运行限时', '秒'], token_limit: ['Token 上限', '个'], max_model_rounds: ['模型轮数上限', '次'], max_tool_calls: ['工具调用上限', '次'], max_iterations: ['循环上限', '次'], loop_timeout_seconds: ['循环限时', '秒'], output_repair_attempts: ['输出修复上限', '次'] }).map(([key, [label, unit]]) => ({ key, label, children: value[key] == null ? '未设置' : `${String(value[key])} ${unit}` })),
+    ...Object.entries({ deadline_seconds: ['运行限时', '秒'], token_limit: ['单次运行 Token 上限', 'Token'], max_model_rounds: ['模型轮数上限', '次'], max_tool_calls: ['工具调用上限', '次'], max_iterations: ['循环上限', '次'], loop_timeout_seconds: ['循环限时', '秒'], output_repair_attempts: ['输出修复上限', '次'] }).map(([key, [label, unit]]) => ({ key, label, children: value[key] == null ? '未设置' : `${String(value[key])} ${unit}` })),
     { key: 'cost', label: '费用上限', children: isObject(value.cost_limit) ? formatAmount(String(value.cost_limit.amount), String(value.cost_limit.currency)) : '未设置' },
   ]} />
   if (field === 'context' && isObject(value)) {

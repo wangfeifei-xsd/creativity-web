@@ -1,6 +1,6 @@
 import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
-import { App, Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Tabs, Typography } from 'antd'
+import { App, Button, Card, Checkbox, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Tabs, Tooltip, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
@@ -15,21 +15,25 @@ import { BudgetPanel } from './BudgetPanel'
 import { Statements } from './Statements'
 import { PricePanel } from './PricePanel'
 import { dimensionNames } from '../models/options'
-import { localTime, purposes, zones, type UsageOptions } from './types'
+import { purposes, zones, type UsageOptions } from './types'
 
 type Summary = Schema<'UsageSummary'>
 type Record = Schema<'RecordView'>
 type Detail = Schema<'RecordDetail'>
-type FilterValues = { start_at: string; end_at: string; timezone: string; key_id?: string; environment?: string; model_id?: string; agent_id?: string; actor_id?: string; purpose?: string; subject_type?: string; subject_id?: string; target_currency?: string }
+type FilterValues = { start_at: string; end_at: string; timezone: string; through_now: boolean; key_id?: string; environment?: string; model_id?: string; agent_id?: string; actor_id?: string; purpose?: string; subject_type?: string; subject_id?: string; target_currency?: string }
 function parameters(values: FilterValues) {
-  return Object.fromEntries(Object.entries({ ...values, start_at: new Date(values.start_at).toISOString(), end_at: new Date(values.end_at).toISOString() }).filter(([, value]) => value)) as { [key: string]: string }
+  const { through_now, ...filters } = values
+  return Object.fromEntries(Object.entries({ ...filters, start_at: new Date(values.start_at).toISOString(), end_at: through_now ? new Date().toISOString() : new Date(values.end_at).toISOString() }).filter(([, value]) => value)) as { [key: string]: string }
 }
-function number(value?: number | null) { return value == null ? '未确认' : value.toLocaleString('zh-CN') }
+function number(value?: number | null) { return value == null ? '用量缺失' : value.toLocaleString('zh-CN') }
 
 export function UsagePage() {
   const { session } = useSession()
   const { message } = App.useApp()
-  const [initial] = useState<FilterValues>(() => ({ start_at: localTime(new Date(Date.now() - 7 * 86400000)), end_at: localTime(new Date(Date.now() + 60000)), timezone: 'Asia/Shanghai' }))
+  const [form] = Form.useForm<FilterValues>()
+  const throughNow = Form.useWatch('through_now', form) ?? true
+  const [appliedThroughNow, setAppliedThroughNow] = useState(true)
+  const [initial] = useState<FilterValues>(() => ({ start_at: dayjs().subtract(7, 'day').format('YYYY-MM-DDTHH:mm:ss'), end_at: dayjs().format('YYYY-MM-DDTHH:mm:ss'), timezone: 'Asia/Shanghai', through_now: true }))
   const [filters, setFilters] = useState(() => parameters(initial))
   const [offset, setOffset] = useState(0)
   const suffix = new URLSearchParams(filters).toString()
@@ -41,6 +45,14 @@ export function UsagePage() {
   const [error, setError] = useState<unknown>()
   const [exporting, setExporting] = useState(false)
   const can = (action: string) => session.actions.some(a => a.action_key === action)
+  function refresh() {
+    if (appliedThroughNow) {
+      const now = new Date().toISOString()
+      setFilters(current => ({ ...current, end_at: now }))
+      if (form.getFieldValue('through_now')) form.setFieldValue('end_at', now)
+      setOffset(0)
+    } else { summary.reload(); records.reload() }
+  }
   async function exportUsage() {
     if (exporting) return
     setExporting(true); setError(undefined)
@@ -48,24 +60,32 @@ export function UsagePage() {
     catch (failure) { setError(failure) } finally { setExporting(false) }
   }
   const data = summary.data
+  const noCalls = data?.attempts === 0
+  const unavailable = summary.error ? '加载失败' : '加载中'
   const overview = <Space orientation="vertical" style={{ width: '100%' }} size="middle">
     <Row gutter={[16, 16]}>{[
-      ['请求数', data?.requests], ['实际尝试数', data?.attempts], ['成功率', data?.success_rate == null ? null : `${(Number(data.success_rate) * 100).toFixed(2)}%`], ['输入 Token', data?.input_tokens], ['输出 Token', data?.output_tokens], ['未定价数量', data?.unpriced],
-    ].map(([label, value]) => <Col xs={12} lg={4} key={label}><Card>{value == null ? <><Typography.Text type="secondary">{label}</Typography.Text><p>未确认</p></> : <Statistic title={label} value={value} />}</Card></Col>)}</Row>
-    <Table rowKey="currency" dataSource={data?.costs} pagination={false} columns={[
+      { label: '受理请求数', value: data?.requests, tip: '已受理的运行请求数；模型调用前失败的请求也计入。' },
+      { label: '模型调用次数', value: data?.attempts, tip: '用量账本中已登记发送的模型尝试数，含重试；工具调用不计入。' },
+      { label: '模型调用成功率', value: data?.success_rate == null ? null : `${(Number(data.success_rate) * 100).toFixed(2)}%`, empty: noCalls ? '暂无模型调用' : '结果待核实', tip: '模型调用成功次数 ÷ 已有成功或失败结果的模型调用次数。' },
+      { label: '输入 Token', value: data?.input_tokens, empty: noCalls ? '暂无模型调用' : '用量缺失' },
+      { label: '输出 Token', value: data?.output_tokens, empty: noCalls ? '暂无模型调用' : '用量缺失' },
+      { label: '未定价数量', value: data?.unpriced },
+    ].map(({ label, value, empty, tip }) => <Col xs={12} lg={8} xxl={4} key={label}><Card size="small" style={{ height: '100%' }} loading={!data && !summary.error}>{value == null ? <><Typography.Text type="secondary"><Tooltip title={tip}>{label}</Tooltip></Typography.Text><p>{data ? empty : unavailable}</p></> : <Statistic title={<Tooltip title={tip}>{label}</Tooltip>} value={value} />}</Card></Col>)}</Row>
+    <Table rowKey="currency" dataSource={data?.costs} loading={!data && !summary.error} locale={{ emptyText: !data ? unavailable : noCalls ? '暂无模型调用' : '暂无可计价费用' }} pagination={false} columns={[
       { title: '币种', dataIndex: 'currency' }, { title: '已计价费用', render: (_, r) => formatAmount(r.priced, r.currency) }, { title: '暂估费用', render: (_, r) => formatAmount(r.provisional, r.currency) },
       { title: '折算金额', render: (_, r) => r.conversion ? <Space orientation="vertical"><span>{formatAmount(r.conversion.amount as string | null, r.conversion.currency as string)}</span><Typography.Text type="secondary">{r.currency === r.conversion.currency ? '同币种，无需折算' : r.conversion.source == null ? '汇率未配置' : `${String(r.conversion.source)} · ${formatTimestamp(r.conversion.date as string)} · 汇率 ${String(r.conversion.rate)}`}</Typography.Text></Space> : '未折算' },
     ]} />
-    <Space><StatusTag label={data?.price_complete ? '价格完整' : '部分费用未确认'} /><Typography.Text>用量缺失：{number(data?.missing_usage)} 次</Typography.Text><Typography.Text type="secondary">更新于 {formatTimestamp(data?.aggregate_updated_at, filters.timezone)}</Typography.Text></Space>
+    {data && <Space wrap>{!noCalls && <><StatusTag label={data.price_complete ? '价格完整' : '部分费用未确认'} /><Typography.Text>用量缺失：{number(data.missing_usage)} 次</Typography.Text></>}<Typography.Text type="secondary">更新于 {formatTimestamp(data.aggregate_updated_at, filters.timezone)}</Typography.Text></Space>}
   </Space>
   const trend = <Table rowKey="date" dataSource={data?.trend as { date: string; attempts: number; input_tokens: number | null; output_tokens: number | null; costs: { [currency: string]: { priced: string; provisional: string } } }[] | undefined} columns={[
-    { title: '日期', render: (_, r) => dayjs(r.date).format('YYYY年M月D日') }, { title: '实际尝试数', dataIndex: 'attempts' }, { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) },
+    { title: '日期', render: (_, r) => dayjs(r.date).format('YYYY年M月D日') }, { title: '模型调用次数', dataIndex: 'attempts' }, { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) },
     { title: '已计价 / 暂估费用', render: (_, r) => Object.keys(r.costs).length ? Object.entries(r.costs).map(([currency, cost]) => <div key={currency}>{formatAmount(cost.priced, currency)} / {formatAmount(cost.provisional, currency)}</div>) : '费用未确认' },
   ]} />
-  return <PageContainer title="用量" actions={<Space><Button onClick={() => { summary.reload(); records.reload() }}>刷新</Button>{can('data:export') && <><Button loading={exporting} onClick={() => void exportUsage()}>导出明细</Button><Button onClick={() => setShowExports(true)}>导出任务</Button></>}</Space>}>
-    <Form layout="inline" initialValues={initial} onFinish={(values: FilterValues) => { setFilters(parameters(values)); setOffset(0) }} style={{ marginBottom: 24 }}>
+  return <PageContainer title="用量" actions={<Space><Button onClick={refresh}>刷新</Button>{can('data:export') && <><Button loading={exporting} onClick={() => void exportUsage()}>导出明细</Button><Button onClick={() => setShowExports(true)}>导出任务</Button></>}</Space>}>
+    <Form form={form} layout="inline" initialValues={initial} onFinish={(values: FilterValues) => { const next = parameters(values); setFilters(next); setAppliedThroughNow(values.through_now); if (values.through_now) form.setFieldValue('end_at', next.end_at); setOffset(0); if (new URLSearchParams(next).toString() === suffix) { summary.reload(); records.reload() } }} style={{ marginBottom: 24 }}>
       <Form.Item name="start_at" label="开始时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
-      <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput /></Form.Item>
+      <Form.Item name="end_at" label="结束时间" rules={[{ required: true }]}><DateTimeInput disabled={throughNow} /></Form.Item>
+      <Form.Item name="through_now" valuePropName="checked"><Checkbox>截至当前</Checkbox></Form.Item>
       <Form.Item name="timezone" label="统计时区"><Select style={{ width: 140 }} options={zones} /></Form.Item>
       {([
         ['key_id', '接入凭据', options.data?.keys], ['environment', '环境', environments], ['model_id', '模型', options.data?.models], ['agent_id', '智能体', options.data?.agents], ['actor_id', '操作人', options.data?.actors], ['purpose', '用途', purposes],
