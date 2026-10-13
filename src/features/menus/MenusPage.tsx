@@ -1,4 +1,5 @@
-import { Button, Input, Select, Space, Tag, TreeSelect } from 'antd'
+import { StatusTag } from '../../components/StatusTag'
+import { Button, Input, Select, Space, TreeSelect } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
@@ -40,7 +41,7 @@ export function MenusPage() {
         { title: '名称', dataIndex: 'name' }, { title: '类型', dataIndex: 'kind_label', width: 80 },
         { title: '适用范围', dataIndex: 'workspace_label' }, { title: '页面 / 操作', render: (_, node) => node.page_name ?? node.action_name ?? '—' },
         { title: '排序', dataIndex: 'sort_order', width: 70 }, { title: '显示', render: (_, node) => node.visible ? '显示' : '隐藏', width: 70 },
-        { title: '状态', render: (_, node) => <Tag>{node.status_label}</Tag> },
+        { title: '状态', render: (_, node) => <StatusTag label={node.status_label} /> },
         { title: '操作', width: 230, render: (_, node) => <Space wrap>
           <Button onClick={() => edit(node)}>编辑</Button>
           {node.kind !== 'BUTTON' && <Button onClick={() => { setKind(node.kind === 'MENU' ? 'BUTTON' : 'MENU'); setEditor({ parent: node.id }) }}>新增子项</Button>}

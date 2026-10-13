@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Button, Form, Input, InputNumber, Select, Space, Tag } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -23,7 +24,7 @@ export function ProvidersPage() {
       { title: '操作', render: (_, r) => <ActionButtons actions={session.actions.map(a => a.action_key === 'channel:govern' ? { ...a, label: '编辑' } : a)} handlers={{ 'channel:govern': () => setEditor({ provider: r }) }} /> },
     ]} />}
     <Table rowKey="code" pagination={false} dataSource={protocols.data} columns={[
-      { title: '协议', dataIndex: 'name' }, { title: '适配状态', render: (_, p) => <Tag>{p.enabled ? '已实现，按模型验证' : '未启用'}</Tag> }, { title: '原因', render: (_, p) => p.reason ?? '无' },
+      { title: '协议', dataIndex: 'name' }, { title: '适配状态', render: (_, p) => <StatusTag label={p.enabled ? '已实现，按模型验证' : '未启用'} tone={p.enabled ? 'success' : 'default'} /> }, { title: '原因', render: (_, p) => p.reason ?? '无' },
     ]} />
     {editor && <ModelDialog title={row ? '编辑供应商' : '新增供应商'} initial={row ? { ...row, ...row.template_content } : { timeout_seconds: 60 }} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }} onSave={v => send('/admin/v1/model-providers', 'POST', {
       id: row?.id, name: v.name, protocols: v.protocols, revision: row?.revision ?? null,

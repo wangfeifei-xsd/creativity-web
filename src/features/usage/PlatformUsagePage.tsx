@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
-import { App, Button, Form, Pagination, Select, Space, Tag } from 'antd'
+import { App, Button, Form, Pagination, Select, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
@@ -68,7 +69,7 @@ export function PlatformUsagePage() {
       { title: '已计价费用', render: (_, row) => row.costs.map(m => formatAmount(m.amount, m.currency)).join('、') || '费用未确认' },
       { title: '暂估费用', render: (_, row) => row.provisional_costs?.map(m => formatAmount(m.amount, m.currency)).join('、') || '费用未确认' },
       { title: '未定价', dataIndex: 'unpriced' }, { title: '用量缺失', dataIndex: 'missing_usage' },
-      { title: '计价完整性', render: (_, row) => <Tag>{row.price_complete ? '完整' : '待核实'}</Tag> },
+      { title: '计价完整性', render: (_, row) => <StatusTag label={row.price_complete ? '完整' : '待核实'} /> },
       { title: '聚合更新时间', render: (_, row) => formatTimestamp(row.aggregate_updated_at, filters?.timezone) },
     ]} />
     {exportsOpen && <ExportDrawer platform onClose={() => setExportsOpen(false)} />}

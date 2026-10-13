@@ -6,6 +6,8 @@ import { applyFormErrors, isFormValidationError } from '../api/form-errors'
 import { isAbort } from '../api/useQuery'
 import type { components } from '../api/generated/schema'
 import { DateTimeInput } from './DateTimeInput'
+import { PlusOutlined } from '@ant-design/icons'
+import { useManagementAppearance } from '../app/management/context'
 
 export type Schema<K extends keyof components['schemas']> = components['schemas'][K]
 export type Values = Record<string, unknown>
@@ -20,8 +22,10 @@ export function ErrorNotice({ error }: { error: unknown }) {
 type DisplayAction = Schema<'VisibleAction'> & Partial<Pick<Schema<'AccessAction'>, 'enabled' | 'disabled_reason'>>
 export function ActionButtons({ actions, handlers, disabled, primaryAction, icons }: { actions: readonly DisplayAction[];
   handlers: Record<string, (() => void) | undefined>; disabled?: boolean; primaryAction?: string; icons?: Record<string, ReactNode> }) {
+  const managementAppearance = useManagementAppearance()
   return <Space wrap>{actions.filter(a => handlers[a.action_key]).map(a => {
-    const button = <Button key={a.action_key} icon={icons?.[a.action_key]} type={a.action_key === primaryAction ? 'primary' : 'default'} disabled={disabled || a.enabled === false} onClick={handlers[a.action_key]}>{a.label}</Button>
+    const create = managementAppearance && /(?:^|:)create$/.test(a.action_key)
+    const button = <Button key={a.action_key} icon={icons?.[a.action_key] ?? (create ? <PlusOutlined aria-hidden /> : undefined)} type={a.action_key === (primaryAction ?? (create ? a.action_key : undefined)) ? 'primary' : 'default'} disabled={disabled || a.enabled === false} onClick={handlers[a.action_key]}>{a.label}</Button>
     return a.enabled === false && a.disabled_reason
       ? <Tooltip key={a.action_key} title={a.disabled_reason}><span>{button}</span></Tooltip>
       : button
@@ -44,6 +48,7 @@ export type EditorProps = { title: string; fields: Field[]; initial?: Values; ch
   onSave: (values: Values) => Promise<unknown>; onClose: () => void; onSaved: () => void;
   latestRevision?: () => Promise<number | null | undefined>; danger?: boolean }
 export function EditorDialog({ title, fields, initial, children, onSave, onClose, onSaved, latestRevision, danger }: EditorProps) {
+  const managementAppearance = useManagementAppearance()
   const [form] = Form.useForm<Values>()
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
@@ -57,7 +62,7 @@ export function EditorDialog({ title, fields, initial, children, onSave, onClose
     catch (failure) { if (!isAbort(failure)) { setError(failure); applyFormErrors(form, failure) } }
     finally { submitting.current = false; setBusy(false) }
   }
-  return <Modal open title={title} onCancel={onClose} destroyOnHidden maskClosable={!busy} closable={!busy}
+  return <Modal open title={title} width={managementAppearance ? 640 : undefined} onCancel={onClose} destroyOnHidden maskClosable={!busy} closable={!busy}
     styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
     footer={<Space><Button disabled={busy} onClick={onClose}>取消</Button>
       <Button type="primary" aria-label="确认" danger={danger} loading={busy} disabled={busy} onClick={() => form.submit()}>确认</Button></Space>}>
@@ -76,7 +81,7 @@ export function EditorDialog({ title, fields, initial, children, onSave, onClose
       }}>读取最新版本，保留填写内容</Button>}
       {recovered && <Alert type="info" title="已更新版本，请核对填写内容后重新提交" />}
       {children}
-      <Form form={form} layout="vertical" initialValues={initial} onFinish={submit} disabled={busy}>
+      <Form form={form} className={managementAppearance ? 'management-form-grid' : undefined} layout="vertical" initialValues={initial} onFinish={submit} disabled={busy}>
         <Fields fields={fields} />
       </Form>
     </Space>

@@ -1,4 +1,5 @@
-import { Button, Descriptions, Drawer, Form, Input, InputNumber, Select, Space, Tabs, Tag } from 'antd'
+import { StatusTag } from '../../components/StatusTag'
+import { Button, Descriptions, Drawer, Form, Input, InputNumber, Select, Space, Tabs } from 'antd'
 import { Table } from '../../components/Table'
 import { useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
@@ -12,6 +13,7 @@ import { ModelDialog } from './shared'
 import { jsonObject, parameterOptions } from './options'
 import { ModelDetails } from './ModelDetails'
 import { ConnectionTest, type ConnectionTestState } from './ConnectionTest'
+import { DeploymentUnitOutlined, ReloadOutlined } from '@ant-design/icons'
 
 type Model = Schema<'ModelView'>
 type Connection = Schema<'ConnectionView'>
@@ -51,14 +53,14 @@ function Models() {
   }
   const row = editor?.model
   const choices = connections.data?.items.map(c => ({ value: c.id, label: `${c.provider_name ?? '供应商名称不可用'} · ${c.name}` })) ?? []
-  return <PageContainer title="模型配置" actions={<Space><Button onClick={query.reload}>刷新</Button><ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setEditor({}) }} /></Space>}>
+  return <PageContainer title="模型配置" actions={<Space><Button icon={<ReloadOutlined aria-hidden />} onClick={query.reload}>刷新</Button><ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setEditor({}) }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
       <Table rowKey="id" dataSource={query.data.items} scroll={{ x: 850 }} columns={[
-        { title: '模型', render: (_, r) => <Button type="link" onClick={() => { setDetailTab('connection'); setSelected(r) }}>{r.name}</Button> },
-        { title: '供应商', render: (_, r) => r.provider_name ?? '名称不可用' }, { title: '连接', dataIndex: 'connection_name' },
-        { title: '协议', dataIndex: 'protocol_name' }, { title: '状态', render: (_, r) => <Tag>{r.status_label}</Tag> },
-        { title: '最近验证', render: (_, r) => formatTimestamp(r.verified_at) },
-        { title: '操作', render: (_, r) => <ActionButtons actions={r.actions ?? []} disabled={connectionTest?.busy} handlers={{ edit: () => setEditor({ model: r }), test_connection: () => { void testConnection(r) }, test: () => { setDetailTab('tests'); setSelected(r) }, history: () => { setDetailTab('history'); setSelected(r) } }} /> },
+        { title: '模型', width: 184, render: (_, r) => <Button type="link" onClick={() => { setDetailTab('connection'); setSelected(r) }}>{r.name}</Button> },
+        { title: '供应商', width: 112, render: (_, r) => r.provider_name ?? '名称不可用' }, { title: '连接', width: 112, dataIndex: 'connection_name' },
+        { title: '协议', width: 140, dataIndex: 'protocol_name' }, { title: '状态', width: 100, render: (_, r) => <StatusTag label={r.status_label} /> },
+        { title: '最近验证', width: 208, render: (_, r) => formatTimestamp(r.verified_at) },
+        { title: '操作', width: 264, render: (_, r) => <ActionButtons actions={r.actions ?? []} disabled={connectionTest?.busy} handlers={{ edit: () => setEditor({ model: r }), test_connection: () => { void testConnection(r) }, test: () => { setDetailTab('tests'); setSelected(r) }, history: () => { setDetailTab('history'); setSelected(r) } }} /> },
       ]} />}
     {editor && <ModelDialog title={row ? '编辑模型' : '新增模型'} initial={row ? { ...row, parameters: JSON.stringify(row.parameters, null, 2) } : { status: 'ACTIVE', parameter_allowlist: ['max_tokens'], parameters: '{}' }} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload() }}
       onSave={v => send(row ? `/admin/v1/models/${row.id}` : '/admin/v1/models', row ? 'PATCH' : 'POST', { ...v, context_limit: v.context_limit ?? null, parameters: jsonObject(v.parameters), revision: row?.revision ?? null })}>
@@ -68,10 +70,10 @@ function Models() {
       <Form.Item name="provider_model_name" label="供应商模型名" rules={[{ required: true }]}><Input /></Form.Item>
       <Form.Item name="context_limit" label="上下文上限（Token）"><InputNumber min={1} placeholder="未知" style={{ width: '100%' }} /></Form.Item>
       <Form.Item name="parameter_allowlist" label="允许参数"><Select mode="multiple" options={parameterOptions} /></Form.Item>
-      <Form.Item name="parameters" label="默认参数（JSON）"><Input.TextArea rows={4} /></Form.Item>
-      <Form.Item name="status" label="状态"><Select options={statuses} /></Form.Item>
+      <Form.Item className="management-field-wide" name="parameters" label="默认参数（JSON）"><Input.TextArea rows={4} /></Form.Item>
+      <Form.Item className="management-field-wide" name="status" label="状态"><Select options={statuses} /></Form.Item>
     </ModelDialog>}
-    {selected && <Drawer open width={920} title={selected.name} onClose={() => { setSelected(undefined); query.reload() }} destroyOnHidden><ModelDetails modelId={selected.id} initialTab={detailTab} /></Drawer>}
+    {selected && <Drawer open width={920} title={<span className="management-dialog-title"><DeploymentUnitOutlined aria-hidden />{selected.name}</span>} onClose={() => { setSelected(undefined); query.reload() }} destroyOnHidden><ModelDetails modelId={selected.id} initialTab={detailTab} /></Drawer>}
     {connectionTest && <ConnectionTest state={connectionTest} onClose={() => setConnectionTest(undefined)} />}
   </PageContainer>
 }
@@ -85,7 +87,7 @@ function Connections() {
   return <PageContainer title="供应商连接" actions={<Space><Button onClick={query.reload}>刷新</Button><ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setEditor({}) }} /></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data.items} scroll={{ x: 900 }} columns={[
       { title: '连接', dataIndex: 'name' }, { title: '供应商', render: (_, r) => r.provider_name ?? '名称不可用' }, { title: '协议', dataIndex: 'protocol_name' },
-      { title: '状态', render: (_, r) => <Tag>{r.status_label}</Tag> }, { title: '最近健康状态', render: (_, r) => <Space orientation="vertical"><Tag>{r.health_label}</Tag>{r.health_reason}</Space> },
+      { title: '状态', render: (_, r) => <StatusTag label={r.status_label} /> }, { title: '最近健康状态', render: (_, r) => <Space orientation="vertical"><StatusTag label={r.health_label} />{r.health_reason}</Space> },
       { title: '检查时间', render: (_, r) => formatTimestamp(r.health_checked_at) },
       { title: '操作', render: (_, r) => <Space><ActionButtons actions={r.actions ?? []} handlers={{ edit: () => setEditor({ connection: r }) }} /><Button onClick={() => setHistory(r)}>历史</Button></Space> },
     ]} />}
@@ -115,7 +117,7 @@ function Connections() {
 export function VersionHistory({ path }: { path: `/admin/v1/${string}` }) {
   const query = useQuery<Schema<'ResourceVersion'>[]>(path)
   return query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="version_id" dataSource={query.data} columns={[
-    { title: '版本', dataIndex: 'version_label' }, { title: '状态', render: (_, row) => row.state === 'RETIRED' ? '已停用' : row.state === 'DRAFT' ? '草稿' : '已冻结' },
+    { title: '版本', dataIndex: 'version_label' }, { title: '状态', render: (_, row) => <StatusTag label={row.state === 'RETIRED' ? '已停用' : row.state === 'DRAFT' ? '草稿' : '已冻结'} /> },
     { title: '供应商模型名', render: (_, row) => typeof row.content.provider_model_name === 'string' ? row.content.provider_model_name : '不适用' },
     { title: '地址', render: (_, row) => typeof row.content.endpoint === 'string' ? row.content.endpoint : '见连接版本' },
   ]} />

@@ -38,7 +38,7 @@ function AgentList() {
   const canAssist = query.data?.actions.some(action => action.action_key === 'assist')
   const canModify = query.data?.items.some(item => item.actions.some(action => action.action_key === 'assist'))
   return <PageContainer title="智能体" actions={<Space wrap><Button onClick={query.reload}>刷新</Button>
-    <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} />
+    <ActionButtons primaryAction={canAssist ? 'assist' : 'create'} actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} />
     {canAssist && <Button type="primary" icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate('/agents/assistance')}>智能创建</Button>}</Space>}>
     <ErrorNotice error={options.error} />
     <Input.Search aria-label="智能体名称或用途" placeholder="智能体名称或用途" onSearch={setSearch} allowClear style={{ maxWidth: 360, marginBottom: 16 }} />

@@ -1,4 +1,5 @@
-import { Button, Form, Input, InputNumber, Modal, Select, Space, Tag } from 'antd'
+import { StatusTag } from '../../components/StatusTag'
+import { Button, Form, Input, InputNumber, Modal, Select, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
@@ -60,10 +61,10 @@ export function BudgetPanel({ options, concurrencyOnly = false }: { options?: Us
       { title: '周期', render: (_, r) => r.unit === 'concurrency' ? '实时' : periods.find(p => p.value === r.period)?.label },
       { title: '控制方式', dataIndex: 'mode_label' }, { title: '限额', render: (_, r) => quantity(r, r.limit_value) },
       { title: '当前占用', render: (_, r) => quantity(r, r.used) }, { title: '剩余', render: (_, r) => quantity(r, r.remaining) },
-      { title: '状态', render: (_, r) => <Tag>{r.status === 'ACTIVE' ? '启用' : '停用'}</Tag> },
+      { title: '状态', render: (_, r) => <StatusTag label={r.status === 'ACTIVE' ? '启用' : '停用'} /> },
       { title: '操作', render: (_, r) => allowed && <Button onClick={() => edit(r)}>编辑</Button> },
     ]} />
-    {!concurrencyOnly && <Table<Alert> rowKey="id" dataSource={alerts.data} columns={[{ title: '预算提醒', dataIndex: 'name' }, { title: '阈值', render: (_, r) => `${Number(r.threshold) * 100}%` }, { title: '状态', dataIndex: 'status_label' }, { title: '首次触发', render: (_, r) => formatTimestamp(r.first_triggered_at) }]} />}
+    {!concurrencyOnly && <Table<Alert> rowKey="id" dataSource={alerts.data} columns={[{ title: '预算提醒', dataIndex: 'name' }, { title: '阈值', render: (_, r) => `${Number(r.threshold) * 100}%` }, { title: '状态', dataIndex: 'status_label', render: (label: string) => <StatusTag label={label} /> }, { title: '首次触发', render: (_, r) => formatTimestamp(r.first_triggered_at) }]} />}
     <Modal open={!!editing} title={concurrencyOnly ? (editing === 'new' ? '新增并发限额' : '编辑并发限额') : (editing === 'new' ? '新增预算' : '编辑预算')} onCancel={() => setEditing(undefined)} onOk={() => form.submit()} confirmLoading={busy} destroyOnHidden>
       <ErrorNotice error={error} />
       <Form form={form} layout="vertical" onFinish={save} disabled={busy}>

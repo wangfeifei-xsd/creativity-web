@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Button, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -19,7 +20,7 @@ export function PromptExperiments({ promptId }: { promptId: string }) {
     <Table rowKey="evaluation_id" dataSource={experiments.data.items.filter(item => item.config.experiment_prompt_id === promptId)} columns={[
       { title: '实验名称', render: (_, item) => <Link to={`/evaluations/${item.evaluation_id}`}>{item.name}</Link> },
       { title: '样本集', dataIndex: 'dataset_name' }, { title: '样本版本', dataIndex: 'dataset_version_label' },
-      { title: '状态', render: (_, item) => item.state.label },
+      { title: '状态', render: (_, item) => <StatusTag status={item.state} /> },
     ]} />
     {creating && <NewEvaluation promptId={promptId} datasets={datasets.data.items} onClose={() => setCreating(false)} onSaved={item => { setCreating(false); navigate(`/evaluations/${item.evaluation_id}`) }} />}
   </Space>

@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Button, Descriptions, Drawer, Form, Input, Select, Space, Tag } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -68,7 +69,7 @@ export function RolesPage({ onSaved }: { onSaved?: () => void } = {}) {
       { title: '类型', render: (_, role) => <Tag>{role.builtin ? '内置' : '自定义'}</Tag> },
       { title: '作用域', dataIndex: 'grant_scope_name' },
       { title: '操作权限', render: (_, role) => role.action_names.join('、'), ellipsis: true },
-      { title: '关联成员', dataIndex: 'member_count' }, { title: '状态', dataIndex: 'state_label' },
+      { title: '关联成员', dataIndex: 'member_count' }, { title: '状态', dataIndex: 'state_label', render: (label: string) => <StatusTag label={label} /> },
       { title: '更新时间', render: (_, role) => formatTimestamp(role.updated_at) },
       { title: '操作', render: (_, role) => role.editable && <Space><Button onClick={() => { void open(role, 'edit') }}>编辑</Button>
         <Button danger onClick={() => { void open(role, 'remove') }}>删除</Button></Space> },
@@ -98,7 +99,7 @@ export function RolesPage({ onSaved }: { onSaved?: () => void } = {}) {
       <Descriptions column={1} items={[{ key: 'scope', label: '作用域', children: detail.role.grant_scope_name },
         { key: 'actions', label: '允许动作', children: detail.role.action_names.join('、') },
         { key: 'members', label: '关联成员', children: `${detail.role.member_count} 位` },
-        { key: 'state', label: '状态', children: detail.role.state_label }]} />
+        { key: 'state', label: '状态', children: <StatusTag label={detail.role.state_label} /> }]} />
       <RoleTree nodes={detail.options.menus} value={selected(detail.role, detail.options.menus)} disabled />
     </Drawer>}
   </PageContainer>

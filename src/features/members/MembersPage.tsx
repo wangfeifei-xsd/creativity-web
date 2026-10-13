@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { names, send, statuses, actionsAsOptions } from '../../api/management'
-import { Button, Select, Space, Tabs, Tag } from 'antd'
+import { Button, Select, Space, Tabs } from 'antd'
 import { Table } from '../../components/Table'
 import { ResourcePicker, type ResourceEntry } from './ResourcePicker'
 import { CustomRoles } from './CustomRoles'
@@ -64,7 +65,7 @@ function MemberTable({ channelId, options, onSaved }: AccessProps) {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="user_id" dataSource={query.data} scroll={{ x: 800 }}
       columns={[{ title: '成员', render: (_, row) => row.display_name ?? '名称不可用' },
         { title: '角色', render: (_, row) => names(row.role_names) }, { title: '环境', render: (_, row) => names(row.environment_names) },
-        { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> },
+        { title: '状态', render: (_, row) => <StatusTag label={row.status_label} /> },
         { title: '操作', render: (_, row) => <ActionButtons actions={row.actions} handlers={{ 'member:edit': () => edit(row), 'member:remove': () => remove(row) }} /> }]} />}
     {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload(); onSaved() }} />}
   </PageContainer>

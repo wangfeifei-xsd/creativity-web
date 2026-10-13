@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Button, Card, Descriptions, Drawer, Empty, Input, Modal, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -47,7 +48,7 @@ export function ConversationResult({ turn }: { turn: Schema<'TurnView'> }) {
   const envelope = turn.output_schema as ResultSchema
   const titles = (envelope.properties?.business_status ? envelope.properties.data?.properties : envelope.properties) ?? {}
   return turn.result && <Space orientation="vertical" size="small" style={{ width: '100%' }}>
-    <Tag>{turn.result_label}</Tag>
+    <StatusTag label={turn.result_label} />
     {Object.entries(turn.result.data).filter(([key]) => !/(?:^|_)(?:id|ids)$/.test(key)).map(([key, value]) => <div key={key} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
       <Typography.Text type="secondary">{fieldTitle(key, titles[key])}：</Typography.Text>
       <ResultValue value={value} schema={titles[key]} />
@@ -68,14 +69,14 @@ export function Timeline({ conversationId, page, onRefresh, onError, canBranch =
       {page.items.map(message => {
         const turn = page.turns.find(t => t.turn_id === message.turn_id)
         return <Card key={message.message_id} size="small" title={<Space wrap><span>{message.role_label}</span>
-          <Tag color={message.status === 'COMPLETED' ? 'success' : message.status === 'FAILED' ? 'error' : 'default'}>{message.status_label}</Tag>
+          <StatusTag label={message.status_label} />
           <Typography.Text type="secondary">{formatTimestamp(message.created_at)}</Typography.Text></Space>}>
           {!(message.role === 'assistant' && turn?.result) && <MessageContent role={message.role} text={message.text} status={message.status} />}
           {canBranch && message.role === 'assistant' && message.status === 'COMPLETED' && <Button onClick={() => setBranch({ messageId: message.message_id, key: crypto.randomUUID(), title: '新分支' })}>从此处创建分支</Button>}
           <Space wrap>{message.attachments.map(a => <Button key={a.artifact_id} onClick={() => void download(a.download_path).catch(onError)}>
             {a.name}（{(a.size_bytes / 1024).toFixed(1)} KB）</Button>)}</Space>
           {message.role === 'assistant' && turn && <Space orientation="vertical" style={{ width: '100%' }}>
-            <Space wrap><Typography.Text>第 {turn.sequence} 轮 · {turn.version_label}</Typography.Text><Tag>{turn.state_label}</Tag>
+            <Space wrap><Typography.Text>第 {turn.sequence} 轮 · {turn.version_label}</Typography.Text><StatusTag label={turn.state_label} />
               <Typography.Text>耗时：{turn.duration_seconds == null ? '运行中' : `${turn.duration_seconds.toFixed(2)} 秒`}</Typography.Text>
               {turn.source_run_id && <Tag>补充上一轮信息</Tag>}
               {turn.can_cancel && <Button loading={cancelling === turn.run_id} disabled={turn.state === 'CANCEL_REQUESTED'} onClick={async () => {
@@ -104,7 +105,7 @@ function ExecutionDetail({ conversationId, runId, onClose }: { conversationId: s
   const query = useQuery<Schema<'ResultEnvelope'>>(`/admin/v1/conversations/${conversationId}/runs/${runId}`)
   return <Drawer open title="执行详情" onClose={onClose} size="large">
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <>
-      <Descriptions column={1} items={[{ key: 'state', label: '状态', children: query.data.state_label },
+      <Descriptions column={1} items={[{ key: 'state', label: '状态', children: <StatusTag label={query.data.state_label} /> },
         { key: 'run', label: '运行标识', children: query.data.run_id },
         { key: 'snapshot', label: '配置快照', children: query.data.release_snapshot_id }]} />
       <ErrorNotice error={query.data.error ? new Error(query.data.error.message) : undefined} />

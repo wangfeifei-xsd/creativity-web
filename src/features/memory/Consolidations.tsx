@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Button, Drawer, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -15,7 +16,7 @@ export function Consolidations({ anchorId, onClose }: { anchorId?: string; onClo
   return <Drawer open title="后台记忆整理" onClose={onClose} size="large" extra={<Button onClick={query.reload}>刷新</Button>}>
     <ErrorNotice error={error} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} scroll={{ x: 740 }} columns={[
-      { title: '来源会话', dataIndex: 'conversation_name' }, { title: '状态', dataIndex: 'state_label' },
+      { title: '来源会话', dataIndex: 'conversation_name' }, { title: '状态', dataIndex: 'state_label', render: (label: string) => <StatusTag label={label} /> },
       { title: '处理次数', render: (_, row) => `${row.attempt} 次` },
       { title: '原因', render: (_, row) => row.message ?? '无' },
       { title: '生成记忆', render: (_, row) => `${row.generated_count} 条` },

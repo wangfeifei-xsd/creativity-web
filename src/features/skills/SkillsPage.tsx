@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, Upload } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -95,7 +96,7 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
         <Table size="small" tableLayout="fixed" rowKey="relative_path" pagination={false} dataSource={preview.files} columns={[
           { title: '文件', render: (_, file) => <span style={{ overflowWrap: 'anywhere' }}>{file.relative_path}</span> },
           { title: '大小', width: 80, render: (_, file) => <span style={{ whiteSpace: 'nowrap' }}>{file.size_bytes} 字节</span> },
-          { title: '加载状态', width: 96, render: (_, file) => file.unavailable_reason ?? '可加载' },
+          { title: '加载状态', width: 120, render: (_, file) => <Space orientation="vertical" size={4}><StatusTag label={file.unavailable_reason ? '不可加载' : '可加载'} />{file.unavailable_reason && <Typography.Text type="secondary">{file.unavailable_reason}</Typography.Text>}</Space> },
         ]} />
         <SkillToolBindings requirements={preview.settings.tool_requirements ?? []} options={tools.data ?? []} />
         <ErrorNotice error={tools.error} />
@@ -149,7 +150,7 @@ function SkillDetail({ skillId }: { skillId: string }) {
     <Button onClick={query.reload}>刷新</Button><Button onClick={() => setEditor('resource')}>编辑信息</Button><ResourceActions kind="skill" summary={summaries.items[skillId]} onEdit={() => setEditor('version')} onChanged={() => navigate('/skills')} /></Space>}>
     <ErrorNotice error={error ?? versionQuery.error} />
     <Descriptions items={[
-      { key: 'status', label: '状态', children: summaries.items[skillId]?.status.label ?? '加载中' },
+      { key: 'status', label: '状态', children: summaries.items[skillId] ? <StatusTag status={summaries.items[skillId].status} /> : '加载中' },
       { key: 'owner', label: '负责人', children: detail.skill.owner },
       { key: 'description', label: '用途', children: detail.skill.description },
     ]} />
@@ -173,7 +174,7 @@ function SkillDetail({ skillId }: { skillId: string }) {
         {validation.issues.map((issue, index) => <Typography.Paragraph type="danger" key={index}>{issue.message}</Typography.Paragraph>)}
         <Table rowKey={(_, index) => String(index)} dataSource={validation.dependencies} columns={[
           { title: '工具', render: (_, dep) => dep.name ?? '目标工具未绑定' },
-          { title: '检查结果', render: (_, dep) => dep.reason ?? '可用' },
+          { title: '检查结果', render: (_, dep) => <Space orientation="vertical" size={4}><StatusTag label={dep.available ? '可用' : '不可用'} />{dep.reason}</Space> },
         ]} /></> : <Button onClick={() => void mutate('validate')} loading={busy}>检查当前依赖</Button> },
       { key: 'tests', label: '测试', children: <SkillTests key={`${version.version_id}:${version.revision}`} version={version} /> },
     ]} />}

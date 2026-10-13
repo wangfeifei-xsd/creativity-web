@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Alert, Button, Descriptions, Form, Input, InputNumber, Segmented, Space, Typography } from 'antd'
 import { useState } from 'react'
@@ -77,7 +78,7 @@ export function ToolTestPanel({ version }: { version: Schema<'ToolVersionView'> 
       <Button type="primary" htmlType="submit" loading={busy} disabled={!query.data.executable}>运行测试</Button>
     </Form>
     {result && <><RunViewer key={result.run_id} runId={result.run_id} />
-      {result.result && <Descriptions title="测试结果" items={[{ key: 'state', label: '状态', children: result.state.label },
+      {result.result && <Descriptions title="测试结果" items={[{ key: 'state', label: '状态', children: <StatusTag status={result.state} /> },
         { key: 'run', label: '运行标识', children: <Typography.Text copyable>{result.run_id}</Typography.Text> },
         { key: 'time', label: '观测时间', children: formatTimestamp(result.result?.observed_at) },
         { key: 'coverage', label: '结果完整性', children: ({ complete: '完整', empty: '无记录', missing: '信息缺失', partial: '部分结果' } as Record<string, string>)[String(result.result?.coverage.result_status)] ?? '未声明' },

@@ -30,7 +30,7 @@ function CallDetail({ id, onClose }: { id: string; onClose: () => void }) {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !row ? <LoadingState /> : <>
       <Descriptions column={1} items={[
         { key: 'tool', label: '工具', children: row.tool_name ?? '名称不可用' },
-        { key: 'state', label: '状态', children: row.state.label },
+        { key: 'state', label: '状态', children: <StatusTag status={row.state} /> },
         { key: 'run', label: '运行标识', children: row.run_id },
         { key: 'step', label: '步骤标识', children: row.step_id },
         { key: 'attempt', label: '尝试标识', children: row.attempt_id ?? '未访问来源' },

@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { Button, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
 import { Table } from '../../components/Table'
@@ -49,7 +50,7 @@ export function SkillTests({ version }: { version: Version }) {
     </>}
     <Table style={{ marginTop: 20 }} rowKey="test_id" dataSource={tests.data ?? []} columns={[
       { title: '验证时间', render: (_, test) => formatTimestamp(test.created_at) },
-      { title: '证据类型', dataIndex: 'evidence_label' }, { title: '结果', render: (_, test) => test.result.complete ? '通过' : '未通过' },
+      { title: '证据类型', dataIndex: 'evidence_label' }, { title: '结果', render: (_, test) => <StatusTag label={test.result.complete ? '通过' : '未通过'} /> },
       { title: '操作', render: (_, test) => <Button type="link" onClick={() => setCurrent(test)}>查看结果</Button> },
     ]} scroll={{ x: 550 }} />
   </>

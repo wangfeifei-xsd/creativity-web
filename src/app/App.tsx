@@ -8,16 +8,17 @@ import { SessionProvider } from './workspace/SessionProvider'
 import { WorkspaceLayout } from './workspace/WorkspaceLayout'
 import { WorkspaceHome } from './workspace/WorkspaceHome'
 import { WorkspaceWorkbench } from './workspace/WorkspaceWorkbench'
+import { ManagementAppearance } from './management/ManagementAppearance'
 
 const router = createHashRouter([{ path: '*', element: <WorkspaceRoutes /> }])
 
 function WorkspaceRoutes() {
-  return <Layout className="app-layout"><SessionProvider><WorkspaceLayout><OAuthCallback /><Routes>
+  return <Layout className="app-layout"><SessionProvider><ManagementAppearance><WorkspaceLayout><OAuthCallback /><Routes>
       <Route path="/" element={<WorkspaceHome />} />
       <Route path="/workbench" element={<WorkspaceWorkbench />} />
       {features.map(({ navigationKey, path, Component }) => <Route key={navigationKey} path={`${path}/*`} element={<Component />} />)}
       <Route path="*" element={<Result status="404" title="页面不存在" />} />
-  </Routes></WorkspaceLayout></SessionProvider></Layout>
+  </Routes></WorkspaceLayout></ManagementAppearance></SessionProvider></Layout>
 }
 
 export function App() {

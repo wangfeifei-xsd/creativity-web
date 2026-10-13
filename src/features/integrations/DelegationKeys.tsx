@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Alert, Button, Descriptions, Input, Modal, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -20,7 +21,7 @@ export function DelegationKeys() {
     {options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : null}
     <Table rowKey="kid" dataSource={query.data} scroll={{ x: 780 }} columns={[
       { title: '接入服务', dataIndex: 'client_name' }, { title: '签发者', dataIndex: 'issuer' },
-      { title: '受众', dataIndex: 'audience' }, { title: '状态', dataIndex: 'status_name' },
+      { title: '受众', dataIndex: 'audience' }, { title: '状态', dataIndex: 'status_name', render: (label: string) => <StatusTag label={label} /> },
       { title: '到期时间', render: (_, row) => formatTimestamp(row.expires_at) },
       { title: '委托有效期', render: (_, row) => `${row.max_ttl_seconds} 秒` },
       { title: '操作', render: (_, row) => <Space><Button disabled={row.status !== 'ACTIVE' || rotated.has(row.kid) || new Date(row.expires_at) <= new Date()} onClick={() => setEdit({ kind: 'rotate', row })}>轮换</Button>

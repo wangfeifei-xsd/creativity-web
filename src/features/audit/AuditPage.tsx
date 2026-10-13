@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
-import { Button, Descriptions, Drawer, Form, Input, Select, Tag } from 'antd'
+import { Button, Descriptions, Drawer, Form, Input, Select } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { formatTimestamp } from '../../api/presentation'
@@ -36,7 +37,7 @@ export function AuditPage({ channelId }: { channelId?: string }) {
       columns={[{ title: '时间', render: (_, row) => formatTimestamp(row.time) },
         { title: '操作人', render: (_, row) => row.actor_name ?? '名称不可用' },
         { title: '操作', dataIndex: 'action_name' }, { title: '对象', render: (_, row) => row.target_name ?? '名称不可用' },
-        { title: '结果', render: (_, row) => <Tag>{row.outcome_label}</Tag> },
+        { title: '结果', render: (_, row) => <StatusTag label={row.outcome_label} /> },
         { title: '变更字段', render: (_, row) => row.changed_fields.join('、') || '未记录字段差异' },
         { title: '操作', render: (_, row) => <Button onClick={() => setDetail(row)}>详情</Button> },
       ]} />
@@ -44,7 +45,7 @@ export function AuditPage({ channelId }: { channelId?: string }) {
       { key: 'action', label: '操作', children: detail.action_name }, { key: 'target', label: '对象', children: detail.target_name ?? '名称不可用' },
       { key: 'actor', label: '操作人', children: detail.actor_name ?? '名称不可用' }, { key: 'time', label: '时间', children: formatTimestamp(detail.time) },
       { key: 'scope', label: '环境', children: detail.environment_name || '未提供' },
-      { key: 'outcome', label: '结果', children: detail.outcome_label }, { key: 'request', label: '请求标识', children: detail.request_id },
+      { key: 'outcome', label: '结果', children: <StatusTag label={detail.outcome_label} /> }, { key: 'request', label: '请求标识', children: detail.request_id },
       { key: 'fields', label: '变更字段', children: detail.changed_fields.join('、') || '本事件未记录字段差异' },
       ...Object.entries(detail.details ?? {}).map(([key, value]) => ({ key, label: key, children: value })),
     ]} /></Drawer>}

@@ -140,7 +140,7 @@ function McpDetail({ id }: { id: string }) {
         { title: '检查时间', render: (_, row) => formatTimestamp(row.checked_at) }, { title: '协商协议', render: (_, row) => row.negotiated_version ?? '未完成协商' },
         { title: '健康状态', render: (_, row) => <StatusTag status={row.health} /> },
         { title: '耗时', render: (_, row) => row.latency_ms == null ? '未记录' : `${row.latency_ms} 毫秒` },
-        { title: '检查结果', render: (_, row) => row.error_message ?? '检查通过' },
+        { title: '检查结果', render: (_, row) => <Space orientation="vertical" size={4}><StatusTag label={row.error_message ? '未通过' : '检查通过'} />{row.error_message}</Space> },
       ]} /> },
       { key: 'tools', label: '远程工具', children: <><Select aria-label="发现快照" placeholder="暂无发现快照" style={{ minWidth: 240, marginBottom: 16 }}
         value={snapshot?.discovery_id} onChange={setSelected} options={detail.discoveries.map(row => ({ value: row.discovery_id, label: formatTimestamp(row.discovered_at) }))} />

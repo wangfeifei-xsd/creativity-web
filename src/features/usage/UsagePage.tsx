@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
-import { App, Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Tabs, Tag, Typography } from 'antd'
+import { App, Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Space, Statistic, Tabs, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
@@ -55,7 +56,7 @@ export function UsagePage() {
       { title: '币种', dataIndex: 'currency' }, { title: '已计价费用', render: (_, r) => formatAmount(r.priced, r.currency) }, { title: '暂估费用', render: (_, r) => formatAmount(r.provisional, r.currency) },
       { title: '折算金额', render: (_, r) => r.conversion ? <Space orientation="vertical"><span>{formatAmount(r.conversion.amount as string | null, r.conversion.currency as string)}</span><Typography.Text type="secondary">{r.currency === r.conversion.currency ? '同币种，无需折算' : r.conversion.source == null ? '汇率未配置' : `${String(r.conversion.source)} · ${formatTimestamp(r.conversion.date as string)} · 汇率 ${String(r.conversion.rate)}`}</Typography.Text></Space> : '未折算' },
     ]} />
-    <Space><Tag color={data?.price_complete ? 'success' : 'warning'}>{data?.price_complete ? '价格完整' : '部分费用未确认'}</Tag><Typography.Text>用量缺失：{number(data?.missing_usage)} 次</Typography.Text><Typography.Text type="secondary">更新于 {formatTimestamp(data?.aggregate_updated_at, filters.timezone)}</Typography.Text></Space>
+    <Space><StatusTag label={data?.price_complete ? '价格完整' : '部分费用未确认'} /><Typography.Text>用量缺失：{number(data?.missing_usage)} 次</Typography.Text><Typography.Text type="secondary">更新于 {formatTimestamp(data?.aggregate_updated_at, filters.timezone)}</Typography.Text></Space>
   </Space>
   const trend = <Table rowKey="date" dataSource={data?.trend as { date: string; attempts: number; input_tokens: number | null; output_tokens: number | null; costs: { [currency: string]: { priced: string; provisional: string } } }[] | undefined} columns={[
     { title: '日期', render: (_, r) => dayjs(r.date).format('YYYY年M月D日') }, { title: '实际尝试数', dataIndex: 'attempts' }, { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) },
@@ -79,8 +80,8 @@ export function UsagePage() {
       { key: 'trend', label: '趋势', children: trend },
       { key: 'records', label: '调用明细', children: <Table<Record> rowKey="id" dataSource={records.data?.items} loading={!records.data && !records.error} scroll={{ x: 1100 }} pagination={{ current: offset / 20 + 1, pageSize: 20, total: records.data?.total, showSizeChanger: false, onChange: page => setOffset((page - 1) * 20) }} columns={[
         { title: '时间', render: (_, r) => formatTimestamp(r.created_at, filters.timezone) }, { title: '模型', render: (_, r) => r.names.model ?? '名称不可用' }, { title: '智能体', render: (_, r) => r.names.agent ?? '名称不可用' }, { title: '用途', dataIndex: 'purpose_label' },
-        { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) }, { title: '用量', dataIndex: 'usage_label' }, { title: '费用', render: (_, r) => <Space orientation="vertical"><span>{formatAmount(r.amount, r.currency)}</span><Tag>{r.pricing_label}</Tag></Space> },
-        { title: '结算', dataIndex: 'state_label' }, { title: '结果', dataIndex: 'outcome_label' }, { title: '操作', render: (_, r) => <Button onClick={() => setSelected(r.id)}>核查</Button> },
+        { title: '输入 Token', render: (_, r) => number(r.input_tokens) }, { title: '输出 Token', render: (_, r) => number(r.output_tokens) }, { title: '用量', dataIndex: 'usage_label', render: (label: string) => <StatusTag label={label} /> }, { title: '费用', render: (_, r) => <Space orientation="vertical"><span>{formatAmount(r.amount, r.currency)}</span><StatusTag label={r.pricing_label} /></Space> },
+        { title: '结算', dataIndex: 'state_label', render: (label: string) => <StatusTag label={label} /> }, { title: '结果', dataIndex: 'outcome_label', render: (label: string) => <StatusTag label={label} /> }, { title: '操作', render: (_, r) => <Button onClick={() => setSelected(r.id)}>核查</Button> },
       ]} /> },
       ...(can('budget:manage') ? [{ key: 'budgets', label: '预算', children: <BudgetPanel options={options.data} /> }] : []),
       { key: 'prices', label: '价格', children: <PricePanel options={options.data} /> },
@@ -132,6 +133,6 @@ export function ExportDrawer({ onClose, platform = false }: { onClose: () => voi
   }
   return <Drawer open title="导出任务" width={760} onClose={onClose}><Space orientation="vertical" style={{ width: '100%' }}>
     <Button onClick={query.reload}>刷新</Button><ErrorNotice error={error ?? query.error} />
-    <Table<Schema<'ExportView'>> rowKey="id" dataSource={query.data} columns={[{ title: '创建时间', render: (_, r) => formatTimestamp(r.created_at) }, { title: '状态', render: (_, r) => <><Tag>{r.state_label}</Tag>{r.error_message}</> }, { title: '有效期', render: (_, r) => formatTimestamp(r.expires_at) }, { title: '操作', render: (_, r) => r.download_path && <Button onClick={() => void download(r.id)}>下载</Button> }]} />
+    <Table<Schema<'ExportView'>> rowKey="id" dataSource={query.data} columns={[{ title: '创建时间', render: (_, r) => formatTimestamp(r.created_at) }, { title: '状态', render: (_, r) => <><StatusTag label={r.state_label} />{r.error_message}</> }, { title: '有效期', render: (_, r) => formatTimestamp(r.expires_at) }, { title: '操作', render: (_, r) => r.download_path && <Button onClick={() => void download(r.id)}>下载</Button> }]} />
   </Space></Drawer>
 }

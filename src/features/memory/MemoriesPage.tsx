@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { App, Button, Descriptions, Select, Space, Switch, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { useEffect, useState } from 'react'
@@ -27,7 +28,7 @@ function MemoryTable({ items }: { items: Memory[] }) {
     { title: '属性', render: (_, row) => <Link to={`/memories/${row.memory_id}`}>{row.display_name}</Link> },
     { title: '记忆值', dataIndex: 'value_label' },
     { title: '主体', render: (_, row) => <Link to={`/memories/subjects/${row.memory_id}`}>{row.subject_name ?? '主体名称不可用'}</Link> },
-    { title: '层级', dataIndex: 'layer_label' }, { title: '类型', dataIndex: 'type_label' }, { title: '状态', dataIndex: 'status_label' },
+    { title: '层级', dataIndex: 'layer_label' }, { title: '类型', dataIndex: 'type_label' }, { title: '状态', dataIndex: 'status_label', render: (label: string) => <StatusTag label={label} /> },
     { title: '有效截止时间', render: (_, row) => formatTimestamp(row.expires_at) },
     { title: '使用次数', render: (_, row) => `${row.usage_count} 次` },
   ]} />
@@ -120,7 +121,7 @@ function MemoryDetail({ memoryId }: { memoryId: string }) {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data || !row ? <LoadingState /> : <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Descriptions bordered column={{ xs: 1, sm: 2 }} items={[
         { key: 'value', label: '记忆值', children: row.value_label }, { key: 'type', label: '类型', children: row.type_label },
-        { key: 'status', label: '状态', children: row.status_label }, { key: 'confirmed', label: '确认情况', children: row.confirmed ? '已明确确认' : '待确认' },
+        { key: 'status', label: '状态', children: <StatusTag label={row.status_label} /> }, { key: 'confirmed', label: '确认情况', children: <StatusTag label={row.confirmed ? '已明确确认' : '待确认'} /> },
         { key: 'expires', label: '有效截止时间', children: formatTimestamp(row.expires_at) }, { key: 'usage', label: '使用次数', children: `${row.usage_count} 次` },
         { key: 'version', label: '版本', children: `第 ${row.version} 版` }, { key: 'subject', label: '主体', children: row.subject_name ?? '主体名称不可用' },
       ]} />
@@ -128,7 +129,7 @@ function MemoryDetail({ memoryId }: { memoryId: string }) {
         { title: '来源', dataIndex: 'name' }, { title: '来源类型', dataIndex: 'source_type_label' }, { title: '观测时间', render: (_, source) => formatTimestamp(source.observed_at) },
       ]} />
       <Table aria-label="变更记录" rowKey="version" pagination={false} dataSource={query.data.versions} scroll={{ x: 540 }} columns={[
-        { title: '版本', render: (_, version) => `第 ${version.version} 版` }, { title: '状态', dataIndex: 'status_label' }, { title: '变更原因', dataIndex: 'reason' }, { title: '变更时间', render: (_, version) => formatTimestamp(version.changed_at) },
+        { title: '版本', render: (_, version) => `第 ${version.version} 版` }, { title: '状态', dataIndex: 'status_label', render: (label: string) => <StatusTag label={label} /> }, { title: '变更原因', dataIndex: 'reason' }, { title: '变更时间', render: (_, version) => formatTimestamp(version.changed_at) },
       ]} />
     </Space>}
     {editing && row && <MemoryEditor memory={row} attributes={catalog.data?.attributes ?? []} subjects={[]} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); query.reload() }} />}
@@ -145,7 +146,7 @@ function MemoryDeletion({ deletionId }: { deletionId: string }) {
   }, [status, reload])
   return <PageContainer title="记忆删除进度" actions={<Space><Link to="/memories">返回记忆列表</Link><Button onClick={query.reload}>刷新</Button></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Descriptions column={1} items={[
-      { key: 'status', label: '状态', children: query.data.status_label }, { key: 'count', label: '记忆数量', children: `${query.data.count} 条` },
+      { key: 'status', label: '状态', children: <StatusTag label={query.data.status_label} /> }, { key: 'count', label: '记忆数量', children: `${query.data.count} 条` },
       { key: 'requested', label: '提交时间', children: formatTimestamp(query.data.requested_at) }, { key: 'completed', label: '完成时间', children: query.data.completed_at ? formatTimestamp(query.data.completed_at) : '尚未完成' },
     ]} />}
     {query.data && query.data.count > 0 && <DeletionSteps deletionId={deletionId} />}

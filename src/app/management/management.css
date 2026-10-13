@@ -1,0 +1,171 @@
+/* 业务管理页与浮层独立作用域，避免影响首页、登录和智能体工作区。 */
+:where(.management-surface, .management-overlay) {
+  --management-line: #e7edf5;
+  --management-muted: #697991;
+  --management-ink: #17243b;
+  --management-blue: #2463eb;
+  --management-soft: #f5f7fb;
+}
+
+.management-surface .app-content { padding: 28px; }
+.management-surface .page-container {
+  border: 1px solid var(--management-line);
+  box-shadow: 0 3px 16px rgb(23 36 59 / 3%);
+}
+.management-surface .page-container > .ant-card-body { padding: 26px; }
+.management-surface .page-heading { min-height: 40px; margin-bottom: 26px; gap: 16px; }
+.management-surface .page-heading h2.ant-typography { font-size: 24px; line-height: 1.4; letter-spacing: -.5px; font-weight: 650; }
+.management-surface .page-heading > .ant-space { justify-content: flex-end; flex-wrap: wrap; gap: 10px !important; }
+.management-surface .page-heading .ant-btn { padding-inline: 16px; }
+.management-surface .page-heading a { font-weight: 500; }
+.management-surface .page-container .page-container { box-shadow: none; border-color: var(--management-line); }
+.management-surface .page-container .page-container > .ant-card-body { padding: 20px; }
+.management-surface .page-container .page-container h2.ant-typography { font-size: 19px; }
+
+/* 页面级标签与筛选区使用独立底色，表格保留完整的横向阅读空间。 */
+.management-surface .app-content > .ant-tabs > .ant-tabs-nav {
+  margin-bottom: 22px; padding-inline: 22px; border: 1px solid var(--management-line);
+  border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgb(23 36 59 / 2%);
+}
+.management-surface .app-content > .ant-tabs > .ant-tabs-nav::before { border-bottom: 0; }
+:where(.management-surface, .management-overlay) .ant-tabs-tab-active { font-weight: 600; }
+.management-surface .app-content .ant-form-inline,
+.management-surface .app-content .query-filters {
+  display: flex; width: 100%; padding: 18px; margin-bottom: 22px;
+  border: 1px solid var(--management-line); border-radius: 10px; background: #f8fafd;
+  row-gap: 16px; column-gap: 16px; align-items: flex-end;
+}
+.management-surface .app-content .ant-form-inline > .ant-form-item { margin: 0; min-width: 0; }
+.management-surface .app-content .ant-form-inline .ant-form-item-row { flex-direction: column; align-items: stretch; }
+.management-surface .app-content .ant-form-inline .ant-form-item-label { padding-bottom: 7px; text-align: left; }
+.management-surface .app-content .ant-form-inline .ant-form-item-label > label { height: auto; font-size: 12px; color: var(--management-muted); }
+.management-surface .app-content .ant-form-inline .ant-form-item-label > label::after { display: none; }
+.management-surface .page-heading .query-filters { padding: 0; margin: 0; border: 0; background: none; }
+.management-surface .page-heading .query-filters .ant-space-item { min-width: 0; }
+:where(.management-surface, .management-overlay) .ant-space-vertical { max-width: 100%; }
+:where(.management-surface, .management-overlay) .ant-space-vertical > .ant-space-item { min-width: 0; }
+.management-surface .app-content > .page-container .ant-input-search { max-width: 100%; }
+
+.management-table .ant-table-container { overflow: hidden; border: 1px solid var(--management-line); border-radius: 10px; }
+.management-table .ant-table-content { scrollbar-width: thin; scrollbar-color: #cad5e4 transparent; }
+.management-table .ant-table-content::-webkit-scrollbar { height: 8px; }
+.management-table .ant-table-content::-webkit-scrollbar-track { background: #f1f4f9; }
+.management-table .ant-table-content::-webkit-scrollbar-thumb { background: #c9d3e2; border: 2px solid #f1f4f9; border-radius: 6px; }
+.management-table .ant-table-thead > tr > th { white-space: nowrap; font-size: 13px; font-weight: 600; }
+.management-table .ant-table-tbody > tr > td { line-height: 1.7; vertical-align: middle; }
+.management-table .ant-table-tbody > tr:last-child > td { border-bottom: 0; }
+.management-table .ant-table-tbody > tr > td:first-child > a,
+.management-table .ant-table-tbody > tr > td:first-child > .ant-btn-link { font-weight: 550; }
+.management-table .ant-table-tbody .ant-btn-link { padding-inline: 0; height: auto; white-space: normal; text-align: start; }
+.management-table .management-table-time { font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #63718a; }
+.management-table .management-table-actions .ant-space { flex-wrap: nowrap; gap: 12px !important; }
+.management-table .management-table-actions .ant-btn {
+  height: auto; min-height: 28px; padding: 2px 0; border: 0; border-radius: 4px;
+  background: transparent; box-shadow: none; color: var(--management-blue); font-size: 13px;
+}
+.management-table .management-table-actions .ant-btn:not(:disabled):hover { color: #164ac6; background: #edf3ff; }
+.management-table .management-table-actions .ant-btn-dangerous { color: #d84e55; }
+.management-table .management-table-actions .ant-btn:disabled { color: #a8b2c2; background: transparent; }
+.management-table .ant-table-pagination { margin-bottom: 0; margin-top: 20px; }
+.management-table .ant-pagination-total-text { margin-inline-end: auto; color: var(--management-muted); font-size: 13px; }
+.management-table .ant-empty { margin-block: 52px; color: #8390a6; }
+.management-table .ant-empty-image { opacity: .8; }
+:where(.management-surface, .management-overlay) .ant-tag { padding-inline: 9px; border-radius: 6px; font-size: 12px; line-height: 24px; }
+:where(.management-surface, .management-overlay) .management-status-tag { display: inline-flex; align-items: center; align-self: flex-start; gap: 6px; max-width: 100%; margin-inline-end: 0; vertical-align: middle; white-space: nowrap; }
+:where(.management-surface, .management-overlay) .management-status-tag::before { flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ''; }
+:where(.management-surface, .management-overlay) .management-status-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* 详情字段与技术内容各自形成可阅读的区域。 */
+:where(.management-surface, .management-overlay) .ant-descriptions:not(.ant-descriptions-bordered) {
+  margin-bottom: 22px; padding: 20px 22px; border: 1px solid var(--management-line); border-radius: 12px; background: #fff;
+}
+:where(.management-surface, .management-overlay) .ant-space-item > .ant-descriptions { margin-bottom: 0; }
+:where(.management-surface, .management-overlay) .ant-descriptions:not(.ant-descriptions-bordered) .ant-descriptions-item-container { flex-direction: column; gap: 7px; }
+:where(.management-surface, .management-overlay) .ant-descriptions .ant-descriptions-item-label { color: var(--management-muted); font-size: 13px; }
+:where(.management-surface, .management-overlay) .ant-descriptions .ant-descriptions-item-label::after { display: none; }
+:where(.management-surface, .management-overlay) .ant-descriptions .ant-descriptions-item-content { min-width: 0; color: var(--management-ink); overflow-wrap: anywhere; line-height: 1.8; }
+:where(.management-surface, .management-overlay) .ant-descriptions-bordered { margin-bottom: 22px; }
+:where(.management-surface, .management-overlay) .ant-descriptions-bordered .ant-descriptions-view { overflow: hidden; }
+:where(.management-surface, .management-overlay) .ant-descriptions.model-connection-details:not(.ant-descriptions-bordered) { padding: 8px 24px 24px; }
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-item-content { font-size: 16px; }
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-item-label { font-size: 14px; }
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-row > td,
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-row > th { width: 50%; padding-inline: 8px; }
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-row > th { padding-top: 22px; padding-bottom: 6px; }
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-row > td { padding-bottom: 22px; border-bottom: 1px solid var(--management-line); }
+:where(.management-surface, .management-overlay) .model-connection-details .ant-descriptions-row:last-child > td { border-bottom: 0; }
+:where(.management-surface, .management-overlay) pre { max-width: 100%; padding: 18px 20px; border: 1px solid var(--management-line); border-radius: 10px; background: #f8fafd; font-size: 13px; line-height: 1.8; overflow: auto; }
+:where(.management-surface, .management-overlay) textarea.ant-input { line-height: 1.8; padding: 12px; }
+:where(.management-surface, .management-overlay) .ant-alert { margin-bottom: 16px; border-radius: 10px; }
+:where(.management-surface, .management-overlay) .ant-alert:last-child { margin-bottom: 0; }
+.management-surface .ant-statistic-content { font-weight: 650; font-variant-numeric: tabular-nums; }
+.management-surface .ant-card:has(> .ant-card-body > .ant-statistic) { background: #f8fafd; box-shadow: none; }
+
+/* 浮层的头部和操作栏固定可见，长表单仅在正文滚动。 */
+.management-overlay .ant-modal { max-width: calc(100vw - 32px); top: 0; padding-bottom: 0; }
+.management-overlay .ant-modal-container {
+  display: flex; flex-direction: column; max-height: calc(100dvh - 64px); padding: 0;
+  overflow: hidden; border: 1px solid rgb(231 237 245 / 90%); border-radius: 16px;
+  box-shadow: 0 24px 80px rgb(23 36 59 / 22%);
+}
+.management-overlay .ant-modal-header { flex: none; margin: 0; padding: 22px 56px 20px 24px; border-bottom: 1px solid var(--management-line); }
+.management-overlay .ant-modal-title { color: var(--management-ink); font-weight: 650; }
+.management-overlay .ant-modal-body { min-height: 0; padding: 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.management-overlay .ant-modal-footer { flex: none; margin: 0; padding: 16px 24px; border-top: 1px solid var(--management-line); background: #f8fafd; }
+.management-overlay .ant-modal-footer .ant-btn { min-width: 82px; }
+.management-overlay .ant-modal-close { top: 22px; inset-inline-end: 20px; color: #8190a6; }
+.management-overlay .ant-modal-mask,
+.management-overlay .ant-drawer-mask { background: rgb(23 36 59 / 38%); }
+.management-dialog-title { display: inline-flex; align-items: center; gap: 12px; }
+.management-dialog-title > .anticon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: #edf3ff; color: var(--management-blue); font-size: 19px; }
+.management-overlay .ant-drawer-content-wrapper { max-width: calc(100vw - 24px); }
+.management-overlay .ant-drawer-section:not(.workspace-drawer) { overflow: hidden; border-radius: 16px 0 0 16px; }
+.management-overlay .ant-drawer-section:not(.workspace-drawer) .ant-drawer-header { padding: 22px 26px; }
+.management-overlay .ant-drawer-section:not(.workspace-drawer) .ant-drawer-header-title { flex-direction: row-reverse; }
+.management-overlay .ant-drawer-section:not(.workspace-drawer) .ant-drawer-title { font-size: 20px; font-weight: 650; }
+.management-overlay .ant-drawer-section:not(.workspace-drawer) .ant-drawer-close { margin: 0 0 0 16px; }
+.management-overlay .ant-drawer-section:not(.workspace-drawer) .ant-drawer-body { padding: 24px; background: var(--management-soft); }
+.management-overlay .ant-drawer-footer { padding: 16px 24px; background: #fff; }
+.management-overlay .ant-form-item:last-child { margin-bottom: 0; }
+.management-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.management-form-grid > .ant-form-item { min-width: 0; margin-bottom: 0; }
+.management-form-grid > :not(.ant-form-item),
+.management-form-grid > .ant-form-item:has(textarea, .ant-tree, .ant-upload, .ant-checkbox-group),
+.management-form-grid > .management-field-wide,
+.management-form-grid > .ant-form-item:only-child,
+.management-form-grid > .ant-form-item:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.management-form-grid .ant-input-number { width: 100%; }
+.management-form-grid > .ant-form-item:has(.ant-form-item-explain-error) { align-self: start; }
+.management-overlay .ant-tree { padding: 12px; border: 1px solid var(--management-line); border-radius: 8px; background: #f8fafd; }
+
+@media (max-width: 767px) {
+  .management-surface .app-content { padding: 16px; }
+  .management-surface .page-container > .ant-card-body { padding: 18px; }
+  .management-surface .page-heading { align-items: flex-start; margin-bottom: 20px; }
+  .management-surface .page-heading h2.ant-typography { font-size: 21px; }
+  .management-surface .page-heading > .ant-space { justify-content: flex-start; }
+  .management-surface .app-content .ant-form-inline,
+  .management-surface .app-content .query-filters { padding: 14px; gap: 14px; }
+  .management-surface .page-heading .query-filters { padding: 0; }
+  .management-overlay .ant-modal-container { max-height: calc(100dvh - 32px); }
+  .management-overlay .ant-modal-header { padding: 18px 52px 18px 20px; }
+  .management-overlay .ant-modal-body { padding: 20px; }
+  .management-overlay .ant-modal-footer { padding: 14px 20px; }
+  .management-overlay .ant-drawer-body { padding: 18px; }
+}
+@media (min-width: 576px) and (max-width: 1199px) {
+  .management-table .management-table-actions { position: static !important; }
+  .management-table .management-table-actions::before { display: none; }
+}
+@media (max-width: 575px) {
+  .management-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .management-surface .app-content .ant-form-inline > .ant-form-item { flex: 1 1 100%; }
+  .management-surface .app-content .ant-form-inline .ant-select,
+  .management-surface .app-content .ant-form-inline .ant-input,
+  .management-surface .app-content .ant-form-inline .ant-picker { width: 100% !important; }
+  .management-surface .page-heading > .ant-space { width: 100%; }
+  .management-overlay .ant-drawer-content-wrapper { max-width: 100vw; }
+  .management-overlay .ant-drawer-section:not(.workspace-drawer) { border-radius: 0; }
+  .management-table .management-table-actions { position: static !important; }
+  .management-table .management-table-actions::before { display: none; }
+}

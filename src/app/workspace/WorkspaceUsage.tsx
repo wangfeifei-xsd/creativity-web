@@ -102,7 +102,7 @@ export function WorkspaceUsage({ entries }: {
     '--usage-primary': token.colorPrimary,
     '--usage-primary-hover': token.colorPrimaryHover,
     '--usage-on-primary': token.colorTextLightSolid,
-    '--usage-radius': `${token.borderRadiusLG + 2}px`,
+    '--usage-radius': `${token.borderRadiusLG}px`,
   } as CSSProperties}>
     <Typography.Title id="workspace-usage-title" level={2}>使用流程</Typography.Title>
     <div className="workspace-usage-flows">

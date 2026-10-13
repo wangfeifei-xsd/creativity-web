@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { RunViewer } from '../../components/run-viewer/RunViewer'
 import { DeletionSteps } from '../../components/DeletionSteps'
 import { App, Button, Collapse, Descriptions, Space, Typography } from 'antd'
@@ -66,7 +67,7 @@ export function ConversationDetail({ conversationId }: { conversationId: string 
       <Descriptions items={[
         { key: 'agent', label: '智能体', children: value.conversation.agent_name },
         { key: 'subject', label: '主体', children: value.conversation.subject_name ?? '名称不可用' },
-        { key: 'state', label: '状态', children: value.conversation.status_label },
+        { key: 'state', label: '状态', children: <StatusTag label={value.conversation.status_label} /> },
         { key: 'environment', label: '环境', children: value.conversation.environment_label },
         { key: 'expires', label: '计划清理时间', children: formatTimestamp(value.conversation.expires_at) },
       ]} />
@@ -110,7 +111,7 @@ export function DeletionProgress({ deletionId }: { deletionId: string }) {
   }, [status, reload])
   return <PageContainer title="删除进度" actions={<Space><Link to="/conversations">返回会话列表</Link><Button onClick={query.reload}>刷新</Button></Space>}>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Descriptions column={1} items={[
-      { key: 'state', label: '状态', children: query.data.status_label },
+      { key: 'state', label: '状态', children: <StatusTag label={query.data.status_label} /> },
       { key: 'requested', label: '提交时间', children: formatTimestamp(query.data.requested_at) },
       { key: 'completed', label: '完成时间', children: query.data.completed_at ? formatTimestamp(query.data.completed_at) : '尚未完成' },
     ]} />}

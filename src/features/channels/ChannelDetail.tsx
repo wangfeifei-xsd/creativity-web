@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { send } from '../../api/management'
-import { Button, Descriptions, Space, Tabs, Tag } from 'antd'
+import { Button, Descriptions, Space, Tabs } from 'antd'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -40,7 +41,7 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
   const channel = page.channel
   const refresh = () => { setGeneration(n => n + 1); query.reload() }
   const titles = { suspend: '暂停渠道', resume: '恢复渠道', archive: '归档渠道' }
-  return <PageContainer title={channel.name} actions={<Space wrap><Tag>{channel.status_label}</Tag><Link to="/channels">渠道列表</Link>
+  return <PageContainer title={channel.name} actions={<Space wrap><StatusTag label={channel.status_label} /><Link to="/channels">渠道列表</Link>
     <Button onClick={refresh}>刷新</Button><ActionButtons actions={page.actions} handlers={{ 'channel:edit': () => setEditing(true),
       'channel:suspend': () => setImpact('suspend'), 'channel:resume': () => setImpact('resume'), 'channel:archive': () => setImpact('archive') }} /></Space>}>
     <Tabs key={generation} activeKey={page.tabs.some(t => t.navigation_key === tab) ? tab : page.tabs[0]?.navigation_key} onChange={setTab} destroyOnHidden

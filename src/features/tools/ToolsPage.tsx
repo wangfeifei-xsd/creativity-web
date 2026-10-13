@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { toolPermissionLabel } from './permissionLabel'
 import { Button, Descriptions, Input, Select, Space, Tabs, Typography } from 'antd'
 import { Table } from '../../components/Table'
@@ -99,7 +100,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
     <ResourceActions kind="tool" summary={summaries.items[toolId]} onEdit={() => setEditor('version')} onChanged={() => navigate('/tools')} /></Space>}>
     <Descriptions items={[
       { key: 'source', label: '来源', children: detail.tool.source_label }, { key: 'owner', label: '负责人', children: detail.tool.owner },
-      { key: 'state', label: '状态', children: summaries.items[toolId]?.status.label ?? '加载中' },
+      { key: 'state', label: '状态', children: summaries.items[toolId] ? <StatusTag status={summaries.items[toolId].status} /> : '加载中' },
       { key: 'description', label: '用途', children: detail.tool.description },
     ]} />
     {definition && version ? <Tabs activeKey={activeTab} onChange={setActiveTab} items={[

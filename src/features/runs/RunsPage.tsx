@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
 import { Button, Form, Input, Select } from 'antd'
 import { Table } from '../../components/Table'
@@ -35,7 +36,7 @@ function RunList() {
       <Form.Item label="主体编号" name="subject_id"><Input style={{ width: 160 }} /></Form.Item>
       <Form.Item label="开始时间" name="start_at"><DateTimeInput /></Form.Item>
       <Form.Item label="结束时间" name="end_at"><DateTimeInput /></Form.Item>
-      <Form.Item><Button htmlType="submit">筛选</Button></Form.Item>
+      <Form.Item><Button type="primary" htmlType="submit">筛选</Button></Form.Item>
     </Form>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <>
       <Table rowKey="run_id" pagination={{ current: page, pageSize, total: query.data.total ?? undefined,
@@ -45,7 +46,7 @@ function RunList() {
           setPageSize(nextSize)
         } }} dataSource={query.data.items} scroll={{ x: 700 }} columns={[
         { title: '任务', render: (_, row) => <Link to={`/runs/${row.run_id}`}>{row.name}</Link> },
-        { title: '状态', dataIndex: 'state_label' },
+        { title: '状态', render: (_, row) => <StatusTag label={row.state_label} /> },
         { title: '发起时间', render: (_, row) => formatTimestamp(row.created_at) },
         { title: '失败原因', render: (_, row) => row.error?.message ?? '—' },
       ]} />

@@ -1,4 +1,5 @@
-import { Button, Form, InputNumber, Modal, Select, Space, Switch, Tag } from 'antd'
+import { StatusTag } from '../../components/StatusTag'
+import { Button, Form, InputNumber, Modal, Select, Space, Switch } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -19,7 +20,7 @@ export function SubjectReviews() {
         { title: '接入服务', dataIndex: 'client_name' },
         { title: '身份复核连接', render: (_, row) => <Link to={`/mcp-connections/${row.connection_id}`}>{row.connection_name}</Link> },
         { title: '身份工具', dataIndex: 'tool_name' },
-        { title: '状态', render: (_, row) => <Tag color={row.unavailable_reason ? 'warning' : 'success'}>{row.status_name}</Tag> },
+        { title: '状态', render: (_, row) => <StatusTag label={row.status_name} tone={row.unavailable_reason ? 'warning' : undefined} /> },
         { title: '原因', render: (_, row) => row.unavailable_reason ?? '当前配置可用' },
         { title: '操作', render: (_, row) => <Button onClick={() => setEditing(row)}>编辑</Button> },
       ]} />}

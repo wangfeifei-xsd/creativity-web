@@ -1,0 +1,42 @@
+import type { ThemeConfig } from 'antd'
+
+export const managementTheme: ThemeConfig = {
+  token: {
+    colorPrimary: '#2463eb',
+    colorBgLayout: '#f5f7fb',
+    colorText: '#17243b',
+    colorTextSecondary: '#697991',
+    colorBorder: '#dfe6f0',
+    colorBorderSecondary: '#e9eef5',
+    colorFillAlter: '#f7f9fc',
+    // 成功色显式定义浅底与深色文字，避免深绿种子自动推导出灰绿背景。
+    colorSuccess: '#15803d',
+    colorSuccessBg: '#f0fdf4',
+    colorSuccessBgHover: '#dcfce7',
+    colorSuccessBorder: '#bbf7d0',
+    colorSuccessBorderHover: '#86efac',
+    colorSuccessHover: '#16a34a',
+    colorSuccessActive: '#166534',
+    colorSuccessText: '#15803d',
+    colorSuccessTextHover: '#16a34a',
+    colorSuccessTextActive: '#166534',
+    controlHeight: 36,
+    borderRadius: 8,
+    borderRadiusLG: 12,
+    fontSize: 14,
+  },
+  components: {
+    Button: { defaultShadow: 'none', primaryShadow: '0 2px 4px rgb(36 99 235 / 12%)', fontWeight: 500 },
+    Card: { bodyPadding: 24, headerFontSize: 16 },
+    Table: { headerBg: '#f5f7fb', headerColor: '#41516a', headerSplitColor: 'transparent',
+      rowHoverBg: '#f6f9ff', cellPaddingBlock: 16, cellPaddingInline: 18, borderColor: '#e9eef5' },
+    Tabs: { horizontalItemGutter: 28, horizontalMargin: '0 0 24px', horizontalItemPadding: '14px 0', titleFontSize: 14 },
+    Form: { itemMarginBottom: 20, verticalLabelPadding: '0 0 8px', labelColor: '#41516a' },
+    Modal: { titleFontSize: 19, titleLineHeight: 1.5 },
+    Descriptions: { labelBg: '#f7f9fc', itemPaddingBottom: 18 },
+    Input: { activeShadow: '0 0 0 3px rgb(36 99 235 / 8%)' },
+    Select: { optionSelectedBg: '#edf3ff' },
+    Tag: { defaultBg: '#f2f5f9', defaultColor: '#66758c', colorInfo: '#2463eb', colorInfoBg: '#edf3ff',
+      colorWarning: '#b45309', colorError: '#c3373c' },
+  },
+}

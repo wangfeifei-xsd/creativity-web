@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
 import { Button, Form, Input, Select, Space } from 'antd'
 import { Table } from '../../components/Table'
@@ -45,7 +46,7 @@ function ConversationList() {
       <Table rowKey="conversation_id" pagination={false} dataSource={query.data.items} scroll={{ x: 880 }} columns={[
         { title: '标题', render: (_, row) => <Link to={`/conversations/${row.conversation_id}`}>{row.title}</Link> },
         { title: '智能体', dataIndex: 'agent_name' }, { title: '主体', render: (_, row) => row.subject_name ?? '名称不可用' },
-        { title: '环境', dataIndex: 'environment_label' }, { title: '状态', dataIndex: 'status_label' },
+        { title: '环境', dataIndex: 'environment_label' }, { title: '状态', dataIndex: 'status_label', render: (label: string) => <StatusTag label={label} /> },
         { title: '创建时间', render: (_, row) => formatTimestamp(row.created_at) },
         { title: '计划清理时间', render: (_, row) => formatTimestamp(row.expires_at) },
       ]} />

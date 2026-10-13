@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Alert, Flex, Segmented, Tree, Typography } from 'antd'
 import { Table } from '../../components/Table'
 import { fileTree } from './file-tree'
@@ -41,6 +42,6 @@ export function SkillFiles({ version }: { version: Schema<'SkillVersionView'> })
     </>}</div>
   </div><Table rowKey="relative_path" size="small" dataSource={version.files} scroll={{ x: 600 }} columns={[
     { title: '文件路径', dataIndex: 'relative_path' }, { title: '大小', render: (_, file) => `${file.size_bytes} 字节` },
-    { title: '加载状态', render: (_, file) => file.unavailable_reason ?? '可加载' },
+    { title: '加载状态', render: (_, file) => <Flex vertical gap={4}><StatusTag label={file.unavailable_reason ? '不可加载' : '可加载'} />{file.unavailable_reason && <Typography.Text type="secondary">{file.unavailable_reason}</Typography.Text>}</Flex> },
   ]} /></>
 }

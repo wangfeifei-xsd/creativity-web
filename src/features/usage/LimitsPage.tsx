@@ -1,4 +1,5 @@
-import { Button, Form, Input, InputNumber, Modal, Result, Select, Space, Tag } from 'antd'
+import { StatusTag } from '../../components/StatusTag'
+import { Button, Form, Input, InputNumber, Modal, Result, Select, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { send } from '../../api/management'
@@ -57,7 +58,7 @@ export function PlatformLimitsPage() {
       { title: '上限', render: (_, row) => `${row.limit_value} ${row.unit === 'concurrency' ? '个' : '次'}` },
       { title: '当前占用', render: (_, row) => row.used == null ? '未确认' : `${row.used} ${row.unit === 'concurrency' ? '个' : '次'}` },
       { title: '剩余', render: (_, row) => row.remaining == null ? '未确认' : `${row.remaining} ${row.unit === 'concurrency' ? '个' : '次'}` },
-      { title: '状态', render: (_, row) => <Tag>{row.status === 'ACTIVE' ? '启用' : '停用'}</Tag> },
+      { title: '状态', render: (_, row) => <StatusTag label={row.status === 'ACTIVE' ? '启用' : '停用'} /> },
       { title: '生效时间', render: (_, row) => formatTimestamp(row.effective_at) },
       { title: '操作', render: (_, row) => <Button onClick={() => edit(row)}>编辑</Button> },
     ]} />

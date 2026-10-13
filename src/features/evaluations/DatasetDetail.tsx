@@ -1,3 +1,4 @@
+import { StatusTag } from '../../components/StatusTag'
 import { Alert, Button, Descriptions, Form, Input, Modal, Select, Space, Tabs, Upload } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
@@ -112,7 +113,7 @@ function ImportDialog({ dataset, onClose, onSaved }: { dataset: Dataset; onClose
       <Form.Item name="mapping" label="字段映射（来源字段 → 样本字段）"><Input.TextArea rows={2} /></Form.Item>
       <Form.Item name="content" label="样本内容" rules={[{ required: true }]}><Input.TextArea rows={8} /></Form.Item>
     </Form>
-    {preview && <><p>可导入 {preview.valid_count} 条，错误 {preview.error_count} 条</p><Table rowKey="row_number" dataSource={preview.rows} columns={[{ title: '行号', dataIndex: 'row_number' }, { title: '样本', render: (_, row) => row.case?.title ?? '不合法样本' }, { title: '检查结果', render: (_, row) => row.errors.join('；') || '通过' }]} /></>}
+    {preview && <><p>可导入 {preview.valid_count} 条，错误 {preview.error_count} 条</p><Table rowKey="row_number" dataSource={preview.rows} columns={[{ title: '行号', dataIndex: 'row_number' }, { title: '样本', render: (_, row) => row.case?.title ?? '不合法样本' }, { title: '检查结果', render: (_, row) => <Space orientation="vertical" size={4}><StatusTag label={row.errors.length ? '未通过' : '通过'} />{row.errors.join('；') || null}</Space> }]} /></>}
   </Modal>
 }
 

@@ -1,6 +1,7 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
 import { RunViewer } from '../../components/run-viewer/RunViewer'
-import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Tabs, Tag } from 'antd'
+import { Alert, Button, Descriptions, Form, Input, InputNumber, Select, Space, Tabs } from 'antd'
 import { Table } from '../../components/Table'
 import { useEffect, useRef, useState } from 'react'
 import { send } from '../../api/management'
@@ -20,14 +21,14 @@ export function ModelDetails({ modelId, initialTab = 'connection' }: { modelId: 
   if (!query.data) return <LoadingState />
   const model = query.data
   return <Tabs activeKey={tab} onChange={setTab} destroyOnHidden items={[
-    { key: 'connection', label: '连接', children: <Descriptions column={1} items={[
+    { key: 'connection', label: '连接', children: <Descriptions className="model-connection-details" layout="vertical" colon={false} column={{ xs: 1, sm: 2 }} items={[
       { key: 'provider', label: '供应商', children: model.provider_name ?? '名称不可用' },
       { key: 'connection', label: '连接', children: model.connection_name }, { key: 'protocol', label: '协议', children: model.protocol_name },
       { key: 'alias', label: '稳定别名', children: model.model_code }, { key: 'actual', label: '供应商模型名', children: model.provider_model_name },
       { key: 'context', label: '上下文上限', children: model.context_limit ? `${model.context_limit.toLocaleString()} Token` : '未知' },
     ]} /> },
     { key: 'capabilities', label: '能力', children: <Table rowKey="capability" pagination={false} dataSource={model.capabilities} columns={[
-      { title: '能力', dataIndex: 'name' }, { title: '状态', render: (_, c) => <Tag color={c.state === 'SUPPORTED' ? 'success' : c.state === 'UNSUPPORTED' ? 'error' : 'default'}>{c.label}</Tag> },
+      { title: '能力', dataIndex: 'name' }, { title: '状态', render: (_, c) => <StatusTag label={c.label} /> },
       { title: '验证时间', render: (_, c) => formatTimestamp(c.verified_at) }, { title: '原因', render: (_, c) => c.reason ?? '无' },
     ]} /> },
     { key: 'parameters', label: '参数', children: <Space orientation="vertical" style={{ width: '100%' }}>
@@ -57,11 +58,11 @@ function Tests({ modelId, onVerified }: { modelId: string; onVerified: () => voi
   }, [active, query.reload])
   return <Space orientation="vertical" style={{ width: '100%' }}><Space><Button onClick={() => setOpen(true)}>能力验证</Button><Button onClick={query.reload}>刷新</Button></Space>
     {query.error ? <ErrorState error={query.error} /> : !query.data ? <LoadingState /> : <Table rowKey="id" dataSource={query.data} expandable={{ expandedRowRender: t => <>{t.run_id && <RunViewer key={t.run_id} runId={t.run_id} onCompleted={query.reload} />}<Table pagination={false} rowKey="case" dataSource={t.results} columns={[
-      { title: '用例', render: (_, r) => cases.data?.find(c => c.case === r.case)?.name ?? '名称不可用' }, { title: '结果', render: (_, r) => r.passed ? '通过' : '未通过' },
+      { title: '用例', render: (_, r) => cases.data?.find(c => c.case === r.case)?.name ?? '名称不可用' }, { title: '结果', render: (_, r) => <StatusTag label={r.passed ? '通过' : '未通过'} /> },
       { title: '原因', render: (_, r) => r.reason ?? '无' }, { title: '尝试次数', render: (_, r) => r.attempt_ids.length },
     ]}/></> }} columns={[
       { title: '验证时间', render: (_, t) => formatTimestamp(t.created_at) }, { title: '配置修订', dataIndex: 'config_revision' },
-      { title: '状态', render: (_, t) => <Tag>{t.state_label}</Tag> }, { title: '耗时', render: (_, t) => t.latency_ms === null ? '未记录' : `${t.latency_ms} 毫秒` },
+      { title: '状态', render: (_, t) => <StatusTag label={t.state_label} /> }, { title: '耗时', render: (_, t) => t.latency_ms === null ? '未记录' : `${t.latency_ms} 毫秒` },
       { title: '执行反馈', render: (_, t) => t.reason ?? (t.run_id ? '已关联调试运行' : '未创建运行') },
     ]} />}
     {open && <ModelDialog title="能力验证" submitLabel="开始验证" initial={{ cases: ['text', 'usage'] }} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); query.reload(); onVerified() }} onSave={values => send(`/admin/v1/models/${modelId}/tests`, 'POST', values)}>

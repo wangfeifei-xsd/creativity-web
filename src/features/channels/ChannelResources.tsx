@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { useDirectory } from '../../api/useDirectory'
-import { Button, Input, Select, Space, Tag } from 'antd'
+import { Button, Input, Select, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
@@ -26,7 +27,7 @@ export function ChannelResources({ channelId }: { channelId: string }) {
     <Table<ResourceEntry> rowKey={row => `${row.resource_type}|${row.resource_id}`} dataSource={query.data?.items} loading={!query.data && !query.error}
       pagination={directory.pagination(query.data?.total)} columns={[
         { title: '资源', render: (_, row) => session.workspace?.channel_id === channelId ? <Link to={row.path}>{row.name}</Link> : row.name },
-        { title: '类型', dataIndex: 'resource_type_name' }, { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> },
+        { title: '类型', dataIndex: 'resource_type_name' }, { title: '状态', render: (_, row) => <StatusTag label={row.status_label} /> },
       ]} />
   </Space>
 }

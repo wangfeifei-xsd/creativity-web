@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { DateTimeInput } from '../../components/DateTimeInput'
-import { Button, Drawer, Form, Input, Modal, Select, Space, Tag, Typography, Upload } from 'antd'
+import { Button, Drawer, Form, Input, Modal, Select, Space, Typography, Upload } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -54,10 +55,10 @@ export function Statements() {
     </Modal>
     <Drawer open={!!selected} title="供应商账单核查" width={1100} onClose={() => setSelected(undefined)} extra={<Button onClick={detail.reload}>重新核查</Button>}>
       <ErrorNotice error={detail.error} />
-      <Space wrap>{detail.data?.counts.filter(c => c.count > 0).map(c => <Tag key={c.state}>{c.label}：{c.count}</Tag>)}</Space>
+      <Space wrap>{detail.data?.counts.filter(c => c.count > 0).map(c => <Space key={c.state} size={4}><StatusTag label={c.label} /><span>：{c.count}</span></Space>)}</Space>
       {detail.data && <Typography.Paragraph>核查时间：{formatTimestamp(detail.data.checked_at)}</Typography.Paragraph>}
       <Table key={selected} rowKey="key" dataSource={detail.data?.results.map((result, index) => ({ ...result, key: `${selected}:${index}` }))} scroll={{ x: 950 }} columns={[
-        { title: '供应商行号', render: (_, r) => r.line_id ?? '未提供' }, { title: '结果', dataIndex: 'state_label' },
+        { title: '供应商行号', render: (_, r) => r.line_id ?? '未提供' }, { title: '结果', dataIndex: 'state_label', render: (label: string) => <StatusTag label={label} /> },
         { title: '模型', render: (_, r) => r.model_name ?? '名称不可用' }, { title: '供应商金额', render: (_, r) => formatAmount(r.provider_amount, detail.data?.currency) },
         { title: '平台金额', render: (_, r) => formatAmount(r.platform_amount, r.platform_currency) }, { title: '差额', render: (_, r) => formatAmount(r.difference, detail.data?.currency) },
         { title: '迟到记录', render: (_, r) => r.late_reported ? '导入后上报' : '无' }, { title: '运行', render: (_, r) => r.run_id ? <Link to={`/runs/${r.run_id}`}>查看运行</Link> : '未匹配' },

@@ -1,5 +1,6 @@
+import { StatusTag } from '../../components/StatusTag'
 import { names, send, statuses, environments, actionsAsOptions } from '../../api/management'
-import { Button, Space, Tag } from 'antd'
+import { Button, Space } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { apiClient } from '../../api/client'
@@ -85,7 +86,7 @@ export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'
       rowKey={row => String(row[definition.id])} dataSource={query.data} scroll={{ x: kind === 'keys' ? 1100 : 800 }} columns={[
         { title: '名称', dataIndex: 'name' },
         ...(kind !== 'environments' ? [{ title: '环境', render: (_: unknown, row: Item) => textValue(row.environment_name) }] : []),
-        { title: '状态', render: (_, row) => <Tag>{row.status_label}</Tag> },
+        { title: '状态', render: (_, row) => <StatusTag label={row.status_label} /> },
         ...(kind === 'clients' || kind === 'keys' ? [{ title: '可调用能力', render: (_: unknown, row: Item) => names(row.scope_names as string[]) }] : []),
         ...(kind === 'keys' ? [
           { title: '接入服务', render: (_: unknown, row: Item) => textValue(row.client_name) },

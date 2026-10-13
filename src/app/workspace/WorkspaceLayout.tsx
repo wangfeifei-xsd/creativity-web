@@ -10,8 +10,10 @@ import { useSession } from './context'
 import { navigationItems } from './navigation'
 import type { CSSProperties, ReactNode } from 'react'
 import './workspace.css'
+import { useManagementAppearance } from '../management/context'
 
 export function WorkspaceLayout({ children }: { children: ReactNode }) {
+  const managementAppearance = useManagementAppearance()
   const { session, switchWorkspace, logout } = useSession()
   const { token } = theme.useToken()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -73,7 +75,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
     '--workspace-subtle': token.colorTextTertiary,
     '--workspace-primary': token.colorPrimary,
   } as CSSProperties
-  return <Layout className="workspace-layout" style={workspaceStyle}>
+  return <Layout className={`workspace-layout${managementAppearance ? ' management-surface' : ''}`} style={workspaceStyle}>
     {screens.lg && <Layout.Sider width={232} className="workspace-sidebar" theme="light">{brand}{menu}</Layout.Sider>}
     {!screens.lg && <Drawer rootStyle={workspaceStyle} classNames={{ section: 'workspace-drawer' }} title={brand} placement="left" size={256} open={menuOpen}
       onClose={() => setMenuOpen(false)} destroyOnHidden>{menu}</Drawer>}
