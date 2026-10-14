@@ -5416,6 +5416,8 @@ export interface components {
         AgentStep: {
             /** Dependency */
             dependency?: string | null;
+            /** Failure Handler */
+            failure_handler?: string | null;
             /**
              * Failure Policy
              * @default retry
@@ -6164,7 +6166,7 @@ export interface components {
              * Capability
              * @enum {string}
              */
-            capability: "text" | "tools" | "structured_output" | "streaming" | "vision" | "embedding";
+            capability: "text" | "tools" | "structured_output" | "json_output" | "streaming" | "vision" | "embedding";
             /** Label */
             label: string;
             /** Name */
@@ -6222,12 +6224,12 @@ export interface components {
             /** Cancel After Chunks */
             cancel_after_chunks?: number | null;
             /** Capability */
-            capability?: ("text" | "tools" | "structured_output" | "streaming" | "vision" | "embedding") | null;
+            capability?: ("text" | "tools" | "structured_output" | "json_output" | "streaming" | "vision" | "embedding") | null;
             /**
              * Case
              * @enum {string}
              */
-            case: "text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision";
+            case: "text" | "schema" | "json" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision";
             /** Images */
             images?: string[];
             /** Name */
@@ -6237,7 +6239,7 @@ export interface components {
              * @default native
              * @enum {string}
              */
-            output_mode: "native" | "prompt";
+            output_mode: "native" | "json" | "prompt";
             /** Output Schema */
             output_schema?: {
                 [key: string]: unknown;
@@ -6299,7 +6301,7 @@ export interface components {
              * Case
              * @enum {string}
              */
-            case: "text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision";
+            case: "text" | "schema" | "json" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision";
             /** Passed */
             passed: boolean;
             /** Reason */
@@ -10076,7 +10078,7 @@ export interface components {
              *       "text"
              *     ]
              */
-            required_capabilities: ("text" | "tools" | "structured_output" | "streaming" | "vision" | "embedding")[];
+            required_capabilities: ("text" | "tools" | "structured_output" | "json_output" | "streaming" | "vision" | "embedding")[];
             /** Resource Revision */
             resource_revision?: number | null;
             retry_policy?: components["schemas"]["creativity_service__modules__models__schemas__RetryPolicy"];
@@ -11150,14 +11152,14 @@ export interface components {
              *       "usage"
              *     ]
              */
-            cases: ("text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision")[];
+            cases: ("text" | "schema" | "json" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision")[];
         };
         /** TestView */
         TestView: {
             /** Attempt Ids */
             attempt_ids: string[];
             /** Cases */
-            cases: ("text" | "schema" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision")[];
+            cases: ("text" | "schema" | "json" | "tools" | "stream_cancel" | "usage" | "embedding" | "vision")[];
             /** Config Digest */
             config_digest: string;
             /** Config Revision */

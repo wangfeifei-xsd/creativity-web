@@ -74,6 +74,7 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
       ...(step.kind === 'compute' ? [{ key: 'operator', label: '操作', children: ({ object: '对象组装', input: '等待补充', approval: '等待审批' } as Record<string, string>)[step.operator ?? ''] ?? '操作名称不可用' }] : []),
       { key: 'timeout', label: '超时', children: `${step.timeout_seconds} 秒` },
       { key: 'retry', label: '失败处理', children: step.failure_policy === 'retry' ? `最多重试 ${step.max_retries} 次` : step.failure_policy === 'partial' ? '返回部分结果' : '终止' },
+      { key: 'failure_handler', label: '失败收尾工具', children: step.failure_handler ? definition?.steps.find(item => item.key === step.failure_handler)?.name ?? '步骤不可用' : '未配置' },
       { key: 'resource', label: '依赖资源', children: step.dependency ? resourceName(step.dependency) : '沿用智能体配置' },
       ...(step.kind === 'model' ? [{ key: 'prompt', label: '提示词', children: step.prompt_id ? resourceName(step.prompt_id) : '沿用默认提示词' }] : []),
     ]} />

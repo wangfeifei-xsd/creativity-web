@@ -22,6 +22,7 @@ export function Flow({ definition, options, compact = false }: { definition: Def
           { key: 'kind', label: '类型', children: stepKinds[step.kind] },
           { key: 'timeout', label: '超时', children: `${step.timeout_seconds} 秒` },
           { key: 'failure', label: '失败处理', children: ({ fail: '终止并报错', partial: '返回部分结果', retry: `最多重试 ${step.max_retries} 次` })[step.failure_policy] },
+          ...(step.failure_handler ? [{ key: 'failure_handler', label: '失败收尾工具', children: label(step.failure_handler) }] : []),
           ...(step.kind !== 'compute' ? [{ key: 'dependency', label: step.kind === 'tool' ? '工具' : '模型路由', children: dependency ? options?.dependencies.find(item => item.version_id === dependency)?.name ?? '资源名称不可用' : '未配置' }] :
             [{ key: 'operator', label: '操作', children: ({ object: '对象组装', input: '等待补充', approval: '等待审批' })[step.operator ?? 'object'] }]),
           ...(step.kind === 'model' ? [{ key: 'prompt', label: '提示词', children: (step.prompt_id || definition.bindings.prompt_id) ? options?.dependencies.find(item => item.version_id === (step.prompt_id || definition.bindings.prompt_id))?.name ?? '资源名称不可用' : '未配置' }] : []),

@@ -104,7 +104,7 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
         invalidNodes={issues.map(issue => locateFlowIssue(value, issue.path ?? '').node).filter((key): key is string => !!key)} disabled={disabled} />
       <aside className="agent-flow-inspector" aria-label={selection.kind === 'edge' ? '流转配置' : '步骤配置'}>
         <div className="agent-flow-inspector-heading"><Typography.Title level={5}>{selection.kind === 'new' ? '新增步骤' : selection.kind === 'edge' ? '配置流转' : step?.name ?? '步骤不可用'}</Typography.Title>
-          {step && selection.kind === 'step' && <Popconfirm title={`删除步骤“${step.name}”及其连线？`} description="引用此步骤的输入映射需要重新配置。" okText="删除" cancelText="取消" disabled={disabled || value.steps.length === 1}
+          {step && selection.kind === 'step' && <Popconfirm title={`删除步骤“${step.name}”及其连线？`} description="引用此步骤的输入映射和失败收尾需要重新配置。" okText="删除" cancelText="取消" disabled={disabled || value.steps.length === 1}
             onConfirm={() => { const steps = value.steps.filter(item => item.key !== step.key); const start_step = value.start_step === step.key ? steps[0].key : value.start_step;
               pending.current = false; setError(undefined); setFocus(undefined); change({ ...value, steps, start_step, edges: value.edges.filter(item => item.source !== step.key && item.target !== step.key) }); setSelection({ kind: 'step', key: start_step }) }}>
             <Button size="small" danger disabled={disabled || value.steps.length === 1}>删除步骤</Button></Popconfirm>}

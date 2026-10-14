@@ -24,6 +24,10 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
   })
   const kind = Form.useWatch('kind', form) ?? initial.kind
   const failurePolicy = Form.useWatch('failure_policy', form) ?? initial.failure_policy
+  const failureHandler = Form.useWatch('failure_handler', form)
+  const handlerOptions = definition.steps.filter(item => item.kind === 'tool' && item.key !== step?.key).map(item => ({ value: item.key, label: item.name, disabled: false }))
+  const displayedHandler = failureHandler === undefined ? step?.failure_handler : failureHandler
+  if (displayedHandler && !handlerOptions.some(item => item.value === displayedHandler)) handlerOptions.push({ value: displayedHandler, label: '收尾步骤不可用，请重新选择', disabled: true })
   const inputSchema = parseOr(Form.useWatch('input_schema', form), step?.input_schema ?? {})
   const [issue, setIssue] = useState<FlowIssue>()
   const tabForField = (field: string): StepTab => field === 'mappings' || field === 'input_schema' ? 'inputs' : field === 'output_schema' ? 'output' : 'base'
@@ -44,7 +48,7 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
         dependency: values.kind === 'compute' ? null : values.dependency ?? null, inputs,
         prompt_id: values.kind === 'model' ? values.prompt_id ?? null : null,
         input_schema: parseObject(values.input_schema), output_schema: parseObject(values.output_schema), timeout_seconds: values.timeout_seconds,
-        failure_policy: values.failure_policy, max_retries: values.failure_policy === 'retry' ? values.max_retries : 0 }
+        failure_policy: values.failure_policy, failure_handler: values.failure_handler ?? null, max_retries: values.failure_policy === 'retry' ? values.max_retries : 0 }
     },
     focus(next) {
       const location = locateFlowIssue(definition, next.path ?? '')
@@ -71,6 +75,9 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
     <div className="agent-flow-form-pair"><Form.Item name="timeout_seconds" label="超时（秒）" rules={[{ required: true, message: '请填写超时' }]}><InputNumber min={1} max={3600} precision={0} /></Form.Item>
       <Form.Item name="failure_policy" label="失败处理"><Select options={[{ value: 'fail', label: '终止并报错' }, { value: 'retry', label: '重试' }, { value: 'partial', label: '返回部分结果' }]} /></Form.Item></div>
     {failurePolicy === 'retry' && <Form.Item name="max_retries" label="重试上限（次）" rules={[{ required: true, message: '请填写重试次数' }]}><InputNumber min={1} max={2} precision={0} /></Form.Item>}
+    <Form.Item name="failure_handler" label="失败收尾工具" extra="失败后执行此工具并保留原失败状态。收尾步骤须独立配置，不连接正常流转。"
+      rules={[{ validator: (_, value) => value && failurePolicy === 'partial' ? Promise.reject(new Error('失败收尾不能与返回部分结果同时配置，请清空收尾工具或修改失败处理')) : Promise.resolve() }]}>
+      <Select allowClear options={handlerOptions} /></Form.Item>
     <Form.Item name="key" label="步骤标识" rules={[{ required: true, message: '请填写步骤标识' }, { validator: (_, value: string) => definition.steps.some(item => item.key === value && item.key !== step?.key) || value === 'END' ? Promise.reject(new Error('步骤标识已使用')) : Promise.resolve() }]}><Input disabled={!!step || disabled} /></Form.Item>
   </>
   const inputs = <>
