@@ -104,10 +104,12 @@
 /* 浮层的头部和操作栏固定可见，长表单仅在正文滚动。 */
 .management-overlay .ant-modal { max-width: calc(100vw - 32px); top: 0; padding-bottom: 0; }
 .management-overlay .ant-modal-container {
-  display: flex; flex-direction: column; max-height: calc(100dvh - 64px); padding: 0;
+  display: flex; flex-direction: column; max-height: calc(100dvh - 64px);
   overflow: hidden; border: 1px solid rgb(231 237 245 / 90%); border-radius: 16px;
   box-shadow: 0 24px 80px rgb(23 36 59 / 22%);
 }
+/* 确认框由容器保留内边距；普通弹窗的间距由头部、正文和操作栏分别提供。 */
+.management-overlay .ant-modal:not(.ant-modal-confirm) .ant-modal-container { padding: 0; }
 .management-overlay .ant-modal-header { flex: none; margin: 0; padding: 22px 56px 20px 24px; border-bottom: 1px solid var(--management-line); }
 .management-overlay .ant-modal-title { color: var(--management-ink); font-weight: 650; }
 .management-overlay .ant-modal-body { min-height: 0; padding: 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
