@@ -1,5 +1,5 @@
 import { Button, Card, Col, Grid, Row, Typography, theme } from 'antd'
-import { ArrowRightOutlined, DownOutlined, UpOutlined } from '@ant-design/icons'
+import { DownOutlined, RightOutlined, UpOutlined } from '@ant-design/icons'
 import { useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../../components/States'
@@ -9,12 +9,15 @@ import { resolveNavigation } from '../../features/navigation'
 import { useSession } from './context'
 import { navigationIcon } from './navigation'
 import { WorkspaceGuide } from './WorkspaceGuide'
+import { WorkspaceTodos } from './WorkspaceTodos'
 
 export function WorkspaceWorkbench() {
   const { session } = useSession()
   const isPlatform = !session.workspace && session.can_access_platform
   const { token } = theme.useToken()
   const entries = resolveNavigation(session.navigation, features)
+  const canReadTodos = !!session.workspace && entries.some(item => item.navigationKey === 'integrations')
+    && session.actions.some(action => action.action_key === 'integration:manage')
   const screens = Grid.useBreakpoint()
   const [expanded, setExpanded] = useState(false)
   const collapsedCount = (screens.xl ? 4 : screens.md ? 3 : 2) * 2
@@ -27,6 +30,7 @@ export function WorkspaceWorkbench() {
     tools: [token.orange6, token.orange1],
   }
   return <div className="workspace-workbench"><PageContainer title="工作台">
+    {canReadTodos && <WorkspaceTodos />}
     {entries.length > 0 ? <nav aria-label="工作台入口" className="workspace-shortcuts" style={{
       '--shortcut-accent': token.colorPrimary,
       '--shortcut-icon-bg': token.colorPrimaryBg,
@@ -34,6 +38,10 @@ export function WorkspaceWorkbench() {
       '--shortcut-muted': token.colorTextTertiary,
       '--shortcut-radius': `${token.borderRadiusLG}px`,
     } as CSSProperties}>
+      <div className="workspace-shortcuts-heading">
+        <Typography.Title level={3}>快捷入口</Typography.Title>
+        <Typography.Text type="secondary">全部 {entries.length} 项</Typography.Text>
+      </div>
       <Row id="workspace-shortcut-grid" gutter={[16, 16]}>
         {visibleEntries.map(item => <Col key={item.navigationKey} xs={12} md={8} xl={6}>
           <Link className="workspace-shortcut" to={item.path}>
@@ -43,7 +51,7 @@ export function WorkspaceWorkbench() {
                   color: iconColors[item.navigationKey][0], background: iconColors[item.navigationKey][1],
                 }}>{navigationIcon(item.navigationKey)}</span>
                 <Typography.Text className="workspace-shortcut-label">{item.label}</Typography.Text>
-                <ArrowRightOutlined className="workspace-shortcut-arrow" aria-hidden />
+                <RightOutlined className="workspace-shortcut-arrow" aria-hidden />
               </div>
             </Card>
           </Link>

@@ -47,8 +47,27 @@
 .workspace-main > .app-content:has(> .workspace-home) { display: flex; flex-direction: column; }
 .workspace-home, .workspace-workbench { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .workspace-home { flex: 1; }
-.workspace-workbench .page-heading { margin-bottom: 24px; }
-.workspace-workbench .page-heading h2.ant-typography { font-size: 28px; line-height: 1.4; letter-spacing: -.5px; }
+.workspace-workbench .page-container > .ant-card-body { padding: 24px; }
+.workspace-workbench .page-heading { margin-bottom: 12px; }
+.workspace-workbench .page-heading h2.ant-typography { font-size: 34px; line-height: 1.3; letter-spacing: -.5px; }
+.workspace-todos { margin-bottom: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--workspace-border); }
+.workspace-todos-heading { margin-bottom: 12px; }
+.workspace-todos-heading h3.ant-typography,
+.workspace-shortcuts-heading h3.ant-typography { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 22px; line-height: 30px; }
+.workspace-todos-count { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 24px; padding: 0 8px; border-radius: 12px; color: var(--workspace-primary); background: var(--todo-count-bg); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.workspace-todos-heading > .ant-btn { height: 36px; color: var(--workspace-muted); }
+.workspace-todo-card.ant-card { border-color: var(--todo-border); border-inline-start: 4px solid var(--todo-accent); background: color-mix(in srgb, var(--todo-bg) 32%, var(--workspace-bg)); box-shadow: none; }
+.workspace-todo-card.ant-card > .ant-card-body { padding: 14px 16px; }
+.workspace-todo-content { display: flex; align-items: center; gap: 20px; }
+.workspace-todo-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 56px; height: 56px; border-radius: 12px; background: var(--todo-icon-bg); color: var(--todo-accent); font-size: 30px; }
+.workspace-todo-copy { flex: 1; min-width: 0; }
+.workspace-todo-title .ant-typography strong { font-size: 16px; }
+.workspace-todo-title .ant-tag { margin-inline-end: 0; }
+.workspace-todo-reason.ant-typography { margin: 6px 0 0; overflow-wrap: anywhere; line-height: 1.6; }
+.workspace-todo-actions { flex-shrink: 0; }
+.workspace-todo-primary.ant-btn { height: 44px; padding-inline: 16px; gap: 10px; border-radius: 8px; font-weight: 500; box-shadow: none; }
+.workspace-todo-actions a:focus-visible { outline: 2px solid var(--workspace-primary); outline-offset: 3px; }
+.workspace-shortcuts-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 8px; }
 .workspace-header.ant-layout-header {
   position: sticky;
   top: 0;
@@ -130,9 +149,9 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  min-height: 118px;
+  min-height: 90px;
   height: 100%;
-  padding: 20px;
+  padding: 16px;
 }
 
 .workspace-shortcut-icon {
@@ -140,12 +159,12 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
   background: var(--shortcut-icon-bg);
   color: var(--shortcut-accent);
-  font-size: 27px;
+  font-size: 28px;
 }
 
 .workspace-shortcut-label.ant-typography {
@@ -176,7 +195,7 @@
 .workspace-shortcut:focus-visible .workspace-shortcut-arrow { color: var(--shortcut-accent); }
 .workspace-shortcut:focus-visible { outline: 2px solid var(--shortcut-accent); outline-offset: 3px; }
 
-.workspace-shortcut-toggle { display: flex; justify-content: center; margin-top: 16px; }
+.workspace-shortcut-toggle { display: flex; justify-content: center; margin-top: 8px; }
 .workspace-shortcut-toggle .anticon { color: var(--shortcut-accent); }
 .workspace-guide { min-width: 0; }
 .workspace-guide-panel h4.ant-typography { margin: 0 0 12px; font-size: 22px; }
@@ -284,6 +303,13 @@
 }
 
 @media (max-width: 767px) {
+  .workspace-todos-heading h3.ant-typography,
+  .workspace-shortcuts-heading h3.ant-typography { font-size: 18px; }
+  .workspace-todo-content { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .workspace-todo-icon { width: 40px; height: 40px; font-size: 24px; }
+  .workspace-todo-copy { flex-basis: calc(100% - 52px); }
+  .workspace-todo-actions { width: 100%; justify-content: flex-end; }
+  .workspace-todo-card.ant-card > .ant-card-body { padding: 14px; }
   .workspace-main > .app-content { padding: 16px; }
   .workspace-workbench .page-container > .ant-card-body,
   .workspace-guide-panel > .ant-card-body { padding: 20px; }

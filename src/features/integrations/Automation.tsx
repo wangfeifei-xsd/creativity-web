@@ -35,8 +35,10 @@ export function Automation() {
 
 function Schedules() {
   const { session } = useSession()
+  const [parameters, setParameters] = useSearchParams()
+  const scheduleId = parameters.get('schedule_id')
   const canRun = session.actions.some(action => action.action_key === 'run:create')
-  const query = useQuery<Schedule[]>('/admin/v1/schedules')
+  const query = useQuery<Schedule[]>(scheduleId ? `/admin/v1/schedules?schedule_id=${encodeURIComponent(scheduleId)}` : '/admin/v1/schedules')
   const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents?published_only=true')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [editing, setEditing] = useState<Schedule>()
@@ -52,6 +54,9 @@ function Schedules() {
     setOpen(true)
   }
   return <><ErrorNotice error={(open ? undefined : error) ?? query.error} /><Space wrap size={12} style={{ display: 'flex', marginBottom: 16 }}><Button type="primary" disabled={busy || !canRun} title={!canRun ? '当前渠道环境没有运行权限' : undefined} onClick={() => edit()}>新增计划</Button><Button disabled={busy} onClick={() => { setError(undefined); query.reload() }}>刷新</Button></Space>
+    {scheduleId && <Space wrap style={{ marginBottom: 16 }}><Typography.Text>当前显示待办关联计划</Typography.Text><Button onClick={() => setParameters(previous => {
+      const next = new URLSearchParams(previous); next.delete('schedule_id'); return next
+    })}>查看全部计划</Button></Space>}
     <Table rowKey="id" dataSource={query.data} loading={!query.data && !query.error} columns={[
       { title: '名称', dataIndex: 'name' }, { title: '状态', dataIndex: 'state_label', render: (label: string) => <StatusTag label={label} /> },
       { title: '周期', render: (_, r) => r.spec.interval_seconds ? `每 ${r.spec.interval_seconds} 秒` : `每日 ${r.spec.daily_at}` },

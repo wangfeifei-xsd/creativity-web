@@ -11,7 +11,7 @@ const navigation = [
   { navigation_key: 'audit-events', label: '操作审计' },
 ]
 
-async function fixture(page: Page, items = navigation, channel = false) {
+async function fixture(page: Page, items = navigation, channel = false, actions: { action_key: string; label: string }[] = []) {
   await page.route('**/admin/v1/**', route => {
     const path = new URL(route.request().url()).pathname
     return route.fulfill({ json: path.endsWith('/auth/session') ? {
@@ -19,8 +19,92 @@ async function fixture(page: Page, items = navigation, channel = false) {
       workspace: channel ? { channel_id: 'channel-a', channel_name: '渠道甲', environment: 'test',
         environment_name: '测试',  } : null,
       workspace_options: [], default_workspace: null, can_access_platform: !channel,
-      navigation: items, actions: [], expires_at: '2030-01-01T00:00:00Z',
+      navigation: items, actions, expires_at: '2030-01-01T00:00:00Z',
     } : [] })
+  })
+}
+
+const todoNavigation = [
+  { navigation_key: 'integrations', label: '业务接入' },
+  { navigation_key: 'runs', label: '运行记录' },
+]
+const todoActions = [
+  { action_key: 'integration:manage', label: '管理业务接入' },
+  { action_key: 'run:read', label: '查看运行' },
+]
+const todo = { id: 'schedule_failed', name: '订单协助巡检', consecutive_failures: 3,
+  failure_threshold: 3, message: '连续失败 3 次，已自动暂停。最近原因：供应商超时', run_id: 'run_failed' }
+
+test('工作台待办展示自动暂停原因并定位关联计划', async ({ page }) => {
+  await fixture(page, todoNavigation, true, todoActions)
+  await page.route('**/admin/v1/schedule-todos?*', route => route.fulfill({ json: { total: 1, items: [todo] } }))
+  await page.route('**/admin/v1/schedules?*', route => {
+    expect(new URL(route.request().url()).searchParams.get('schedule_id')).toBe(todo.id)
+    return route.fulfill({ json: [{ ...todo, revision: 1, state: 'PAUSED', state_label: '失败自动暂停',
+      last_error: { message: todo.message, run_id: todo.run_id }, spec: { interval_seconds: 60, timezone: 'Asia/Shanghai', failure_threshold: 3 } }] })
+  })
+  await page.route('**/admin/v1/agents?*', route => route.fulfill({ json: { items: [] } }))
+  await page.goto('#/workbench')
+  const region = page.getByRole('region', { name: '待办事项' })
+  await expect(region.getByRole('heading', { name: '待办事项（1）' })).toBeVisible()
+  await expect(region.getByText(todo.name, { exact: true })).toBeVisible()
+  await expect(region.getByText('连续失败 3 / 3 次', { exact: true })).toBeVisible()
+  await expect(region.getByText('最近原因：供应商超时', { exact: true })).toBeVisible()
+  await expect(region.getByRole('link', { name: '查看失败运行' })).toHaveAttribute('href', '#/runs/run_failed')
+  await region.getByRole('link', { name: '去处理' }).click()
+  await expect(page).toHaveURL(/tab=automation&section=schedules&schedule_id=schedule_failed$/)
+  await expect(page.getByRole('cell', { name: todo.name, exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '查看全部计划' }).click()
+  await expect(page).not.toHaveURL(/schedule_id/)
+})
+
+test('待办恢复后刷新移除，查询失败不冒充空待办', async ({ page }) => {
+  await fixture(page, todoNavigation, true, todoActions)
+  let state = 'paused'
+  await page.route('**/admin/v1/schedule-todos?*', route => state === 'error'
+    ? route.fulfill({ status: 503, json: {} })
+    : route.fulfill({ json: { total: state === 'paused' ? 1 : 0, items: state === 'paused' ? [todo] : [] } }))
+  await page.goto('#/workbench')
+  const region = page.getByRole('region', { name: '待办事项' })
+  await expect(region.getByText(todo.name, { exact: true })).toBeVisible()
+  state = 'resumed'
+  await region.getByRole('button', { name: '刷新待办' }).click()
+  await expect(region.getByText('暂无待办事项')).toBeVisible()
+  state = 'error'
+  await region.getByRole('button', { name: '刷新待办' }).click()
+  await expect(region.getByText('服务暂不可用，请稍后重试')).toBeVisible()
+  await expect(region.getByText('暂无待办事项')).toHaveCount(0)
+  await expect(region.getByRole('heading', { name: '待办事项（0）' })).toHaveCount(0)
+})
+
+test('待办支持服务端分页，窄屏可处理且没有运行权限时不展示运行链接', async ({ page }) => {
+  await fixture(page, todoNavigation, true, todoActions.slice(0, 1))
+  await page.route('**/admin/v1/schedule-todos?*', route => {
+    const pageNumber = new URL(route.request().url()).searchParams.get('page')
+    return route.fulfill({ json: { total: 6, items: pageNumber === '1'
+      ? Array.from({ length: 5 }, (_, i) => ({ ...todo, id: `schedule_${i}`, name: `巡检${i + 1}` }))
+      : [{ ...todo, name: '巡检6' }] } })
+  })
+  await page.setViewportSize({ width: 375, height: 900 })
+  await page.goto('#/workbench')
+  const region = page.getByRole('region', { name: '待办事项' })
+  await expect(region.getByRole('link', { name: '去处理' })).toHaveCount(5)
+  await expect(region.getByRole('link', { name: '查看失败运行' })).toHaveCount(0)
+  await region.getByTitle('2', { exact: true }).click()
+  await expect(region.getByText('巡检6', { exact: true })).toBeVisible()
+  await expect(region.getByRole('link', { name: '去处理' })).toHaveCount(1)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
+})
+
+for (const variant of ['platform', 'no-menu', 'no-action']) {
+  test(`没有待办访问入口时不请求待办（${variant}）`, async ({ page }) => {
+    await fixture(page, variant === 'no-menu' ? [] : todoNavigation, variant !== 'platform', variant === 'no-action' ? [] : todoActions)
+    let requests = 0
+    page.on('request', request => { if (request.url().includes('/schedule-todos')) requests++ })
+    await page.goto('#/workbench')
+    await expect(page.getByRole('heading', { name: '工作台', exact: true })).toBeVisible()
+    await expect(page.getByRole('region', { name: '待办事项' })).toHaveCount(0)
+    expect(requests).toBe(0)
   })
 }
 
@@ -40,7 +124,7 @@ for (const [width, columns] of [[1391, 4], [820, 3], [375, 2], [320, 2]]) {
     expect(boxes.filter(box => box.y === boxes[0].y)).toHaveLength(columns)
     for (const box of boxes) {
       expect(box.width).toBeGreaterThan(100)
-      expect(box.height).toBeGreaterThanOrEqual(108)
+      expect(box.height).toBeGreaterThanOrEqual(90)
       expect(box.x + box.width).toBeLessThanOrEqual(width)
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
