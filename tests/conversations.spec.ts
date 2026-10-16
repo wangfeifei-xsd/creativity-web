@@ -72,6 +72,34 @@ test('网络失败保留正文并复用客户端消息标识', async ({ page }) 
   expect(state.attempts[0]).toEqual({ content: '请推荐杭州的账号', input: { message: '请推荐杭州的账号' }, attachments: [], client_message_id: expect.any(String) })
 })
 
+test('附件先通用上传，消息只提交 URL 并直接展示文件链接', async ({ page }) => {
+  const state = await fixture(page, true)
+  const url = 'https://files.example.test/channels/channel_a/files/file_a/notes.txt'
+  let uploads = 0
+  await page.route('**/files/upload', async route => {
+    uploads++
+    expect(route.request().method()).toBe('POST')
+    expect(route.request().headers()['content-type']).toContain('multipart/form-data; boundary=')
+    expect(route.request().postDataBuffer()?.toString()).toContain('name="file"; filename="notes.txt"')
+    await route.fulfill({ status: 201, json: { url, name: 'notes.txt', content_type: 'text/plain', size_bytes: 5 } })
+  })
+  await page.route('**/conversations/conversation_a/messages*', async route => {
+    if (route.request().method() !== 'GET' || !state.attempts.length) { await route.fallback(); return }
+    await route.fulfill({ json: { items: [{ message_id: 'message_a', turn_id: 'turn_a', run_id: 'run_a', sequence: 1, role: 'user', role_label: '用户', status: 'COMPLETED', status_label: '已完成',
+      text: '查看附件', attachments: [{ url, name: 'notes.txt' }], created_at: '2026-10-02T01:00:00Z' }], turns: [], has_more: false, next_cursor: null } })
+  })
+  await page.goto('#/conversations/conversation_a')
+  await page.locator('input[type=file]').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('notes') })
+  await expect(page.getByText('notes.txt', { exact: true })).toBeVisible()
+  await page.getByLabel('消息', { exact: true }).fill('查看附件')
+  await page.getByRole('button', { name: '发送', exact: true }).click()
+  const link = page.getByRole('link', { name: 'notes.txt', exact: true })
+  await expect(link).toHaveAttribute('href', url)
+  expect(state.attempts).toHaveLength(1)
+  expect(state.attempts[0].attachments).toEqual([{ type: 'attachment', url }])
+  expect(uploads).toBe(1)
+})
+
 test('归档恢复与删除进度入口可用', async ({ page }) => {
   await fixture(page, true)
   await page.goto('#/conversations/conversation_a')

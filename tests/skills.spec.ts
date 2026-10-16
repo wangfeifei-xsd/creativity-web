@@ -146,14 +146,29 @@ test('导出通过受控产物下载', async ({ page }) => {
 test('导入预览后显式绑定本渠道工具，契约失败保留选择', async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width: 390, height: 844 })
+  const archiveUrl = 'https://files.example.test/channels/channel_a/files/file_a/archive-answer.zip'
+  let uploads = 0, previews = 0
+  await page.route('**/files/upload', async route => {
+    uploads++
+    expect(route.request().method()).toBe('POST')
+    expect(route.request().headers()['content-type']).toContain('multipart/form-data; boundary=')
+    expect(route.request().postDataBuffer()?.toString()).toContain('name="file"; filename="archive-answer.zip"')
+    await route.fulfill({ status: 201, json: { url: archiveUrl, name: 'archive-answer.zip', content_type: 'application/zip', size_bytes: 512 } })
+  })
   const requirement = { tool_code: 'archive.find-notes', version_label: '配置初版', source_type: 'mcp', input_schema: { type: 'object' }, output_schema: { type: 'object' } }
   await page.route('**/skills/tool-options', route => route.fulfill({ json: [{ ...requirement, tool_code: 'local_archive', version_id: 'local_tool_v1', name: '本地档案工具', available: true, reason: null }] }))
-  await page.route('**/skills/imports/preview', route => route.fulfill({ json: { metadata: { name: 'archive-answer' }, files, settings: { tool_requirements: [requirement], tool_bindings: {} }, instruction_preview: '引用已授权的档案查询结果。' } }))
+  await page.route('**/skills/imports/preview', async route => {
+    previews++
+    expect(route.request().postDataJSON()).toEqual({ archive_url: archiveUrl })
+    await route.fulfill({ json: { metadata: { name: 'archive-answer' }, files, settings: { tool_requirements: [requirement], tool_bindings: {} }, instruction_preview: '引用已授权的档案查询结果。' } })
+  })
   let imports = 0
   await page.route('**/skills/imports', async route => {
     imports++
     const body = route.request().postDataJSON()
     expect(body.tool_bindings).toEqual({ 'archive.find-notes': 'local_tool_v1' })
+    expect(body.archive_url).toBe(archiveUrl)
+    expect(body).not.toHaveProperty('archive_base64')
     expect(body).not.toHaveProperty('channel_id')
     await route.fulfill({ status: 422, json: { error: { code: 'SKILL_DEPENDENCY_MISSING', message: '工具输入或输出 schema 与依赖契约不兼容', fields: [] } } })
   })
@@ -172,6 +187,8 @@ test('导入预览后显式绑定本渠道工具，契约失败保留选择', as
   await expect(page.getByText('工具输入或输出 schema 与依赖契约不兼容', { exact: true })).toBeVisible()
   await expect(page.getByText('本地档案工具', { exact: true }).first()).toBeVisible()
   await page.getByText('工具输入或输出 schema 与依赖契约不兼容', { exact: true }).scrollIntoViewIfNeeded()
-  await page.screenshot({ path: '.logs/21/skill-import-mobile.png', fullPage: true })
+  await page.screenshot({ path: test.info().outputPath('skill-import-mobile.png'), fullPage: true })
+  expect(uploads).toBe(1)
+  expect(previews).toBe(1)
   expect(imports).toBe(1)
 })

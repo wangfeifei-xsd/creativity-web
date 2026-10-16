@@ -73,8 +73,9 @@ export function Timeline({ conversationId, page, onRefresh, onError, canBranch =
           <Typography.Text type="secondary">{formatTimestamp(message.created_at)}</Typography.Text></Space>}>
           {!(message.role === 'assistant' && turn?.result) && <MessageContent role={message.role} text={message.text} status={message.status} />}
           {canBranch && message.role === 'assistant' && message.status === 'COMPLETED' && <Button onClick={() => setBranch({ messageId: message.message_id, key: crypto.randomUUID(), title: '新分支' })}>从此处创建分支</Button>}
-          <Space wrap>{message.attachments.map(a => <Button key={a.artifact_id} onClick={() => void download(a.download_path).catch(onError)}>
-            {a.name}（{(a.size_bytes / 1024).toFixed(1)} KB）</Button>)}</Space>
+          <Space wrap>{message.attachments.map(a => a.url.startsWith('https://')
+            ? <Button key={a.url} href={a.url} target="_blank" rel="noopener noreferrer">{a.name}</Button>
+            : <Button key={a.url} onClick={() => void download(a.url).catch(onError)}>{a.name}</Button>)}</Space>
           {message.role === 'assistant' && turn && <Space orientation="vertical" style={{ width: '100%' }}>
             <Space wrap><Typography.Text>第 {turn.sequence} 轮 · {turn.version_label}</Typography.Text><StatusTag label={turn.state_label} />
               <Typography.Text>耗时：{turn.duration_seconds == null ? '运行中' : `${turn.duration_seconds.toFixed(2)} 秒`}</Typography.Text>

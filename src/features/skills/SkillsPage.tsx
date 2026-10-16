@@ -4,6 +4,7 @@ import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
+import { uploadFile } from '../../api/files'
 import { send } from '../../api/management'
 import { useQuery } from '../../api/useQuery'
 import { ActionButtons, ErrorNotice, type Schema } from '../../components/Management'
@@ -58,12 +59,9 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
     form.setFieldValue('tool_bindings', {})
     try {
       if (file.size > 8 * 1024 * 1024) throw new Error('压缩包不能超过 8 MiB')
-      const bytes = new Uint8Array(await file.arrayBuffer())
-      const parts: string[] = []
-      for (let start = 0; start < bytes.length; start += 8192) parts.push(String.fromCharCode(...bytes.subarray(start, start + 8192)))
-      const encoded = btoa(parts.join(''))
-      const result = await send<Schema<'SkillImportPreview'>>('/admin/v1/skills/imports/preview', 'POST', { archive_base64: encoded })
-      setPreview(result); setArchive(encoded); setFilename(file.name); setError(undefined)
+      const uploaded = await uploadFile(file)
+      const result = await send<Schema<'SkillImportPreview'>>('/admin/v1/skills/imports/preview', 'POST', { archive_url: uploaded.url })
+      setPreview(result); setArchive(uploaded.url); setFilename(file.name); setError(undefined)
     } catch (failure) { setError(failure) }
     finally { setBusy(false) }
     return false
@@ -73,7 +71,7 @@ function SkillCreate({ mode, onClose, onSaved }: { mode: 'create' | 'import'; on
     try {
       if (mode === 'import' && !archive) throw new Error('请选择技能归档包')
       const result = await send<Detail>(mode === 'import' ? '/admin/v1/skills/imports' : '/admin/v1/skills', 'POST',
-        mode === 'import' ? { skill_code: values.skill_code, owner: values.owner, name: values.name || null, archive_base64: archive,
+        mode === 'import' ? { skill_code: values.skill_code, owner: values.owner, name: values.name || null, archive_url: archive,
           tool_bindings: values.tool_bindings ?? {} } : values)
       onSaved(result)
     } catch (failure) { setError(failure) }

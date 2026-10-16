@@ -1,6 +1,6 @@
 import { Alert, Button, Form, Input, InputNumber, Space, Tag, Upload } from 'antd'
 import { useRef, useState } from 'react'
-import { apiClient } from '../../api/client'
+import { uploadFile } from '../../api/files'
 import { send } from '../../api/management'
 import { applyFormErrors, clearFormErrors } from '../../api/form-errors'
 import { ErrorNotice, type Schema } from '../../components/Management'
@@ -9,7 +9,7 @@ import { parseSchemaInput, schemaInputHint, schemaRequiredValue, SchemaInputErro
 
 export function Composer({ conversationId, detail, onSent }: { conversationId: string; detail: Schema<'ConversationDetail'>; onSent: () => void }) {
   const [form] = Form.useForm()
-  const [attachments, setAttachments] = useState<Schema<'Artifact'>[]>([])
+  const [attachments, setAttachments] = useState<Schema<'UploadedFile'>[]>([])
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -26,7 +26,7 @@ export function Composer({ conversationId, detail, onSent }: { conversationId: s
     try {
       const input = parseSchemaInput(properties, { ...(values.arguments as Record<string, unknown> | undefined), message: values.content })
       const body = { content: values.content, input: Object.keys(properties).length || detail.input_schema.additionalProperties === false ? input : undefined,
-        attachments: attachments.map(a => ({ type: 'attachment', artifact_id: a.artifact_id })) }
+        attachments: attachments.map(a => ({ type: 'attachment', url: a.url })) }
       const signature = JSON.stringify(body)
       if (attempt.current?.signature !== signature) attempt.current = { signature, id: crypto.randomUUID() }
       await send(`/admin/v1/conversations/${conversationId}/messages`, 'POST', { ...body, client_message_id: attempt.current.id })
@@ -51,16 +51,14 @@ export function Composer({ conversationId, detail, onSent }: { conversationId: s
             : property.type === 'integer' || property.type === 'number' ? <InputNumber precision={property.type === 'integer' ? 0 : undefined} />
               : <Input.TextArea autoSize={{ minRows: 1, maxRows: 5 }} />}
         </Form.Item>)}
-      <Space wrap>{attachments.map(a => <Tag key={a.artifact_id} closable={!busy} onClose={() => setAttachments(v => v.filter(item => item.artifact_id !== a.artifact_id))}>{a.name}</Tag>)}</Space>
+      <Space wrap>{attachments.map(a => <Tag key={a.url} closable={!busy} onClose={() => setAttachments(v => v.filter(item => item.url !== a.url))}>{a.name}</Tag>)}</Space>
       <Form.Item style={{ marginTop: 12 }}><Space>
         {can('upload') && <Upload showUploadList={false} disabled={disabled || busy || uploading} beforeUpload={async file => {
-          if (file.size > 20 * 1024 * 1024) { setError(new Error('附件不能超过 20 MB')); return false }
           if (attachments.length >= 10) { setError(new Error('最多添加 10 个附件')); return false }
           setUploading(true); setError(undefined)
           try {
-            const artifact = await apiClient.request<Schema<'Artifact'>>(`/admin/v1/conversations/${conversationId}/attachments?name=${encodeURIComponent(file.name)}`,
-              { method: 'POST', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file })
-            setAttachments(v => [...v, artifact])
+            const fileInfo = await uploadFile(file)
+            setAttachments(v => [...v, fileInfo])
           } catch (failure) { setError(failure) } finally { setUploading(false) }
           return false
         }}><Button loading={uploading}>上传附件</Button></Upload>}
