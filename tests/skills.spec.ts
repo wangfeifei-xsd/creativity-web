@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const skillProposal = { skill_code: 'reply_review', name: '客服回复检查', description: '检查遗漏和无依据的承诺', owner: '客服团队', tags: [], version_label: '当前配置',
   instructions: '## 使用场景\n\n回复客户前。\n\n## 操作步骤\n\n1. 核对客户问题。\n2. 标记没有依据的承诺。\n\n## 输出\n\n列出问题和修改建议。',
-  settings: { loading_mode: 'on_demand', priority: 0, context_budget: 16000, change_note: '补充检查步骤', tool_requirements: [], tool_bindings: {}, required_model_capabilities: [], input_variables: [], allowed_agents: [], conflict_groups: [] } }
+  settings: { loading_mode: 'on_demand', priority: 0, context_budget: 16000, change_note: '补充检查步骤', tool_requirements: [], tool_bindings: {}, required_model_capabilities: [], input_variables: [], conflict_groups: [] } }
 
 test('智能创建技能经过追问、完整技能书预览和保存', async ({ page }) => {
   await fixture(page)
@@ -171,7 +171,7 @@ const workspace = { channel_id: 'channel_a', channel_name: '租号渠道', envir
 const skill = { skill_id: 'skill_a', skill_code: 'rental_intent', name: '租赁诉求解析', description: '提取用户确认的条件', owner: '业务负责人', tags: [], revision: 1,
   status: { value: 'ACTIVE', label: '已启用', tone: 'success' }, actions: [action('edit', '编辑技能'), action('assist', '智能修改'), action('create_version', '新增版本')] }
 const source = '---\nname: rental-intent\ndescription: 提取用户条件\n---\n只提取已确认的事实。'
-const settings = { loading_mode: 'on_demand', priority: 0, context_budget: 16000, change_note: '', tool_requirements: [], required_model_capabilities: [], input_variables: [], allowed_agents: [], conflict_groups: [] }
+const settings = { loading_mode: 'on_demand', priority: 0, context_budget: 16000, change_note: '', tool_requirements: [], required_model_capabilities: [], input_variables: [], conflict_groups: [] }
 const files = [
   { relative_path: 'SKILL.md', size_bytes: 128, content_type: 'text/markdown', loadable: true, unavailable_reason: null, sha256: 'a'.repeat(64) },
   { relative_path: 'references/conditions.md', size_bytes: 30, content_type: 'text/markdown', loadable: true, unavailable_reason: null, sha256: 'b'.repeat(64) },

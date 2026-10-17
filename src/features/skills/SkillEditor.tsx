@@ -18,7 +18,6 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
   const [form] = Form.useForm<Values>()
   const { modal } = App.useApp()
   const tools = useQuery<Schema<'SkillToolOption'>[]>('/admin/v1/skills/tool-options')
-  const agents = useQuery<Schema<'SkillAgentOption'>[]>('/admin/v1/skills/agent-options')
   const [requirements, setRequirements] = useState(version.settings.tool_requirements ?? [])
   const [texts, setTexts] = useState<Record<string, string>>({})
   const [removed, setRemoved] = useState<string[]>([])
@@ -59,7 +58,7 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
   return <Modal open title="编辑技能包" width={980} onCancel={onClose} closable={!busy} maskClosable={!busy} style={{ top: 24 }}
     styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }} footer={<Space><Button onClick={onClose} disabled={busy}>取消</Button>
       <Button type="primary" loading={busy} onClick={() => form.submit()}>保存</Button></Space>}>
-    <ErrorNotice error={error || tools.error || agents.error} />
+    <ErrorNotice error={error || tools.error} />
     <Form form={form} layout="vertical" onFinish={save} disabled={busy} onFinishFailed={({ errorFields }) => {
       setError(undefined)
       const field = errorFields[0]?.name[0]
@@ -80,10 +79,6 @@ export function SkillEditor({ version, onClose, onSaved }: { version: Version; o
           <Form.Item name="loading_mode" label="加载方式"><Select options={[{ value: 'mandatory', label: '始终加载' }, { value: 'on_demand', label: '按需加载' }]} /></Form.Item>
           <Form.Item name="priority" label="加载优先级" extra="数字越小越先加载，同优先级遵循智能体配置顺序。"><InputNumber min={-1000} max={1000} /></Form.Item>
           <Form.Item name="context_budget" label="上下文上限（UTF-8 字节）"><InputNumber min={1} max={200000} /></Form.Item>
-          <Form.Item name="allowed_agents" label="授权智能体" extra="留空表示由智能体绑定与当前权限共同决定。"><Select mode="multiple" options={[
-            ...(agents.data?.map(agent => ({ value: agent.agent_id, label: agent.name })) ?? []),
-            ...(version.settings.allowed_agents ?? []).filter(id => !agents.data?.some(agent => agent.agent_id === id)).map(id => ({ value: id, label: '智能体名称不可用' })),
-          ]} /></Form.Item>
           <Form.Item name="conflict_groups" label="互斥规则组"><Select mode="tags" /></Form.Item>
           <Form.Item name="change_note" label="变更说明"><Input.TextArea rows={3} /></Form.Item>
         </> },

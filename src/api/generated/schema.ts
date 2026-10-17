@@ -3495,23 +3495,6 @@ export interface paths {
         patch: operations["edit_configuration_admin_v1_skills__skill_id__configuration_patch"];
         trace?: never;
     };
-    "/admin/v1/skills/agent-options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Agent Options */
-        get: operations["agent_options_admin_v1_skills_agent_options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/v1/skills/assistance": {
         parameters: {
             query?: never;
@@ -10682,13 +10665,6 @@ export interface components {
             /** Workspace Options */
             workspace_options?: components["schemas"]["WorkspaceOption"][];
         };
-        /** SkillAgentOption */
-        SkillAgentOption: {
-            /** Agent Id */
-            agent_id: string;
-            /** Name */
-            name: string;
-        };
         /**
          * SkillAssistanceApply
          * @description 不允许客户端回传候选、目标或权限字段。
@@ -10752,7 +10728,6 @@ export interface components {
             owner: string;
             /**
              * @default {
-             *       "allowed_agents": [],
              *       "change_note": "",
              *       "conflict_groups": [],
              *       "context_budget": 16000,
@@ -10978,7 +10953,6 @@ export interface components {
             owner: string;
             /**
              * @default {
-             *       "allowed_agents": [],
              *       "change_note": "",
              *       "conflict_groups": [],
              *       "context_budget": 16000,
@@ -11016,11 +10990,6 @@ export interface components {
         };
         /** SkillSettings */
         SkillSettings: {
-            /**
-             * Allowed Agents
-             * @default []
-             */
-            allowed_agents: string[];
             /**
              * Change Note
              * @default
@@ -47378,138 +47347,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillVersionView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    agent_options_admin_v1_skills_agent_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SkillAgentOption"][];
                 };
             };
             /** @description Bad Request */

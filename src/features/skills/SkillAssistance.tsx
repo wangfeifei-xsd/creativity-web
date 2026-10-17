@@ -39,7 +39,6 @@ function SkillWorkspace({ skill, version, onReset }: { skill?: Schema<'SkillView
   const { token } = theme.useToken()
   const routes = useQuery<Schema<'SkillAssistanceRoute'>[]>(`/admin/v1/skills/assistance/options${skill ? `?skill_id=${encodeURIComponent(skill.skill_id)}` : ''}`)
   const tools = useQuery<Schema<'SkillToolOption'>[]>('/admin/v1/skills/tool-options')
-  const agents = useQuery<Schema<'SkillAgentOption'>[]>('/admin/v1/skills/agent-options')
   const [route, setRoute] = useState<string>()
   const [text, setText] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -190,10 +189,10 @@ function SkillWorkspace({ skill, version, onReset }: { skill?: Schema<'SkillView
           <Tabs className="agent-assistance-preview-tabs" items={[
             { key: 'book', label: '技能书', children: <><Segmented aria-label="技能书展示方式" value={mode} onChange={setMode} options={[{ value: 'formatted', label: '格式化' }, { value: 'source', label: '源文件' }]} />
               <div style={{ marginTop: 16 }}>{mode === 'formatted' ? <MarkdownContent text={preview.instructions} renderLink={(_href, children) => children} /> : <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{source}</pre>}</div></> },
-            { key: 'settings', label: '技能配置', children: <SkillSettingsPreview proposal={preview} tools={tools.data ?? []} agents={agents.data ?? []} /> },
+            { key: 'settings', label: '技能配置', children: <SkillSettingsPreview proposal={preview} tools={tools.data ?? []} /> },
             ...(proposal && before ? [{ key: 'changes', label: '变更对照', children: <Collapse defaultActiveKey={['before', 'after']} items={[
-              { key: 'before', label: '修改前', children: <><SkillSettingsPreview proposal={before} tools={tools.data ?? []} agents={agents.data ?? []} /><MarkdownContent text={before.instructions} renderLink={(_href, children) => children} /></> },
-              { key: 'after', label: '修改后', children: <><SkillSettingsPreview proposal={proposal} tools={tools.data ?? []} agents={agents.data ?? []} /><MarkdownContent text={proposal.instructions} renderLink={(_href, children) => children} /></> },
+              { key: 'before', label: '修改前', children: <><SkillSettingsPreview proposal={before} tools={tools.data ?? []} /><MarkdownContent text={before.instructions} renderLink={(_href, children) => children} /></> },
+              { key: 'after', label: '修改后', children: <><SkillSettingsPreview proposal={proposal} tools={tools.data ?? []} /><MarkdownContent text={proposal.instructions} renderLink={(_href, children) => children} /></> },
             ]} /> }] : []),
           ]} />
           {published && <Alert type="warning" showIcon title="保存后，引用此技能的新任务将使用修改后的内容" />}
@@ -205,7 +204,7 @@ function SkillWorkspace({ skill, version, onReset }: { skill?: Schema<'SkillView
   </section>
 }
 
-function SkillSettingsPreview({ proposal, tools, agents }: { proposal: Proposal; tools: Schema<'SkillToolOption'>[]; agents: Schema<'SkillAgentOption'>[] }) {
+function SkillSettingsPreview({ proposal, tools }: { proposal: Proposal; tools: Schema<'SkillToolOption'>[] }) {
   const settings = proposal.settings
   const capabilities: Record<string, string> = { text: '文本生成', tools: '工具调用', structured_output: '结构化输出', streaming: '流式输出', vision: '视觉理解', embedding: '向量生成' }
   const types: Record<string, string> = { string: '文本', number: '数值', boolean: '是或否', object: '对象', array: '列表' }
@@ -217,7 +216,6 @@ function SkillSettingsPreview({ proposal, tools, agents }: { proposal: Proposal;
     { key: 'budget', label: '上下文上限', children: `${settings?.context_budget ?? 16000} 字节` },
     { key: 'tools', label: '依赖工具', children: Object.values(settings?.tool_bindings ?? {}).map(id => tools.find(tool => tool.version_id === id)?.name ?? '工具名称不可用').join('、') || '无' },
     { key: 'models', label: '模型能力', children: settings?.required_model_capabilities?.map(value => capabilities[value] ?? '能力名称不可用').join('、') || '无额外要求' },
-    { key: 'agents', label: '授权智能体', children: settings?.allowed_agents?.map(id => agents.find(agent => agent.agent_id === id)?.name ?? '智能体名称不可用').join('、') || '按绑定与当前权限确定' },
     { key: 'groups', label: '互斥规则组', children: settings?.conflict_groups?.join('、') || '未设置' },
     { key: 'variables', label: '输入变量', children: settings?.input_variables?.map(variable => `${variable.label}（${types[variable.value_type ?? 'string']}，${variable.required === false ? '选填' : '必填'}）`).join('、') || '无' },
     { key: 'note', label: '变更说明', children: settings?.change_note || '未填写' },
