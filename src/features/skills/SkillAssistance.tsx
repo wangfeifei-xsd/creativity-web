@@ -174,7 +174,7 @@ function SkillWorkspace({ skill, version, onReset }: { skill?: Schema<'SkillView
           <div ref={bottom} />
         </div>
         <div className="agent-assistance-composer"><Input.TextArea aria-label="技能创建或修改需求" placeholder={skill ? '描述要调整的规则、步骤或示例…' : '描述技能用途、处理步骤和期望结果…'}
-          variant="borderless" value={text} onChange={event => setText(event.target.value)} autoSize={{ minRows: 3, maxRows: 7 }} maxLength={8000} disabled={saving}
+          variant="borderless" value={text} onChange={event => setText(event.target.value)} autoSize={{ minRows: 3, maxRows: 7 }} disabled={saving}
           onKeyDown={event => { if (!event.nativeEvent.isComposing && (event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); void submit() } }} />
           <div className="agent-assistance-composer-toolbar"><Select aria-label="协助模型" value={selectedRoute} placeholder="选择协助模型" onChange={setRoute}
             disabled={pending || saving} loading={!routes.data && !routes.error} options={routes.data?.map(item => ({ value: item.route_id, label: item.name }))} />
