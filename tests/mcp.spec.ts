@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 const action = (action_key: string, label: string) => ({ action_key, label })
 const session = { user: { user_id: 'admin_a', display_name: '管理员', login_name: 'admin' },
   workspace: { channel_id: 'channel_a', channel_name: '租号渠道', environment: 'test', environment_name: '测试',  },
-  navigation: [{ navigation_key: 'mcp-connections', label: 'MCP 连接' }], actions: [action('run:create', '执行能力')], expires_at: '2030-01-01T00:00:00Z' }
+  navigation: [{ navigation_key: 'mcp-connections', label: 'MCP 连接' }], actions: [action('run:create', '执行能力'), action('data:read_sensitive', '读取敏感数据')], expires_at: '2030-01-01T00:00:00Z' }
 const connection = { connection_id: 'mcp_a', name: '目录服务', endpoint: 'https://example.com/mcp', transport: 'streamable_http', transport_label: 'Streamable HTTP',
   revision: 3, configuration_revision: 1, credential_mask: '••••••••', timeouts: { connect_seconds: 10, operation_seconds: 30 }, health_policy: { interval_seconds: 300, failure_threshold: 3 },
   status: { value: 'DISABLED', label: '未启用', tone: 'default' }, health: { value: 'HEALTHY', label: '正常', tone: 'success' }, last_check_at: '2026-10-02T08:00:00Z',
@@ -61,7 +61,7 @@ test('连接详情区分人工启用和健康，契约变化明确提示', async
   await expect(page.getByText('••••••••', { exact: true })).toBeVisible()
 })
 
-test('工具导入要求本地权限与执行策略，只提交草稿请求', async ({ page }) => {
+for (const additional of [false, true]) test(`工具导入默认执行能力并保留高级权限（${additional ? '额外限制' : '默认权限'}）`, async ({ page }) => {
   await fixture(page)
   let imported: Record<string, unknown> | undefined
   await page.route('**/mcp_a/imports', async route => { imported = route.request().postDataJSON(); await route.fulfill({ json: {} }) })
@@ -70,19 +70,28 @@ test('工具导入要求本地权限与执行策略，只提交草稿请求', as
   await expect(page.getByText('未导入', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '导入工具' }).click()
   const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('负责人').fill('业务负责人')
+  await expect(dialog.getByLabel('负责人')).toHaveCount(0)
+  await expect(dialog.getByText('调用所需权限', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('执行能力', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('额外调用权限')).not.toBeVisible()
   await dialog.getByLabel('实际影响').click()
   await page.getByText('只读', { exact: true }).click()
-  await dialog.getByLabel('必要业务权限').click()
-  await page.getByText('执行能力', { exact: true }).click()
+  if (additional) {
+    await dialog.getByText('高级配置', { exact: true }).click()
+    await dialog.getByLabel('额外调用权限').click()
+    await page.locator('.ant-select-dropdown:visible').getByText('读取敏感数据', { exact: true }).click()
+    await dialog.getByLabel('额外调用权限').press('Escape')
+    await dialog.getByText('高级配置', { exact: true }).click()
+  }
   await dialog.getByLabel('本地显示名称').click()
   await dialog.getByRole('button', { name: '导入工具' }).click()
   await expect(dialog).not.toBeVisible()
-  expect(imported?.required_scopes).toEqual(['run:create'])
+  expect(imported?.required_scopes).toEqual(additional ? ['run:create', 'data:read_sensitive'] : ['run:create'])
   expect(imported?.effect_type).toBe('READ_ONLY')
   expect(imported?.remote_tool_name).toBe(remote.name)
   expect(imported).not.toHaveProperty('channel_id')
   expect(imported).not.toHaveProperty('binding')
+  expect(imported).not.toHaveProperty('owner')
 })
 
 test('窄屏连接配置提供 OAuth 与隔离 stdio', async ({ page }) => {
@@ -124,11 +133,12 @@ for (const mobile of [false, true]) test(`重新绑定显示原绑定的字段�
   await page.route('**/admin/v1/tools/tool_*', route => route.fulfill({ json: {
     tool: { name: '目录查询', description: '查询授权目录', owner: '业务负责人' },
     versions: [{ definition: { input_schema: remote.input_schema, output_schema: remote.output_schema,
-      effect_type: 'READ_ONLY', required_scopes: ['run:create'], timeout_seconds: 10, max_result_size: 2048,
+      effect_type: 'READ_ONLY', required_scopes: ['run:create', 'data:read_sensitive'], timeout_seconds: 10, max_result_size: 2048,
       subject_requirements: { required: true } } }],
   } }))
   await page.route('**/mcp_a/imports', async route => {
     expect(route.request().postDataJSON().target_tool_id).toBe('tool_0')
+    expect(route.request().postDataJSON().required_scopes).toEqual(['run:create', 'data:read_sensitive'])
     await route.fulfill({ status: 409, json: { request_id: 'request_diff', error: {
       code: 'MCP_TOOL_CHANGED', message: '无法重新绑定：本地工具与本次发现的工具契约不一致', fields: [
         { path: ['remote_input_schema', 'properties', 'limit', 'type'], message: '原值："integer"\n新值："string"' },

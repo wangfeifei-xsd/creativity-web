@@ -56,7 +56,6 @@ function ToolList() {
         { title: '工具名称', render: (_, row) => <Link to={`/tools/${row.tool_id}`}>{row.name}</Link> },
         { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '来源', dataIndex: 'source_label' },
         { title: '影响类型', render: (_, row) => row.effect_labels.join('、') || '未配置' },
-        { title: '负责人', dataIndex: 'owner' },
         ...resourceColumns<Schema<'ToolView'>>('tool', summaries.items, row => row.tool_id, row => navigate(`/tools/${row.tool_id}?edit=1`), query.reload),
       ]} />}
     {creating && <ToolResourceEditor onClose={() => setCreating(false)} onSaved={() => { setCreating(false); query.reload() }} />}
@@ -68,9 +67,9 @@ function ToolResourceEditor({ tool, onClose, onSaved }: { tool?: Schema<'ToolVie
     onClose={onClose} onSaved={onSaved} fields={[
       { name: 'name', label: '工具名称', required: true },
       ...(!tool ? [{ name: 'tool_code', label: '工具编码', required: true }, { name: 'source_type', label: '来源类型', kind: 'select' as const, options: sources, required: true }] : []),
-      { name: 'description', label: '用途', required: true }, { name: 'owner', label: '负责人', required: true },
+      { name: 'description', label: '用途', required: true },
     ]} onSave={values => send(tool ? `/admin/v1/tools/${tool.tool_id}` : '/admin/v1/tools', tool ? 'PATCH' : 'POST', tool
-      ? { revision: tool.revision, name: values.name, description: values.description, owner: values.owner } : values)} />
+      ? { revision: tool.revision, name: values.name, description: values.description } : values)} />
 }
 
 function ToolDetail({ toolId }: { toolId: string }) {
@@ -99,7 +98,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
     <Button onClick={query.reload}>刷新</Button><Button onClick={() => setEditor('resource')}>编辑信息</Button>
     <ResourceActions kind="tool" summary={summaries.items[toolId]} onEdit={() => setEditor('version')} onChanged={() => navigate('/tools')} /></Space>}>
     <Descriptions items={[
-      { key: 'source', label: '来源', children: detail.tool.source_label }, { key: 'owner', label: '负责人', children: detail.tool.owner },
+      { key: 'source', label: '来源', children: detail.tool.source_label },
       { key: 'state', label: '状态', children: summaries.items[toolId] ? <StatusTag status={summaries.items[toolId].status} /> : '加载中' },
       { key: 'description', label: '用途', children: detail.tool.description },
     ]} />
@@ -115,7 +114,7 @@ function ToolDetail({ toolId }: { toolId: string }) {
       ]} /> },
       { key: 'permissions', label: '权限', children: <Descriptions column={1} items={[
         { key: 'environment', label: '环境', children: definition.environments.map(environment => ({ dev: '开发', test: '测试', fat: '验收', prod: '生产' })[environment]).join('、') },
-        { key: 'actions', label: '必要授权', children: definition.required_scopes?.map(scope => toolPermissionLabel(scope, session.actions)).join('、') },
+        { key: 'actions', label: '调用所需权限', children: Array.from(new Set(['run:create', ...definition.required_scopes])).map(scope => toolPermissionLabel(scope, session.actions)).join('、') },
         { key: 'subject', label: '主体要求', children: definition.subject_requirements?.required ? '需要受信业务主体' : '使用当前身份' },
       ]} /> },
       { key: 'policy', label: '执行策略', children: <Descriptions column={2} items={[

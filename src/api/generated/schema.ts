@@ -8276,11 +8276,19 @@ export interface components {
             output_schema: {
                 [key: string]: unknown;
             };
-            /** Owner */
-            owner: string;
+            /**
+             * Owner
+             * @deprecated
+             */
+            owner?: string | null;
             /** Remote Tool Name */
             remote_tool_name: string;
-            /** Required Scopes */
+            /**
+             * Required Scopes
+             * @default [
+             *       "run:create"
+             *     ]
+             */
             required_scopes: string[];
             /**
              * Subject Required
@@ -11367,8 +11375,11 @@ export interface components {
             description: string;
             /** Name */
             name: string;
-            /** Owner */
-            owner: string;
+            /**
+             * Owner
+             * @deprecated
+             */
+            owner?: string | null;
             /**
              * Source Type
              * @enum {string}
@@ -11462,8 +11473,11 @@ export interface components {
             description: string;
             /** Name */
             name: string;
-            /** Owner */
-            owner: string;
+            /**
+             * Owner
+             * @deprecated
+             */
+            owner?: string | null;
             /** Revision */
             revision: number;
         };
@@ -11603,8 +11617,11 @@ export interface components {
             effect_types: ("READ_ONLY" | "IDEMPOTENT_WRITE" | "EXTERNAL_WRITE")[];
             /** Name */
             name: string;
-            /** Owner */
-            owner: string;
+            /**
+             * Owner
+             * @deprecated
+             */
+            owner: string | null;
             /** Revision */
             revision: number;
             /** Source Label */

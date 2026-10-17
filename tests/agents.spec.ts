@@ -169,6 +169,41 @@ test('没有可用模型时智能协助保留输入并禁止发送', async ({ pa
   await expect(dialog.getByRole('button', { name: '发送', exact: true })).toBeDisabled()
 })
 
+test('智能协助超时后可沿用需求重新生成，保留未发送内容', async ({ page }) => {
+  await assistanceFixture(page)
+  const submissions: { message: string; previous_run_id: string | null; idempotency_key: string }[] = []
+  await page.route('**/admin/v1/agents/assistance', async route => {
+    submissions.push(route.request().postDataJSON())
+    await route.fulfill({ status: 202, json: { run_id: `retry_${submissions.length}` } })
+  })
+  await page.route('**/admin/v1/agents/assistance/runs/*', async route => {
+    const runId = route.request().url().split('/').at(-1)
+    await route.fulfill({ json: runId === 'retry_2'
+      ? { run_id: runId, state: 'FAILED', state_label: '失败', error: '模型调用超时' }
+      : { run_id: runId, state: 'SUCCEEDED', state_label: '已完成', reply: {
+        message: runId === 'retry_1' ? '请补充查询范围' : '已生成方案', proposal: runId === 'retry_1' ? null : assistedProposal,
+      } } })
+  })
+  await page.goto('#/agents/assistance')
+  const input = page.getByLabel('创建或修改需求')
+  await input.fill('创建服务推荐助手')
+  await page.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(page.getByText('请补充查询范围')).toBeVisible()
+  await input.fill('运行时传入租户编号和需求描述')
+  await page.getByRole('button', { name: '发送', exact: true }).click()
+  await expect(page.getByText('模型调用超时', { exact: true })).toBeVisible()
+  expect(submissions).toHaveLength(2)
+  await input.fill('还没决定是否发送的补充要求')
+  await page.getByRole('button', { name: '重新生成', exact: true }).click()
+  await expect(page.getByText('已生成方案', { exact: true })).toBeVisible()
+  expect(submissions).toHaveLength(3)
+  expect(submissions[2].message).toBe(submissions[1].message)
+  expect(submissions[2].previous_run_id).toBe('retry_1')
+  expect(submissions[2].idempotency_key).not.toBe(submissions[1].idempotency_key)
+  await expect(input).toHaveValue('还没决定是否发送的补充要求')
+  await expect(page.getByRole('button', { name: '重新生成', exact: true })).toHaveCount(0)
+})
+
 test('智能创建使用独立入口，示例只填入需求，返回前保留未保存内容', async ({ page }) => {
   await assistanceFixture(page)
   await page.goto('#/agents')

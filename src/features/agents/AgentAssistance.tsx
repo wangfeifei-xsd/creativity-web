@@ -64,7 +64,8 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
   const canSave = !!proposal && candidate === last && !pending && !saving
   const routes = options.data?.dependencies.filter(item => item.resource_type === 'model_route' && item.required_capabilities?.includes('text')) ?? []
   const selectedRoute = route ?? routes[0]?.version_id
-  const canSend = !pending && !saving && !!text.trim() && routes.some(item => item.version_id === selectedRoute)
+  const canGenerate = !pending && !saving && routes.some(item => item.version_id === selectedRoute)
+  const canSend = canGenerate && !!text.trim()
   const title = agent ? '智能修改' : '智能创建'
   const examples = agent ? [
     { title: '补齐中文字段', text: '为这个智能体的输入输出字段补齐中文名称和必要说明，保留已有业务含义。' },
@@ -104,17 +105,19 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
     return () => window.removeEventListener('beforeunload', confirmLeave)
   }, [dirty])
 
-  async function submit() {
-    if (busyRef.current || !canSend) return
+  async function submit(messageText = text, regenerate = false) {
+    if (busyRef.current || !canGenerate || !messageText.trim()) return
     busyRef.current = true; setSending(true); setError(undefined)
     const previous = [...messages].reverse().find(message => message.response?.state === 'SUCCEEDED')
-    const body = { message: text.trim(), agent_id: agent?.agent_id ?? null, base_version_id: base?.version_id ?? null,
+    const body = { message: messageText.trim(), agent_id: agent?.agent_id ?? null, base_version_id: base?.version_id ?? null,
       model_route_id: selectedRoute ?? null, previous_run_id: previous?.runId ?? null }
     const encoded = JSON.stringify(body)
     if (pendingRequest.current?.body !== encoded) pendingRequest.current = { body: encoded, key: crypto.randomUUID() }
     try {
       const receipt = await send<Schema<'AdmissionReceipt'>>('/admin/v1/agents/assistance', 'POST', { ...body, idempotency_key: pendingRequest.current.key })
-      setMessages(items => [...items, { text: body.message, runId: receipt.run_id }]); setText(''); pendingRequest.current = null
+      setMessages(items => [...items, { text: body.message, runId: receipt.run_id }]);
+      if (!regenerate) setText('')
+      pendingRequest.current = null
     } catch (failure) { setError(failure) } finally { busyRef.current = false; setSending(false) }
   }
   async function save() {
@@ -181,6 +184,8 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
             </div></div>}
             {message.response?.error && <Alert type="error" showIcon title={message.response.error} />}
             {message.response && ['CANCELLED', 'TIMED_OUT'].includes(message.response.state) && !message.response.error && <Alert type="warning" title={message.response.state_label} />}
+            {message === last && message.response && ['FAILED', 'TIMED_OUT', 'CANCELLED'].includes(message.response.state)
+              && <Button disabled={!canGenerate} onClick={() => void submit(message.text, true)}>重新生成</Button>}
           </div>)}
           {pending && <Space className="agent-assistance-working"><Spin size="small" /><span>{
             last?.response?.state === 'QUEUED' ? '排队中，请勿切换或关闭页面'
