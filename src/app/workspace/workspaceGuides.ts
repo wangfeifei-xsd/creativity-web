@@ -93,7 +93,7 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
       },
       {
         title: '发布并关联使用',
-        description: '确认候选模型已通过当前配置所需的能力验证，再发布路由。发布后可在提示词调试和智能体配置中选择。',
+        description: '确认候选模型已通过当前配置所需的能力验证，再发布路由。发布后可在智能体配置中选择。',
         action: routes,
       },
       {
@@ -116,13 +116,8 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
         action: prompts,
       },
       {
-        title: '使用模型路由调试',
-        description: '选择已发布的模型路由，填写正常、信息不足等样例，检查实际输出是否满足要求。调试会产生模型用量。',
-        action: prompts,
-      },
-      {
         title: '发布后绑定智能体',
-        description: '完成验证后发布提示词，再在智能体中选择。后续修改已发布提示词前查看引用，保存后会影响所有引用方的新任务。',
+        description: '保存并发布提示词，再在智能体中选择。需要验证实际效果时调试智能体。后续修改已发布提示词前查看引用，保存后会影响所有引用方的新任务。',
         action: prompts,
       },
     ],

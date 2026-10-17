@@ -1,3 +1,4 @@
+import { ThunderboltOutlined } from '@ant-design/icons'
 import { StatusTag } from '../../components/StatusTag'
 import { Button, Collapse, Descriptions, Form, Input, Modal, Select, Space, Tabs, Typography, Upload } from 'antd'
 import { Table } from '../../components/Table'
@@ -14,6 +15,7 @@ import { useResourceSummaries } from '../resources/useResourceSummaries'
 import { resourceColumns } from '../resources/resourceColumns'
 import { ResourceActions } from '../resources/ResourceManagement'
 import { SkillEditor } from './SkillEditor'
+import { SkillAssistance } from './SkillAssistance'
 import { SkillFiles } from './SkillFiles'
 import { SkillTests } from './SkillTests'
 import { SkillToolBindings } from './SkillToolBindings'
@@ -22,6 +24,8 @@ type Detail = Schema<'SkillDetail'>
 
 export function SkillsPage() {
   const { '*': path } = useParams()
+  const [params] = useSearchParams()
+  if (path === 'assistance') return <SkillAssistance key={params.toString()} skillId={params.get('skill') ?? undefined} />
   return path ? <SkillDetail key={path} skillId={path} /> : <SkillList />
 }
 
@@ -32,7 +36,8 @@ function SkillList() {
   const summaries = useResourceSummaries('skill', query.data?.items.map(row => row.skill_id) ?? [], query.data)
   const navigate = useNavigate()
   return <PageContainer title="技能管理" actions={<Space><Button onClick={query.reload}>刷新</Button>
-    <ActionButtons actions={query.data?.actions ?? []} handlers={{ create: () => setEditor('create'), import: () => setEditor('import') }} /></Space>}>
+    <ActionButtons actions={(query.data?.actions ?? []).filter(action => action.action_key !== 'assist')} handlers={{ create: () => setEditor('create'), import: () => setEditor('import') }} />
+    {query.data?.actions.some(action => action.action_key === 'assist') && <Button type="primary" icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate('/skills/assistance')}>智能创建</Button>}</Space>}>
     <Input.Search aria-label="技能名称或用途" placeholder="技能名称或用途" allowClear onSearch={setSearch} style={{ maxWidth: 360, marginBottom: 16 }} />
     <ErrorNotice error={summaries.error} />
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> :
@@ -40,6 +45,7 @@ function SkillList() {
         { title: '技能名称', render: (_, row) => <Link to={`/skills/${row.skill_id}`}>{row.name}</Link> },
         { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '负责人', dataIndex: 'owner' },
         { title: '标签', render: (_, row) => row.tags.join('、') || '未设置' },
+        ...(query.data.items.some(row => row.actions.some(action => action.action_key === 'assist')) ? [{ title: '智能协助', width: 120, render: (_: unknown, row: Schema<'SkillView'>) => row.actions.some(action => action.action_key === 'assist') && <Button type="link" onClick={() => navigate(`/skills/assistance?skill=${encodeURIComponent(row.skill_id)}`)}>智能修改</Button> }] : []),
         ...resourceColumns<Schema<'SkillView'>>('skill', summaries.items, row => row.skill_id, row => navigate(`/skills/${row.skill_id}?edit=1`), query.reload),
       ]} />}
     {editor && <SkillCreate mode={editor} onClose={() => setEditor(undefined)} onSaved={detail => navigate(`/skills/${detail.skill.skill_id}`)} />}
@@ -145,7 +151,9 @@ function SkillDetail({ skillId }: { skillId: string }) {
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
   if (!detail) return <LoadingState />
   return <PageContainer title={detail.skill.name} actions={<Space wrap><Link to="/skills">返回技能列表</Link>
-    <Button onClick={query.reload}>刷新</Button><Button onClick={() => setEditor('resource')}>编辑信息</Button><ResourceActions kind="skill" summary={summaries.items[skillId]} onEdit={() => setEditor('version')} onChanged={() => navigate('/skills')} /></Space>}>
+    <Button onClick={query.reload}>刷新</Button>
+    {detail.skill.actions.some(action => action.action_key === 'assist') && <Button icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate(`/skills/assistance?skill=${encodeURIComponent(skillId)}`)}>智能修改</Button>}
+    <Button onClick={() => setEditor('resource')}>编辑信息</Button><ResourceActions kind="skill" summary={summaries.items[skillId]} onEdit={() => setEditor('version')} onChanged={() => navigate('/skills')} /></Space>}>
     <ErrorNotice error={error ?? versionQuery.error} />
     <Descriptions items={[
       { key: 'status', label: '状态', children: summaries.items[skillId] ? <StatusTag status={summaries.items[skillId].status} /> : '加载中' },

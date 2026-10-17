@@ -8,11 +8,9 @@ import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
 import { useResourceSummaries } from '../resources/useResourceSummaries'
 import { ResourceActions } from '../resources/ResourceManagement'
-import { PromptDebug } from './Debug'
 import { TemplateFields, VariableFields } from './EditorFields'
 import { editorValues, fromEditor, type EditorValues } from './editor-values'
 import { PromptPreview } from './Preview'
-import { PromptExperiments } from './Experiments'
 import { contentOf, errorText, send, type Prompt, type Schema, type Version } from './types'
 
 export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: () => void }) {
@@ -26,7 +24,7 @@ export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: (
     <ResourceActions kind="prompt" summary={summaries.items[promptId]} onEdit={() => setEditingInfo(true)} onChanged={onBack} /></Space>}>
     {resource.error || configuration.error ? <ErrorState error={resource.error || configuration.error} onRetry={refresh} /> : !resource.data || !configuration.data ? <LoadingState /> : <>
       <Descriptions items={[{ key: 'purpose', label: '用途', children: resource.data.purpose }]} />
-      <Workbench key={configuration.data.revision} current={configuration.data} prompt={resource.data} onChanged={refresh} activeTab={activeTab} onTabChange={setActiveTab} />
+      <Workbench key={configuration.data.revision} current={configuration.data} onChanged={refresh} activeTab={activeTab} onTabChange={setActiveTab} />
     </>}
     {editingInfo && resource.data && <EditorDialog title="编辑提示词信息" initial={{ name: resource.data.name, purpose: resource.data.purpose, revision: resource.data.revision }}
       fields={[{ name: 'name', label: '名称', required: true }, { name: 'purpose', label: '用途', required: true }]}
@@ -35,8 +33,8 @@ export function PromptDetail({ promptId, onBack }: { promptId: string; onBack: (
       onSave={values => send(`/admin/v1/prompts/${promptId}`, values, 'PATCH')} />}
   </PageContainer>
 }
-function Workbench({ current, prompt, onChanged, activeTab, onTabChange }: {
-  current: Version; prompt: Prompt; onChanged: () => void; activeTab: string; onTabChange: (key: string) => void
+function Workbench({ current, onChanged, activeTab, onTabChange }: {
+  current: Version; onChanged: () => void; activeTab: string; onTabChange: (key: string) => void
 }) {
   const { message } = App.useApp()
   const [form] = Form.useForm<EditorValues>()
@@ -84,8 +82,6 @@ function Workbench({ current, prompt, onChanged, activeTab, onTabChange }: {
         { key: 'edit', label: '编辑', forceRender: true, children: <Space orientation="vertical" size="middle" style={{ width: '100%' }}>{controls}<TemplateFields editable={editable} /></Space> },
         { key: 'variables', label: '变量', forceRender: true, children: <Space orientation="vertical" size="middle" style={{ width: '100%' }}>{controls}<VariableFields editable={editable} /></Space> },
         { key: 'preview', label: '预览', children: <PromptPreview version={current} /> },
-        { key: 'debug', label: '调试', children: <PromptDebug version={current} /> },
-        { key: 'experiments', label: '实验', children: <PromptExperiments promptId={prompt.prompt_id} /> },
       ]} />
     </Form>
   </Space>

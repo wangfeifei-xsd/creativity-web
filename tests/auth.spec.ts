@@ -3,10 +3,13 @@ import { expect, test, type Page } from '@playwright/test'
 const image = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="320" height="160" fill="#cad6df"/><rect x="150" y="50" width="52" height="52" fill="#738b9f"/></svg>')}`
 const error = (message: string) => ({ error: { code: 'CAPTCHA_FAILED', message, fields: [] } })
 
-async function loginPage(page: Page, options: { failChallenge?: boolean; failVerification?: boolean; failLogin?: boolean; proofTtl?: number; path?: string } = {}) {
+async function loginPage(page: Page, options: { failChallenge?: boolean; failVerification?: boolean; failLogin?: boolean; proofTtl?: number; path?: string; mustChangePassword?: boolean } = {}) {
   const state = { challenges: 0, verifications: 0, logins: 0, authenticated: false, options }
   await page.route('**/admin/v1/**', async route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/auth/session') && state.authenticated && options.mustChangePassword) {
+      return route.fulfill({ status: 403, json: { error: { code: 'PASSWORD_CHANGE_REQUIRED', message: '请先修改初始密码', fields: [] } } })
+    }
     if (path.endsWith('/auth/session')) return route.fulfill({ status: state.authenticated ? 200 : 401, json: state.authenticated ? {
       user: { user_id: 'test-admin', login_name: 'admin', display_name: '管理员' }, workspace: null, can_access_platform: true,
       workspace_options: [], default_workspace: null, navigation: [], actions: [], expires_at: '2030-01-01T00:00:00Z',
@@ -45,6 +48,34 @@ async function verifyWithKeyboard(page: Page) {
   await slider.press('ArrowRight')
   await slider.press('Enter')
 }
+
+test('首次强制改密仅填写两次新密码，成功后清除会话并重新登录', async ({ page }) => {
+  const state = await loginPage(page, { mustChangePassword: true })
+  const changes: unknown[] = []
+  await page.route('**/admin/v1/auth/change-password', async route => {
+    changes.push(route.request().postDataJSON())
+    expect(route.request().headers().authorization).toBe('Bearer test-token')
+    state.authenticated = false
+    return route.fulfill({ status: 204 })
+  })
+  await verifyWithKeyboard(page)
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '修改初始密码' })).toBeVisible()
+  await expect(page.getByLabel('原密码', { exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('当前密码', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '点击完成滑动验证' })).toHaveCount(0)
+  await page.getByLabel('新密码', { exact: true }).fill('Changed-password-5678')
+  await page.getByLabel('确认新密码', { exact: true }).fill('Different-password-5678')
+  await page.getByRole('button', { name: '修改密码并重新登录' }).click()
+  await expect(page.getByText('两次密码不一致')).toBeVisible()
+  expect(changes).toEqual([])
+  await page.getByLabel('确认新密码', { exact: true }).fill('Changed-password-5678')
+  await page.getByRole('button', { name: '修改密码并重新登录' }).click()
+  await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible()
+  await expect(page.getByText('密码已修改，请重新登录')).toBeVisible()
+  expect(changes).toEqual([{ new_password: 'Changed-password-5678' }])
+  expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBeNull()
+})
 
 test('登录必须先验证，键盘调整不会提前提交，成功凭据随登录提交', async ({ page }) => {
   const state = await loginPage(page)

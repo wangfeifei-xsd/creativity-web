@@ -1,11 +1,12 @@
 import { Avatar, Breadcrumb, Button, Drawer, Dropdown, Grid, Layout, Menu, Select, Tooltip, Typography, theme } from 'antd'
-import { ApartmentOutlined, AppstoreOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
+import { ApartmentOutlined, AppstoreOutlined, CloudServerOutlined, DownOutlined, HomeOutlined, LockOutlined, LogoutOutlined, MenuOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/Management'
 import { features } from '../../features/registry'
 import { resolveNavigation } from '../../features/navigation'
 import { BrandMark } from '../../features/auth/BrandMark'
+import { ChangePasswordDialog } from '../../features/auth/ChangePasswordDialog'
 import { useSession } from './context'
 import { navigationItems } from './navigation'
 import type { CSSProperties, ReactNode } from 'react'
@@ -14,9 +15,10 @@ import { useManagementAppearance } from '../management/context'
 
 export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const managementAppearance = useManagementAppearance()
-  const { session, switchWorkspace, logout } = useSession()
+  const { session, switchWorkspace, logout, changePassword } = useSession()
   const { token } = theme.useToken()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
   const [error, setError] = useState<unknown>()
   const screens = Grid.useBreakpoint()
   const location = useLocation()
@@ -51,7 +53,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
   const breadcrumbs = current ? [
     ...current.ancestors.map(parent => ({ title: parent.label })),
     { title: isDetail ? <Link to={current.path}>{current.label}</Link> : current.label },
-    ...(isDetail ? [{ title: location.pathname === '/agents/assistance' ? new URLSearchParams(location.search).has('agent') ? '智能修改' : '智能创建' : '详情' }] : []),
+    ...(isDetail ? [{ title: ['/agents/assistance', '/skills/assistance'].includes(location.pathname) ? new URLSearchParams(location.search).has(location.pathname.startsWith('/skills') ? 'skill' : 'agent') ? '智能修改' : '智能创建' : '详情' }] : []),
   ] : [
     { title: location.pathname === landingPath || (isPlatform && isWorkbench) ? landingLabel : <Link to={landingPath}>{landingLabel}</Link> },
     ...(!isPlatform && isWorkbench ? [{ title: '工作台' }] : []),
@@ -128,8 +130,10 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
           <Tooltip title="刷新当前页面"><Button type="text" aria-label="刷新当前页面" icon={<ReloadOutlined aria-hidden />}
             onClick={() => window.location.reload()} /></Tooltip>
           <Dropdown placement="bottomRight" trigger={['click']} autoFocus menu={{ items: [
+            { key: 'password', label: '修改密码', icon: <LockOutlined aria-hidden /> },
             { key: 'logout', label: '退出登录', icon: <LogoutOutlined aria-hidden />, danger: true },
           ], onClick: ({ key }) => {
+            if (key === 'password') setPasswordOpen(true)
             if (key === 'logout') void logout().catch(setError)
           } }}>
             <Button className="workspace-user" aria-label="用户菜单">
@@ -140,5 +144,6 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
       </Layout.Header>
       <Layout.Content className="app-content"><ErrorNotice error={error} />{children}</Layout.Content>
     </Layout>
+    {passwordOpen && <ChangePasswordDialog onSubmit={changePassword} onClose={() => setPasswordOpen(false)} />}
   </Layout>
 }

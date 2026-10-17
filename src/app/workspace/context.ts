@@ -6,6 +6,7 @@ export type SessionContextValue = {
   reload: () => Promise<void>
   switchWorkspace: (workspace: Schema<'WorkspaceOption'> | null) => Promise<void>
   logout: () => Promise<void>
+  changePassword: (values: Schema<'PasswordChange'>) => Promise<void>
 }
 export const SessionContext = createContext<SessionContextValue | null>(null)
 export function useSession() {

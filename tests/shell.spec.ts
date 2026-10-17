@@ -15,6 +15,72 @@ async function authenticated(page: Page) {
   })
 }
 
+for (const width of [1365, 375]) test(`用户菜单修改密码校验输入、失败可重试并在成功后退出（${width}）`, async ({ page }) => {
+  await authenticated(page)
+  const workspace = width === 375 ? { channel_id: 'channel-a', channel_name: '研发渠道', environment: 'test', environment_name: '测试' } : null
+  await page.route('**/admin/v1/auth/session', route => route.fulfill({ json: { ...session, workspace } }))
+  const changes: unknown[] = []
+  let completeChange: (() => void) | undefined
+  await page.route('**/admin/v1/auth/change-password', async route => {
+    changes.push(route.request().postDataJSON())
+    if (changes.length === 1) return route.fulfill({ status: 403, json: { error: { code: 'PASSWORD_INCORRECT', message: '原密码不正确', fields: [] } } })
+    await new Promise<void>(resolve => { completeChange = resolve })
+    return route.fulfill({ status: 204 })
+  })
+  await page.setViewportSize({ width, height: 812 })
+  await page.goto('#/')
+  await page.getByRole('button', { name: '用户菜单' }).click()
+  await page.getByRole('menuitem', { name: '修改密码', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '修改密码' })
+  const save = dialog.getByRole('button', { name: '修改密码并重新登录' })
+  await save.click()
+  await expect(dialog.getByText('请输入原密码', { exact: true })).toBeVisible()
+  expect(changes).toEqual([])
+  await dialog.getByLabel('原密码', { exact: true }).fill('Incorrect-password-1234')
+  await dialog.getByLabel('新密码', { exact: true }).fill('New-password-5678')
+  await dialog.getByLabel('确认新密码', { exact: true }).fill('Different-password-5678')
+  await save.click()
+  await expect(dialog.getByText('两次密码不一致')).toBeVisible()
+  expect(changes).toEqual([])
+  await dialog.getByLabel('确认新密码', { exact: true }).fill('New-password-5678')
+  await save.click()
+  await expect(dialog.getByText('原密码不正确', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('新密码', { exact: true })).toHaveValue('New-password-5678')
+  await dialog.getByLabel('原密码', { exact: true }).fill('Current-password-1234')
+  await save.click()
+  await expect.poll(() => changes.length).toBe(2)
+  await expect(save).toBeDisabled()
+  await expect(dialog.getByRole('button', { name: '取消', exact: true })).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+  completeChange?.()
+  await expect(page.getByRole('heading', { name: '登录', exact: true })).toBeVisible()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByText('密码已修改，请重新登录')).toBeVisible()
+  expect(changes).toEqual([
+    { current_password: 'Incorrect-password-1234', new_password: 'New-password-5678' },
+    { current_password: 'Current-password-1234', new_password: 'New-password-5678' },
+  ])
+  expect(await page.evaluate(() => sessionStorage.getItem('creativity.management.token'))).toBeNull()
+})
+
+test('取消修改密码后再次打开不保留密码', async ({ page }) => {
+  await authenticated(page)
+  await page.goto('#/')
+  await page.getByRole('button', { name: '用户菜单' }).click()
+  await page.getByRole('menuitem', { name: '修改密码', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '修改密码' })
+  await dialog.getByLabel('原密码', { exact: true }).fill('Current-password-1234')
+  await dialog.getByLabel('新密码', { exact: true }).fill('New-password-5678')
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await page.getByRole('button', { name: '用户菜单' }).click()
+  await page.getByRole('menuitem', { name: '修改密码', exact: true }).click()
+  await expect(dialog.getByLabel('原密码', { exact: true })).toBeEmpty()
+  await expect(dialog.getByLabel('新密码', { exact: true })).toBeEmpty()
+})
+
 test('基础路径覆盖入口、静态资源、页面刷新和前进后退', async ({ page }) => {
   await authenticated(page)
   const response = await page.goto('./')

@@ -10,6 +10,7 @@ import { AuthBackdrop } from './AuthBackdrop'
 import { AuthStory } from './AuthStory'
 import { AuthIcon } from './AuthIcon'
 import { SliderCaptcha } from './SliderCaptcha'
+import { PasswordFields } from './PasswordFields'
 import './auth.css'
 
 export function AuthForm({ changePassword, onSubmit, onLogout }: {
@@ -55,17 +56,10 @@ export function AuthForm({ changePassword, onSubmit, onLogout }: {
       }}>
         {!changePassword && !external && <Form.Item name="login_name" label="登录名" rules={[{ required: true, message: '请输入登录名' }]}>
           <Input prefix={<AuthIcon name="user" />} autoComplete="username" placeholder="请输入登录名" maxLength={128} /></Form.Item>}
-        {!external && <Form.Item name={changePassword ? 'current_password' : 'password'} label={changePassword ? '当前密码' : '密码'}
-          rules={[{ required: true, message: '请输入密码' }]}><Input.Password prefix={<AuthIcon name="lock" />} autoComplete="current-password" placeholder={changePassword ? '请输入当前密码' : '请输入密码'} maxLength={256} /></Form.Item>}
+        {!changePassword && !external && <Form.Item name="password" label="密码"
+          rules={[{ required: true, message: '请输入密码' }]}><Input.Password prefix={<AuthIcon name="lock" />} autoComplete="current-password" placeholder="请输入密码" maxLength={256} /></Form.Item>}
         {external && <><Form.Item name="profile_id" label="身份源" rules={[{ required: true }]}><Select options={providers.data?.map(p => ({ value: p.profile_id, label: p.name }))} /></Form.Item><Form.Item name="token" label="外部访问凭据" rules={[{ required: true }]}><Input.Password autoComplete="off" /></Form.Item></>}
-        {changePassword && <><Form.Item name="new_password" label="新密码" extra="密码不少于 12 个字符" rules={[{ required: true, message: '请输入新密码' }]}>
-          <Input.Password prefix={<AuthIcon name="lock" />} autoComplete="new-password" placeholder="请输入新密码" /></Form.Item>
-          <Form.Item name="confirmation" label="确认新密码" dependencies={['new_password']} rules={[
-            { required: true, message: '请再次输入新密码' },
-            ({ getFieldValue }) => ({ validator(_, value: string) {
-              return !value || value === getFieldValue('new_password') ? Promise.resolve() : Promise.reject(new Error('两次密码不一致'))
-            } }),
-          ]}><Input.Password prefix={<AuthIcon name="lock" />} autoComplete="new-password" placeholder="请再次输入新密码" /></Form.Item></>}
+        {changePassword && <PasswordFields />}
         {!changePassword && !external && <Form.Item name="captcha_token" label="安全验证" rules={[{ required: true, message: '请先完成滑动验证' }]}>
           <SliderCaptcha key={`${loginName}:${captchaRevision}`} loginName={loginName} disabled={busy} beforeOpen={() => form.validateFields(['login_name'])} />
         </Form.Item>}

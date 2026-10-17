@@ -36,6 +36,62 @@ async function fixture(page: Page) {
   })
 }
 
+for (const entry of ['list', 'detail'] as const) {
+  test(`停用智能体从${entry === 'list' ? '列表' : '详情'}确认删除，取消不提交`, async ({ page }) => {
+    await fixture(page)
+    const stopped = { ...agent, status: { value: 'OFFLINE', label: '已下线', tone: 'default' }, actions: [{ ...action('delete', '删除'), enabled: true }] }
+    let deleted = false, requests = 0
+    await page.route('**/admin/v1/agents?*', route => route.fulfill({ json: { items: deleted ? [] : [stopped], actions: [] } }))
+    await page.route('**/admin/v1/agents/agent_a', async route => {
+      if (route.request().method() === 'DELETE') {
+        requests++
+        expect(route.request().postDataJSON()).toEqual({ revision: agent.revision })
+        deleted = true
+        await route.fulfill({ status: 204 })
+      } else await route.fulfill({ json: { ...detail, agent: stopped } })
+    })
+    await page.goto(entry === 'list' ? '#/agents' : '#/agents/agent_a')
+    await page.getByRole('button', { name: '删除', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: '删除智能体' })
+    await expect(dialog.getByText(/历史运行记录保留/)).toBeVisible()
+    await dialog.getByRole('button', { name: '取消', exact: true }).click()
+    expect(requests).toBe(0)
+    await page.getByRole('button', { name: '删除', exact: true }).click()
+    await dialog.getByRole('button', { name: '确认', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page).toHaveURL(/#\/agents$/)
+    await expect(page.getByRole('link', { name: '业务助手', exact: true })).toHaveCount(0)
+    expect(requests).toBe(1)
+  })
+
+  test(`智能体${entry === 'list' ? '列表' : '详情'}展示服务端删除限制原因`, async ({ page }) => {
+    await fixture(page)
+    const blocked = { ...agent, actions: [{ ...action('delete', '删除'), enabled: false, disabled_reason: '智能体仍关联定时计划，请先解除关联' }] }
+    await page.route('**/admin/v1/agents?*', route => route.fulfill({ json: { items: [blocked], actions: [] } }))
+    await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, agent: blocked } }))
+    await page.goto(entry === 'list' ? '#/agents' : '#/agents/agent_a')
+    const button = page.getByRole('button', { name: '删除', exact: true })
+    await expect(button).toBeDisabled()
+    await button.hover({ force: true })
+    await expect(page.getByRole('tooltip')).toHaveText('智能体仍关联定时计划，请先解除关联')
+  })
+}
+
+test('智能体删除时引用变化，错误保留在确认框中', async ({ page }) => {
+  await fixture(page)
+  const stopped = { ...agent, actions: [{ ...action('delete', '删除'), enabled: true }] }
+  await page.route('**/admin/v1/agents/agent_a', route => route.request().method() === 'DELETE'
+    ? route.fulfill({ status: 409, json: { error: { code: 'AGENT_IN_USE', message: '智能体仍有待派发的业务任务，请先取消或等待处理完成', fields: [] } } })
+    : route.fulfill({ json: { ...detail, agent: stopped } }))
+  await page.goto('#/agents/agent_a')
+  await page.getByRole('button', { name: '删除', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '删除智能体' })
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(dialog.getByRole('alert')).toContainText('智能体仍有待派发的业务任务')
+  await expect(dialog.getByRole('button', { name: '确认', exact: true })).toBeEnabled()
+  await expect(page).toHaveURL(/#\/agents\/agent_a$/)
+})
+
 test('运行限制直达选择原运行版本，编辑草稿直接定位运行策略', async ({ page }) => {
   await fixture(page)
   const published = { ...version, version_id: 'published_a', version_label: '运行使用版本', status: { value: 'PUBLISHED', label: '已发布', tone: 'success' }, actions: [], definition: { ...definition, limits: { ...definition.limits, token_limit: 96000 } } }
@@ -129,6 +185,44 @@ test('智能协助修改有变更预览，冲突保留方案与对话', async ({
   await expect(dialog.getByText('补充任务指令，保留原流程。')).toBeVisible()
   await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
   await page.screenshot({ path: '.local/agent-assistance-conflict.png', fullPage: true })
+})
+
+test('复杂提示词预览带来源名称，保存后自动发布并关联步骤', async ({ page }) => {
+  await assistanceFixture(page)
+  const name = '企业客户咨询分析与售后支持智能体抽象的业务诉求分类、关键事实核对与后续行动建议提示词'
+  const draft = { name, purpose: '归纳问题与待办事项', step_key: 'answer', content: {
+    instruction_blocks: { system: '先提取事实，再分类问题，最后列出待办事项。', output_requirements: '仅使用可核实的事实' },
+    message_templates: [], variables: [], change_note: '',
+  } }
+  let saves = 0
+  await page.route('**/admin/v1/agents/assistance', route => route.fulfill({ status: 202, json: { run_id: 'assist_prompts' } }))
+  await page.route('**/admin/v1/agents/assistance/runs/assist_prompts', route => route.fulfill({ json: {
+    run_id: 'assist_prompts', state: 'SUCCEEDED', state_label: '已完成',
+    reply: { message: '已生成方案和可复用提示词', proposal: assistedProposal, prompt_drafts: [draft] },
+  } }))
+  await page.route('**/admin/v1/agents/assistance/runs/assist_prompts/apply', async route => {
+    saves++
+    expect(route.request().postData()).toBeNull()
+    await route.fulfill({ json: { agent_id: 'agent_a', version_id: 'draft_a', prompts: [{ prompt_id: 'prompt_extracted', name }] } })
+  })
+  await page.goto('#/agents/assistance')
+  await page.getByLabel('创建或修改需求').fill('创建一个复杂咨询分析智能体，并提取可复用的提示词')
+  await page.getByRole('button', { name: '发送', exact: true }).click()
+  await page.getByRole('tab', { name: '待创建提示词（1）' }).click()
+  await expect(page.getByText(name, { exact: true })).toBeVisible()
+  await page.getByText(name, { exact: true }).hover()
+  await expect(page.getByRole('tooltip')).toHaveText(name)
+  await page.getByText('关联步骤：生成业务结果').hover()
+  await expect(page.getByLabel('系统指令', { exact: true })).toHaveValue(draft.content.instruction_blocks.system)
+  await expect(page.getByText('关联步骤：生成业务结果')).toBeVisible()
+  await expect(page.getByText('同时发布并关联 1 个提示词')).toBeVisible()
+  expect(saves).toBe(0)
+  await page.screenshot({ path: '.local/agent-extracted-prompts.png', fullPage: true })
+  await page.getByRole('button', { name: '创建并保存草稿' }).click()
+  await expect(page).toHaveURL(/agents\/agent_a\?edit=draft_a/)
+  await expect(page.getByText('以下提示词已自动发布并关联到对应步骤。')).toBeVisible()
+  await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute('href', /#\/prompts\?prompt=prompt_extracted$/)
+  expect(saves).toBe(1)
 })
 
 test('智能协助查询失败可恢复，不重复生成；窄屏预览不溢出', async ({ page }) => {

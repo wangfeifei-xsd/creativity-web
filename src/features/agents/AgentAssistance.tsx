@@ -1,7 +1,7 @@
-import { Alert, Avatar, Badge, Button, Card, Collapse, Descriptions, Empty, Input, Modal, Segmented, Select, Space, Spin, Tabs, Tag, Typography, theme } from 'antd'
+import { Alert, App, Avatar, Badge, Button, Card, Collapse, Descriptions, Empty, Input, Modal, Segmented, Select, Space, Spin, Tabs, Tag, Typography, theme } from 'antd'
 import { ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined, CheckCircleFilled, CommentOutlined, FileTextOutlined, FormOutlined, PlusOutlined, ThunderboltOutlined, UserOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState, type ComponentRef, type CSSProperties } from 'react'
-import { useBlocker, useNavigate } from 'react-router-dom'
+import { Link, useBlocker, useNavigate } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { send } from '../../api/management'
 import { isAbort, useQuery } from '../../api/useQuery'
@@ -10,6 +10,7 @@ import { ErrorState, LoadingState } from '../../components/States'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
 import { SchemaComparison } from '../../components/schema-fields/SchemaComparison'
 import { DifferenceValue } from './AgentDifferences'
+import { AssistancePrompts } from './AssistancePrompts'
 import { Flow } from './Flow'
 import { type Definition, type Detail, type Options, type Version, workflowNames } from './types'
 
@@ -37,6 +38,7 @@ export function AgentAssistance({ agentId, versionId }: { agentId?: string; vers
 function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']; base?: Version; onReset?: () => void }) {
   const navigate = useNavigate()
   const { token } = theme.useToken()
+  const { notification } = App.useApp()
   const options = useQuery<Options>('/admin/v1/agents/options')
   const [route, setRoute] = useState<string>()
   const [text, setText] = useState('')
@@ -60,6 +62,7 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
   // 继续对话时保留最近的方案供核对，只有最新一轮确认的方案可以保存。
   const candidate = [...messages].reverse().find(message => message.response?.state === 'SUCCEEDED' && message.response.reply?.proposal)
   const proposal = candidate?.response?.reply?.proposal
+  const promptDrafts = candidate?.response?.reply?.prompt_drafts ?? []
   const preview = proposal?.definition ?? base?.definition
   const canSave = !!proposal && candidate === last && !pending && !saving
   const routes = options.data?.dependencies.filter(item => item.resource_type === 'model_route' && item.required_capabilities?.includes('text')) ?? []
@@ -125,6 +128,13 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
     busyRef.current = true; setSaving(true); setError(undefined)
     try {
       const result = await send<Schema<'AssistanceSaved'>>(`/admin/v1/agents/assistance/runs/${candidate.runId}/apply`, 'POST')
+      if (result.prompts?.length) notification.success({
+        title: '智能体草稿和提示词已保存', duration: 0,
+        description: <Space orientation="vertical">
+          <span>以下提示词已自动发布并关联到对应步骤。</span>
+          {result.prompts.map(prompt => <Link key={prompt.prompt_id} to={`/prompts?prompt=${encodeURIComponent(prompt.prompt_id)}`} target="_blank" rel="noopener noreferrer">{prompt.name}</Link>)}
+        </Space>,
+      })
       leaving.current = true
       navigate(`/agents/${result.agent_id}?edit=${result.version_id}`)
     } catch (failure) { setError(failure) } finally { busyRef.current = false; setSaving(false) }
@@ -214,13 +224,14 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
             { key: 'flow', label: '流程', children: <Flow key={candidate?.runId ?? base?.version_id} definition={preview} options={options.data} compact /> },
             { key: 'schema', label: '输入输出', children: <Space orientation="vertical" className="agent-flow-full-width"><Typography.Text strong>输入字段</Typography.Text><SchemaView value={preview.input_schema} label="输入结构" /><Typography.Text strong>输出字段</Typography.Text><SchemaView value={preview.output_schema} label="输出结构" /></Space> },
             { key: 'instructions', label: '任务指令', children: <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{preview.instructions || '沿用绑定的提示词'}</Typography.Paragraph> },
+            ...(promptDrafts.length ? [{ key: 'prompt-drafts', label: `待创建提示词（${promptDrafts.length}）`, children: <AssistancePrompts key={candidate?.runId} drafts={promptDrafts} definition={preview} /> }] : []),
             { key: 'configuration', label: '完整配置', children: <Collapse items={[
               { key: 'code', label: '接入配置', children: <Descriptions size="small" items={[{ key: 'code', label: '调用编码', children: proposal?.agent_code ?? agent?.agent_code }]} /> },
               ...(['bindings', 'limits', 'context'] as const).map(field => ({ key: field, label: fields[field], children: <DifferenceValue field={field} value={preview[field]} definition={preview} options={options.data} /> })),
             ]} /> },
             ...(proposal && candidate?.response?.base_definition ? [{ key: 'changes', label: '变更对照', children: <ProposalChanges before={candidate.response.base_definition} after={proposal.definition} options={options.data} /> }] : []),
           ]} />
-        </div><div className="agent-assistance-save"><span>{proposal ? candidate === last ? '保存为草稿' : '等待最新方案' : '当前版本的配置'}</span>
+        </div><div className="agent-assistance-save"><span>{proposal ? candidate === last ? promptDrafts.length ? `同时发布并关联 ${promptDrafts.length} 个提示词` : '保存为草稿' : '等待最新方案' : '当前版本的配置'}</span>
           {proposal && <Button type="primary" loading={saving} disabled={!canSave} onClick={() => void save()}>{agent ? '保存为新草稿' : '创建并保存草稿'}</Button>}
         </div></> : <div className="agent-assistance-preview-empty"><span><FileTextOutlined aria-hidden /></span><Typography.Text>方案生成后在这里预览</Typography.Text></div>}
       </section>

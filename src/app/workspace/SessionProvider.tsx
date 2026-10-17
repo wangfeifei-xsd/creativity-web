@@ -56,6 +56,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       tokenStore.set(null); setGeneration(n => n + 1); setState({ phase: 'login' }); navigate('/', { replace: true })
     } finally { ending.current = false }
   }
+  const changePassword = async (values: Schema<'PasswordChange'>) => {
+    await send('/admin/v1/auth/change-password', 'POST', { current_password: values.current_password, new_password: values.new_password })
+    tokenStore.set(null); setGeneration(n => n + 1); setState({ phase: 'login' }); navigate('/', { replace: true })
+    void message.success('密码已修改，请重新登录')
+  }
   const switchWorkspace = async (workspace: Schema<'WorkspaceOption'> | null) => {
     if (switching.current) return
     switching.current = true
@@ -81,15 +86,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   if (state.phase === 'login' || state.phase === 'password') return <AuthForm key={state.phase}
     changePassword={state.phase === 'password'} onLogout={logout} onSubmit={async values => {
       if ('new_password' in values) {
-        await send('/admin/v1/auth/change-password', 'POST', { current_password: values.current_password, new_password: values.new_password })
-        tokenStore.set(null); setState({ phase: 'login' }); void message.success('密码已修改，请重新登录')
+        await changePassword(values)
       } else {
         const response = await send<Schema<'TokenResponse'>>('profile_id' in values ? '/admin/v1/auth/external-token' : '/admin/v1/auth/login', 'POST', values)
         tokenStore.set(response.access_token); navigate('/', { replace: true }); await reload()
       }
     }} />
   if (state.phase !== 'ready') return null
-  return <SessionContext value={{ session: state.session, reload, logout, switchWorkspace }}>
+  return <SessionContext value={{ session: state.session, reload, logout, switchWorkspace, changePassword }}>
     <div key={generation}>{children}</div>
   </SessionContext>
 }

@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const actions = [
   { action_key: 'prompt:manage', label: '编辑提示词' }, { action_key: 'version:edit', label: '编辑草稿' },
-  { action_key: 'version:read', label: '查看版本' }, { action_key: 'run:create', label: '调试' },
+  { action_key: 'version:read', label: '查看配置' },
 ]
 const content = { instruction_blocks: { system: '只分析事实', output_requirements: '返回中文结论' },
   message_templates: [{ source: 'input', template: '{{ text }}' }], change_note: '',
@@ -33,11 +33,11 @@ async function setup(page: Page) {
   await page.getByRole('button', { name: '风险分析', exact: true }).click()
 }
 
-test('提示词编辑与调试操作区、中文变量、脱敏预览和未知上下文上限', async ({ page }) => {
+test('提示词仅保留编辑、变量和预览，支持中文变量与脱敏预览', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await setup(page)
-  for (const name of ['编辑', '变量', '预览', '调试', '实验']) await expect(page.getByRole('tab', { name, exact: true })).toBeVisible()
+  await expect(page.getByRole('tab')).toHaveText(['编辑', '变量', '预览'])
   await page.getByRole('tab', { name: '变量', exact: true }).click()
   await expect(page.getByLabel('中文名称', { exact: true })).toHaveValue('待评估文本')
   await page.getByRole('tab', { name: '预览', exact: true }).click()
@@ -65,17 +65,35 @@ test('草稿冲突保留输入并展示最新修订', async ({ page }) => {
   await expect(page.getByText('本次编辑内容', { exact: true })).toBeVisible()
 })
 
-test('旧测试读取固定快照，后续草稿不替换测试内容', async ({ page }) => {
+test('提示词详情支持地址直达和刷新，返回后恢复列表', async ({ page }) => {
   await setup(page)
-  await page.route('**/admin/v1/prompt-versions/v1/tests', route => route.fulfill({ json: [{ test_id: 't1', version_id: 'v1', version_label: '旧草稿', draft_revision: 1,
-    model_route_version: 'route1', model_route_name: '文本模型', sample_title: '旧样例', run_id: 'run1',
-    status: { value: 'SUCCEEDED', label: '已完成', tone: 'success' }, created_at: '2026-10-01T00:00:00Z',
-    snapshot: { ...version.version, content: { ...content, instruction_blocks: { system: '历史模板原文', output_requirements: '' } } },
-    rendered, output: null, masked: true, descriptor_digest: 'c'.repeat(64) }] }))
-  await page.getByRole('tab', { name: '调试', exact: true }).click()
-  await page.getByRole('button', { name: '查看快照', exact: true }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.getByText('模板配置快照', { exact: true }).click()
-  await expect(dialog.getByText(/历史模板原文/)).toBeVisible()
-  await expect(dialog.getByRole('button', { name: '查看完整渲染和结果' })).toHaveCount(0)
+  await page.goto('#/prompts?prompt=p1')
+  await expect(page.getByLabel('系统指令', { exact: true })).toHaveValue('只分析事实')
+  await page.reload()
+  await expect(page.getByLabel('系统指令', { exact: true })).toHaveValue('只分析事实')
+  await page.getByRole('button', { name: '返回列表', exact: true }).click()
+  await expect(page).toHaveURL(/#\/prompts$/)
+  await expect(page.getByRole('button', { name: '风险分析', exact: true })).toBeVisible()
+})
+
+test('提示词直接发布，不要求调试或实验', async ({ page }) => {
+  const requests: string[] = []
+  page.on('request', request => {
+    const path = new URL(request.url()).pathname
+    if (path.startsWith('/admin/v1/')) requests.push(path)
+  })
+  await setup(page)
+  let published = false
+  await page.route('**/admin/v1/resource-management/prompt/summaries', route => route.fulfill({ json: [resourceSummary('p1', prompt.name, published)] }))
+  await page.route('**/admin/v1/resource-management/prompt/p1/publish', async route => {
+    expect(route.request().postDataJSON()).toEqual({ revision: 1, configuration_revision: 1, confirm_used: false })
+    published = true
+    await route.fulfill({ status: 204 })
+  })
+  await page.getByRole('button', { name: '发布', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: '发布', exact: true }).click()
+  await expect(page.getByText('发布成功', { exact: true })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '已发布', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: '最近测试' })).toHaveCount(0)
+  expect(requests.filter(path => /\/(tests|samples|evaluations|evaluation-datasets|model-routes)(\/|$)/.test(path))).toEqual([])
 })

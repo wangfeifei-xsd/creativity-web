@@ -1,5 +1,5 @@
 import { Button, Descriptions, Empty, Form, Input, Modal, Select, Space, Tabs, Tag, Typography } from 'antd'
-import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, DatabaseOutlined, EditOutlined, HistoryOutlined, MessageOutlined, PauseCircleOutlined, PlayCircleOutlined, PlusOutlined, PoweroffOutlined, ReloadOutlined, SendOutlined, SlidersOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, CheckCircleOutlined, ClockCircleOutlined, DatabaseOutlined, DeleteOutlined, EditOutlined, HistoryOutlined, MessageOutlined, PauseCircleOutlined, PlayCircleOutlined, PlusOutlined, PoweroffOutlined, ReloadOutlined, SendOutlined, SlidersOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -33,10 +33,11 @@ function AgentList() {
   const [search, setSearch] = useState('')
   const query = useQuery<Schema<'AgentList'>>(`/admin/v1/agents?search=${encodeURIComponent(search)}`)
   const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState<Schema<'AgentView'>>()
   const options = useQuery<Options>(creating ? '/admin/v1/agents/options' : null)
   const navigate = useNavigate()
   const canAssist = query.data?.actions.some(action => action.action_key === 'assist')
-  const canModify = query.data?.items.some(item => item.actions.some(action => action.action_key === 'assist'))
+  const canOperate = query.data?.items.some(item => item.actions.some(action => ['assist', 'delete'].includes(action.action_key)))
   return <PageContainer title="智能体" actions={<Space wrap><Button onClick={query.reload}>刷新</Button>
     <ActionButtons primaryAction={canAssist ? 'assist' : 'create'} actions={query.data?.actions ?? []} handlers={{ create: () => setCreating(true) }} />
     {canAssist && <Button type="primary" icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate('/agents/assistance')}>智能创建</Button>}</Space>}>
@@ -46,10 +47,13 @@ function AgentList() {
       { title: '智能体名称', render: (_, row) => <Link to={`/agents/${row.agent_id}`}>{row.name}</Link> },
       { title: '用途', dataIndex: 'description', ellipsis: true }, { title: '负责人', dataIndex: 'owner' },
       { title: '状态', render: (_, row) => <StatusTag status={row.status} /> },
-      ...(canModify ? [{ title: '操作', width: 120, render: (_: unknown, row: Schema<'AgentList'>['items'][number]) => row.actions.some(action => action.action_key === 'assist') && <Button type="link" onClick={() => navigate(`/agents/assistance?agent=${encodeURIComponent(row.agent_id)}`)}>智能修改</Button> }] : []),
+      ...(canOperate ? [{ title: '操作', width: 220, render: (_: unknown, row: Schema<'AgentView'>) => <ActionButtons actions={row.actions} icons={{ delete: <DeleteOutlined aria-hidden /> }} handlers={{
+        assist: () => navigate(`/agents/assistance?agent=${encodeURIComponent(row.agent_id)}`), delete: () => setDeleting(row),
+      }} /> }] : []),
     ]} />}
     {creating && !options.data && <Modal open title="新增智能体" footer={null} onCancel={() => setCreating(false)}>{options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />}</Modal>}
     {creating && options.data && <AgentEditor options={options.data} onClose={() => setCreating(false)} onSaved={detail => { if (detail) navigate(`/agents/${detail.agent.agent_id}`) }} />}
+    {deleting && <DeleteAgentDialog agent={deleting} onClose={() => setDeleting(undefined)} onSaved={() => { setDeleting(undefined); query.reload() }} />}
   </PageContainer>
 }
 
@@ -62,7 +66,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const [initialFocus, setInitialFocus] = useState<FlowIssue>()
   const editVersion = searchParams.get('edit')
   const closeVersionEditor = () => { setSearchParams({}, { replace: true }); setInitialFocus(undefined); setEditor(undefined) }
-  const [editor, setEditor] = useState<'resource' | 'new' | 'release' | 'offline' | 'emergency_stop' | 'enable'>()
+  const [editor, setEditor] = useState<'resource' | 'new' | 'release' | 'offline' | 'emergency_stop' | 'enable' | 'delete'>()
   const [validation, setValidation] = useState<Schema<'AgentValidation'>>()
   const [tab, setTab] = useState(() => searchParams.get('tab') === 'limits' ? 'limits' : 'flow')
   const [error, setError] = useState<unknown>()
@@ -93,8 +97,8 @@ function AgentDetail({ agentId }: { agentId: string }) {
   const openEditor = (issue?: FlowIssue) => { if (!version) return; setInitialFocus(issue); setSelected(version.version_id); setSearchParams({ edit: version.version_id, ...(!issue && tab === 'limits' ? { section: 'limits' } : {}) }) }
   return <AgentWorkspace className="agent-detail"><PageContainer title={detail.agent.name} actions={<Space wrap><Link to="/agents"><ArrowLeftOutlined aria-hidden /> 返回智能体列表</Link><Button icon={<ReloadOutlined aria-hidden />} onClick={reload}>刷新</Button>
     {detail.agent.actions.some(action => action.action_key === 'edit') && <Button icon={<ThunderboltOutlined aria-hidden />} onClick={() => navigate(`/agents/assistance?${new URLSearchParams({ agent: agentId, ...(version ? { version: version.version_id } : {}) })}`)}>智能修改</Button>}
-    <ActionButtons actions={detail.agent.actions} icons={{ edit: <EditOutlined aria-hidden />, create_version: <PlusOutlined aria-hidden />, offline: <PoweroffOutlined aria-hidden />, emergency_stop: <PauseCircleOutlined aria-hidden />, enable: <PlayCircleOutlined aria-hidden /> }} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
-      offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable') }} /></Space>}>
+    <ActionButtons actions={detail.agent.actions} icons={{ edit: <EditOutlined aria-hidden />, create_version: <PlusOutlined aria-hidden />, offline: <PoweroffOutlined aria-hidden />, emergency_stop: <PauseCircleOutlined aria-hidden />, enable: <PlayCircleOutlined aria-hidden />, delete: <DeleteOutlined aria-hidden /> }} handlers={{ edit: () => setEditor('resource'), create_version: () => setEditor('new'),
+      offline: () => setEditor('offline'), emergency_stop: () => setEditor('emergency_stop'), enable: () => setEditor('enable'), delete: () => setEditor('delete') }} /></Space>}>
     <ErrorNotice error={error ?? options.error} />
     <div className="agent-detail-summary">
     <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} items={[{ key: 'status', label: '当前环境状态', children: <StatusTag status={detail.agent.status} /> },
@@ -169,7 +173,15 @@ function AgentDetail({ agentId }: { agentId: string }) {
       fields={[{ name: 'reason', label: '操作原因', required: true }]} onClose={() => setEditor(undefined)} onSaved={saved}
       onSave={values => send(`/admin/v1/agents/${agentId}/state`, 'POST', { ...values, revision: detail.agent.revision, operation: editor })} />}
     {editor === 'release' && version && options.data && <ReleaseDialog version={version} detail={detail} options={options.data} onClose={() => setEditor(undefined)} onSaved={saved} />}
+    {editor === 'delete' && <DeleteAgentDialog agent={detail.agent} onClose={() => setEditor(undefined)} onSaved={() => navigate('/agents', { replace: true })} />}
   </PageContainer></AgentWorkspace>
+}
+
+function DeleteAgentDialog({ agent, onClose, onSaved }: { agent: Schema<'AgentView'>; onClose: () => void; onSaved: () => void }) {
+  return <EditorDialog title="删除智能体" fields={[]} danger onClose={onClose} onSaved={onSaved}
+    onSave={() => send(`/admin/v1/agents/${agent.agent_id}`, 'DELETE', { revision: agent.revision })}>
+    <Typography.Paragraph>确认删除“{agent.name}”？删除后所有环境均不可再使用该智能体，历史运行记录保留。</Typography.Paragraph>
+  </EditorDialog>
 }
 
 function ReleaseDialog({ detail, version, options, onClose, onSaved }: { detail: Detail; version: Version; options: Options; onClose: () => void; onSaved: () => void }) {

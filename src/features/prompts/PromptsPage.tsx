@@ -1,8 +1,8 @@
 import { Alert, Button, Form, Input, Modal, Select, Space, Upload } from 'antd'
 import { Table } from '../../components/Table'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { applyFormErrors } from '../../api/form-errors'
-import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
 import { PageContainer } from '../../components/PageContainer'
 import { ErrorState, LoadingState } from '../../components/States'
@@ -15,7 +15,16 @@ type CreateValues = Schema<'PromptCreate'> & { format: 'text' | 'json'; data: st
 export function PromptsPage() {
   const query = useQuery<Schema<'PromptListView'>>('/admin/v1/prompts')
   const summaries = useResourceSummaries('prompt', query.data?.items.map(row => row.prompt_id) ?? [], query.data)
-  const [selected, setSelected] = useState<string>()
+  const [params, setParams] = useSearchParams()
+  const selected = params.get('prompt') ?? undefined
+  function setSelected(identifier?: string) {
+    setParams(current => {
+      const next = new URLSearchParams(current)
+      if (identifier) next.set('prompt', identifier)
+      else next.delete('prompt')
+      return next
+    })
+  }
   const [mode, setMode] = useState<'create' | 'import'>()
   const [form] = Form.useForm<CreateValues>()
   const [error, setError] = useState<string>()
@@ -28,7 +37,6 @@ export function PromptsPage() {
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : !query.data ? <LoadingState /> : <Table rowKey="prompt_id" dataSource={query.data.items} scroll={{ x: 950 }} columns={[
       { title: '名称', render: (_, row) => <Button type="link" onClick={() => setSelected(row.prompt_id)}>{row.name}</Button> },
       { title: '用途', dataIndex: 'purpose' },
-      { title: '最近测试', render: (_, row) => formatTimestamp(row.last_test_at) },
       ...resourceColumns<Prompt>('prompt', summaries.items, row => row.prompt_id, row => setSelected(row.prompt_id), query.reload),
     ]} />}
     <Modal title={mode === 'import' ? '导入提示词' : '创建提示词'} open={!!mode} onCancel={() => setMode(undefined)} confirmLoading={busy} onOk={async () => {

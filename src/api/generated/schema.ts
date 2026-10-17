@@ -185,7 +185,8 @@ export interface paths {
         get: operations["detail_admin_v1_agents__agent_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete */
+        delete: operations["delete_admin_v1_agents__agent_id__delete"];
         options?: never;
         head?: never;
         /** Edit */
@@ -3511,6 +3512,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/skills/assistance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assist */
+        post: operations["assist_admin_v1_skills_assistance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/skills/assistance/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistance Options */
+        get: operations["assistance_options_admin_v1_skills_assistance_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/skills/assistance/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistance Turn */
+        get: operations["assistance_turn_admin_v1_skills_assistance_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/skills/assistance/runs/{run_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assistance Apply */
+        post: operations["assistance_apply_admin_v1_skills_assistance_runs__run_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/skills/imports": {
         parameters: {
             query?: never;
@@ -5194,6 +5263,11 @@ export interface components {
              */
             workflow_type: "structured" | "template" | "tool_loop" | "stateful";
         };
+        /** AgentDeleteInput */
+        AgentDeleteInput: {
+            /** Revision */
+            revision: number;
+        };
         /** AgentDependency */
         AgentDependency: {
             /** Content Digest */
@@ -5620,7 +5694,7 @@ export interface components {
         /** AgentView */
         AgentView: {
             /** Actions */
-            actions: components["schemas"]["VisibleAction"][];
+            actions: components["schemas"]["AccessAction"][];
             /** Agent Code */
             agent_code: string;
             /** Agent Id */
@@ -5740,10 +5814,22 @@ export interface components {
          * @description 保存只使用运行中的候选，禁止请求正文附带配置或目标。
          */
         AssistanceApply: Record<string, never>;
+        /** AssistancePromptDraft */
+        AssistancePromptDraft: {
+            content: components["schemas"]["PromptContent"];
+            /** Name */
+            name: string;
+            /** Purpose */
+            purpose: string;
+            /** Step Key */
+            step_key?: string | null;
+        };
         /** AssistanceReply */
         AssistanceReply: {
             /** Message */
             message: string;
+            /** Prompt Drafts */
+            prompt_drafts?: components["schemas"]["AssistancePromptDraft"][];
             proposal?: components["schemas"]["AgentCreate-Output"] | null;
         };
         /** AssistanceRequest */
@@ -5765,8 +5851,17 @@ export interface components {
         AssistanceSaved: {
             /** Agent Id */
             agent_id: string;
+            /** Prompts */
+            prompts?: components["schemas"]["AssistanceSavedPrompt"][];
             /** Version Id */
             version_id: string;
+        };
+        /** AssistanceSavedPrompt */
+        AssistanceSavedPrompt: {
+            /** Name */
+            name: string;
+            /** Prompt Id */
+            prompt_id: string;
         };
         /** AssistanceTurn */
         AssistanceTurn: {
@@ -8897,9 +8992,9 @@ export interface components {
         PasswordChange: {
             /**
              * Current Password
-             * Format: password
+             * @description 首次强制改密时可省略；日常修改密码时必填
              */
-            current_password: string;
+            current_password?: string | null;
             /**
              * New Password
              * Format: password
@@ -10594,6 +10689,57 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * SkillAssistanceApply
+         * @description 不允许客户端回传候选、目标或权限字段。
+         */
+        SkillAssistanceApply: Record<string, never>;
+        /** SkillAssistanceReply */
+        SkillAssistanceReply: {
+            /** Message */
+            message: string;
+            proposal?: components["schemas"]["SkillProposal"] | null;
+        };
+        /** SkillAssistanceRequest */
+        SkillAssistanceRequest: {
+            /** Base Revision */
+            base_revision?: number | null;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Message */
+            message: string;
+            /** Model Route Id */
+            model_route_id?: string | null;
+            /** Previous Run Id */
+            previous_run_id?: string | null;
+            /** Skill Id */
+            skill_id?: string | null;
+        };
+        /** SkillAssistanceRoute */
+        SkillAssistanceRoute: {
+            /** Name */
+            name: string;
+            /** Route Id */
+            route_id: string;
+        };
+        /** SkillAssistanceSaved */
+        SkillAssistanceSaved: {
+            /** Skill Id */
+            skill_id: string;
+        };
+        /** SkillAssistanceTurn */
+        SkillAssistanceTurn: {
+            base?: components["schemas"]["SkillProposal"] | null;
+            /** Error */
+            error?: string | null;
+            reply?: components["schemas"]["SkillAssistanceReply"] | null;
+            /** Run Id */
+            run_id: string;
+            /** State */
+            state: string;
+            /** State Label */
+            state_label: string;
+        };
         /** SkillCreate */
         SkillCreate: {
             /** Description */
@@ -10819,6 +10965,44 @@ export interface components {
             reason: string;
             /** Version Id */
             version_id: string;
+        };
+        /** SkillProposal */
+        SkillProposal: {
+            /** Description */
+            description: string;
+            /** Instructions */
+            instructions: string;
+            /** Name */
+            name: string;
+            /** Owner */
+            owner: string;
+            /**
+             * @default {
+             *       "allowed_agents": [],
+             *       "change_note": "",
+             *       "conflict_groups": [],
+             *       "context_budget": 16000,
+             *       "input_variables": [],
+             *       "loading_mode": "on_demand",
+             *       "priority": 0,
+             *       "required_model_capabilities": [],
+             *       "tool_bindings": {},
+             *       "tool_requirements": []
+             *     }
+             */
+            settings: components["schemas"]["SkillSettings"];
+            /** Skill Code */
+            skill_code: string;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: string[];
+            /**
+             * Version Label
+             * @default 当前配置
+             */
+            version_label: string;
         };
         /** SkillReference */
         SkillReference: {
@@ -13894,6 +14078,142 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AgentDetail"];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_admin_v1_agents__agent_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentDeleteInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -47190,6 +47510,548 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SkillAgentOption"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    assist_admin_v1_skills_assistance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillAssistanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdmissionReceipt"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    assistance_options_admin_v1_skills_assistance_options_get: {
+        parameters: {
+            query?: {
+                skill_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillAssistanceRoute"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    assistance_turn_admin_v1_skills_assistance_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillAssistanceTurn"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    assistance_apply_admin_v1_skills_assistance_runs__run_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SkillAssistanceApply"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillAssistanceSaved"];
                 };
             };
             /** @description Bad Request */
