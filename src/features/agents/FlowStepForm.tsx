@@ -3,6 +3,8 @@ import { useImperativeHandle, useState, type ReactNode, type Ref } from 'react'
 import { SchemaFields } from '../../components/schema-fields/SchemaFields'
 import { schemaRules, type SchemaObject } from '../../components/schema-fields/schema'
 import { FlowValueInput } from './FlowValueInput'
+import { NodeScriptEditor, PaginationEditor } from './NodeScripts'
+import { validationSource, validationSchema } from './node-script-template'
 import { fieldChoices, fieldSchema, locateFlowIssue, stepKinds, withCurrentChoice, type FlowIssue, type Step, type StepTab } from './flow-fields'
 import { type Definition, type Options, parseObject, pretty } from './types'
 
@@ -17,7 +19,7 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
 }) {
   const [form] = Form.useForm<Values>()
   const [tab, setTab] = useState<StepTab>(initialTab)
-  const [initial] = useState(() => step ? { ...step, input_schema: pretty(step.input_schema), output_schema: pretty(step.output_schema),
+  const [initial] = useState<Values>(() => step ? { ...step, input_schema: pretty(step.input_schema), output_schema: pretty(step.output_schema),
     mappings: Object.entries(step.inputs ?? {}).map(([field, source]) => ({ ...source, field, value: pretty(source.value) })) } : {
     key: `step_${crypto.randomUUID().slice(0, 8)}`, name: '', kind: 'compute' as const, operator: 'object' as const, timeout_seconds: 30, failure_policy: 'fail' as const, max_retries: 0,
     input_schema: pretty({ type: 'object', properties: {} }), output_schema: pretty({ type: 'object', properties: {} }), mappings: [],
@@ -30,7 +32,7 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
   if (displayedHandler && !handlerOptions.some(item => item.value === displayedHandler)) handlerOptions.push({ value: displayedHandler, label: '收尾步骤不可用，请重新选择', disabled: true })
   const inputSchema = parseOr(Form.useWatch('input_schema', form), step?.input_schema ?? {})
   const [issue, setIssue] = useState<FlowIssue>()
-  const tabForField = (field: string): StepTab => field === 'mappings' || field === 'input_schema' ? 'inputs' : field === 'output_schema' ? 'output' : 'base'
+  const tabForField = (field: string): StepTab => ['script', 'pagination'].includes(field) ? 'scripts' : field === 'mappings' || field === 'input_schema' ? 'inputs' : field === 'output_schema' ? 'output' : 'base'
   useImperativeHandle(ref, () => ({
     async flush() {
       let values: Values
@@ -45,10 +47,12 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
         path: item.source === 'constant' ? '' : item.path ?? '', value: item.source === 'constant' ? JSON.parse(item.value ?? 'null') as unknown : null,
       }
       return { ...step, key: values.key, name: values.name, kind: values.kind, operator: values.kind === 'compute' ? values.operator ?? 'object' : null,
-        dependency: values.kind === 'compute' ? null : values.dependency ?? null, inputs,
+        dependency: values.kind === 'model' || values.kind === 'tool' ? values.dependency ?? null : null, inputs,
+        script: values.kind === 'script' ? values.script ?? null : null,
+        pagination: values.kind === 'tool' ? values.pagination ?? null : null,
         prompt_id: values.kind === 'model' ? values.prompt_id ?? null : null,
         input_schema: parseObject(values.input_schema), output_schema: parseObject(values.output_schema), timeout_seconds: values.timeout_seconds,
-        failure_policy: values.failure_policy, failure_handler: values.failure_handler ?? null, max_retries: values.failure_policy === 'retry' ? values.max_retries : 0 }
+        failure_policy: values.failure_policy, failure_handler: values.kind === 'script' ? null : values.failure_handler ?? null, max_retries: values.failure_policy === 'retry' ? values.max_retries : 0 }
     },
     focus(next) {
       const location = locateFlowIssue(definition, next.path ?? '')
@@ -65,19 +69,19 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
   if (prompt && !promptOptions.some(item => item.value === prompt)) promptOptions.push({ value: prompt, label: '提示词不可用，请重新选择', disabled: true })
   const base = <>
     <Form.Item name="name" label="步骤名称" rules={[{ required: true, whitespace: true, message: '请填写步骤名称' }]}><Input maxLength={128} /></Form.Item>
-    <Form.Item name="kind" label="步骤类型"><Select options={Object.entries(stepKinds).map(([value, label]) => ({ value, label }))} onChange={() => form.setFieldsValue({ dependency: null, prompt_id: null })} /></Form.Item>
-    {kind === 'compute' ? <Form.Item name="operator" label="操作"><Select options={[{ value: 'object', label: '对象组装' }, { value: 'input', label: '等待补充' }, { value: 'approval', label: '等待审批' }]} /></Form.Item> :
+    <Form.Item name="kind" label="步骤类型"><Select options={Object.entries(stepKinds).map(([value, label]) => ({ value, label }))} onChange={next => { form.setFieldsValue({ dependency: null, prompt_id: null, operator: next === 'compute' ? 'object' : null, ...(next === 'script' ? { failure_policy: 'fail', max_retries: 0, failure_handler: null } : {}) }); setTab('base') }} /></Form.Item>
+    {kind === 'compute' ? <Form.Item name="operator" label="操作"><Select options={[{ value: 'object', label: '对象组装' }, { value: 'input', label: '等待补充' }, { value: 'approval', label: '等待审批' }]} /></Form.Item> : (kind === 'model' || kind === 'tool') &&
       <Form.Item name="dependency" label={kind === 'tool' ? '工具' : '模型路由'} extra={kind === 'model' ? '留空使用智能体默认模型路由' : undefined} rules={kind === 'tool' ? [{ required: true, message: '请选择工具' }] : []}>
         <Select allowClear showSearch optionFilterProp="label" options={depOptions} /></Form.Item>}
     {kind === 'model' && <Form.Item name="prompt_id" label="提示词" extra="留空沿用默认提示词；单独选择时，提示词变量读取本步骤的输入映射。">
       <Select allowClear showSearch optionFilterProp="label" options={promptOptions} /></Form.Item>}
     {kind === 'tool' && dependency && !definition.bindings.tool_ids.includes(dependency) && <Alert type="warning" showIcon title="此工具尚未加入资源依赖中的工具白名单" className="agent-flow-field-notice" />}
     <div className="agent-flow-form-pair"><Form.Item name="timeout_seconds" label="超时（秒）" rules={[{ required: true, message: '请填写超时' }]}><InputNumber min={1} max={3600} precision={0} /></Form.Item>
-      <Form.Item name="failure_policy" label="失败处理"><Select options={[{ value: 'fail', label: '终止并报错' }, { value: 'retry', label: '重试' }, { value: 'partial', label: '返回部分结果' }]} /></Form.Item></div>
+      <Form.Item name="failure_policy" label="失败处理"><Select options={[{ value: 'fail', label: '终止并报错' }, ...(kind === 'script' ? [] : [{ value: 'retry', label: '重试' }]), { value: 'partial', label: '返回部分结果' }]} /></Form.Item></div>
     {failurePolicy === 'retry' && <Form.Item name="max_retries" label="重试上限（次）" rules={[{ required: true, message: '请填写重试次数' }]}><InputNumber min={1} max={2} precision={0} /></Form.Item>}
-    <Form.Item name="failure_handler" label="失败收尾工具" extra="失败后执行此工具并保留原失败状态。收尾步骤须独立配置，不连接正常流转。"
+    {kind !== 'script' && <Form.Item name="failure_handler" label="失败收尾工具" extra="失败后执行此工具并保留原失败状态。收尾步骤须独立配置，不连接正常流转。"
       rules={[{ validator: (_, value) => value && failurePolicy === 'partial' ? Promise.reject(new Error('失败收尾不能与返回部分结果同时配置，请清空收尾工具或修改失败处理')) : Promise.resolve() }]}>
-      <Select allowClear options={handlerOptions} /></Form.Item>
+      <Select allowClear options={handlerOptions} /></Form.Item>}
     <Form.Item name="key" label="步骤标识" rules={[{ required: true, message: '请填写步骤标识' }, { validator: (_, value: string) => definition.steps.some(item => item.key === value && item.key !== step?.key) || value === 'END' ? Promise.reject(new Error('步骤标识已使用')) : Promise.resolve() }]}><Input disabled={!!step || disabled} /></Form.Item>
   </>
   const inputs = <>
@@ -95,6 +99,16 @@ export function FlowStepForm({ ref, step, definition, options, initialTab = 'bas
       { key: 'base', label: '基础配置', forceRender: true, children: base },
       { key: 'inputs', label: '输入映射', forceRender: true, children: inputs },
       { key: 'output', label: '输出结构', forceRender: true, children: <Form.Item name="output_schema" rules={schemaRules}><SchemaFields label="步骤输出结构" disabled={disabled} compact /></Form.Item> },
+      ...(kind === 'script' ? [{ key: 'scripts', label: 'Python 脚本', forceRender: true, children: <>
+        <Button disabled={disabled || !options.python_environments?.length} onClick={() => {
+          const profile = options.python_environments![0]
+          form.setFieldsValue({ script: { source: validationSource, profile_id: profile.profile_id, profile_digest: profile.profile_digest }, output_schema: pretty(validationSchema(inputSchema)) })
+          onDirty()
+        }}>填入校验示例</Button>
+        <Form.Item name="script" label="处理脚本" rules={[{ validator: (_, value: Step['script']) => value?.source.trim() && options.python_environments?.some(profile => profile.profile_id === value.profile_id && profile.profile_digest === value.profile_digest) ? Promise.resolve() : Promise.reject(new Error('请填写 Python 代码并选择有效执行环境')) }]}>
+          <NodeScriptEditor options={options} disabled={disabled} />
+        </Form.Item>
+      </> }] : kind === 'tool' ? [{ key: 'scripts', label: '全量分页', forceRender: true, children: <Form.Item name="pagination" label="全量分页" rules={[{ validator: (_, value: Step['pagination']) => !value || (value.cursor_input && value.items_path && value.has_more_path && value.cursor_path) ? Promise.resolve() : Promise.reject(new Error('请填写完整的分页字段路径')) }]}><PaginationEditor disabled={disabled} /></Form.Item> }] : []),
       ...(branches ? [{ key: 'branches', label: '后续流转', forceRender: true, children: branches }] : []),
     ]} />
   </Form>

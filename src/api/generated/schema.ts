@@ -5432,6 +5432,8 @@ export interface components {
             environment_label: string;
             /** Legacy Templates */
             legacy_templates?: components["schemas"]["AgentTemplate"][];
+            /** Python Environments */
+            python_environments?: components["schemas"]["PythonEnvironment"][];
             /** Templates */
             templates: components["schemas"]["AgentTemplate"][];
         };
@@ -5508,6 +5510,8 @@ export interface components {
             selected_files: string[];
             /** Skill Id */
             skill_id: string;
+            /** Step Keys */
+            step_keys?: string[] | null;
             /**
              * Trigger Reason
              * @default 配置选择
@@ -5552,7 +5556,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "model" | "tool" | "compute";
+            kind: "model" | "tool" | "compute" | "script";
             /**
              * Max Retries
              * @default 2
@@ -5566,8 +5570,10 @@ export interface components {
             output_schema: {
                 [key: string]: unknown;
             };
+            pagination?: components["schemas"]["StepPagination"] | null;
             /** Prompt Id */
             prompt_id?: string | null;
+            script?: components["schemas"]["NodePython"] | null;
             /**
              * Timeout Seconds
              * @default 30
@@ -8919,6 +8925,15 @@ export interface components {
             /** Navigation Key */
             navigation_key: string;
         };
+        /** NodePython */
+        NodePython: {
+            /** Profile Digest */
+            profile_digest: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Source */
+            source: string;
+        };
         /** OAuthCallback */
         OAuthCallback: {
             /**
@@ -9615,6 +9630,19 @@ export interface components {
             template_content?: {
                 [key: string]: unknown;
             };
+        };
+        /** PythonEnvironment */
+        PythonEnvironment: {
+            /** Memory Mb */
+            memory_mb: number;
+            /** Name */
+            name: string;
+            /** Profile Digest */
+            profile_digest: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Seconds */
+            seconds: number;
         };
         /** ReadinessResponse */
         ReadinessResponse: {
@@ -11281,6 +11309,38 @@ export interface components {
             occurred_at: string;
             /** Request Id */
             request_id: string;
+        };
+        /** StepPagination */
+        StepPagination: {
+            /** Count Path */
+            count_path?: string | null;
+            /**
+             * Cursor Input
+             * @default cursor
+             */
+            cursor_input: string;
+            /**
+             * Cursor Path
+             * @default cursor
+             */
+            cursor_path: string;
+            /**
+             * Has More Path
+             * @default has_more
+             */
+            has_more_path: string;
+            /**
+             * Items Path
+             * @default items
+             */
+            items_path: string;
+            /**
+             * Max Items
+             * @default 1000
+             */
+            max_items: number;
+            /** Total Path */
+            total_path?: string | null;
         };
         /** SubjectRequirements */
         SubjectRequirements: {

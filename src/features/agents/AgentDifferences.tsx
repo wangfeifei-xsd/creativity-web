@@ -3,6 +3,7 @@ import { formatAmount } from '../../api/presentation'
 import { Table } from '../../components/Table'
 import { SchemaComparison } from '../../components/schema-fields/SchemaComparison'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
+import { NodeScriptsView } from './NodeScripts'
 import { isObject } from '../../components/schema-fields/schema'
 import { displayValue, fieldName, stepKinds } from './flow-fields'
 import { type Definition, type Detail, type Options, workflowNames } from './types'
@@ -39,6 +40,7 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
       return { key, label, children: ids.length ? ids.map(resourceName).join('、') : '未设置' }
     })} />
       {Array.isArray(value.skill_loading) && value.skill_loading.filter(isObject).map((loading, index) => <Card key={index} size="small" title={`${resourceName(loading.skill_id ?? loading.version_id)} · 加载设置`}><Descriptions size="small" column={1} items={[
+        { key: 'steps', label: '生效节点', children: Array.isArray(loading.step_keys) ? loading.step_keys.map(key => stepName(String(key))).join('、') : '全部模型节点' },
         { key: 'mode', label: '加载方式', children: loading.loading_mode === 'mandatory' ? '始终加载' : loading.loading_mode === 'on_demand' ? '按需加载' : '沿用技能设置' },
         { key: 'selected', label: '触发按需技能', children: loading.selected ? '是' : '否' },
         { key: 'files', label: '参考资料', children: Array.isArray(loading.selected_files) ? loading.selected_files.join('、') || '不加载参考资料' : '沿用技能设置' },
@@ -74,8 +76,8 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
       ...(step.kind === 'compute' ? [{ key: 'operator', label: '操作', children: ({ object: '对象组装', input: '等待补充', approval: '等待审批' } as Record<string, string>)[step.operator ?? ''] ?? '操作名称不可用' }] : []),
       { key: 'timeout', label: '超时', children: `${step.timeout_seconds} 秒` },
       { key: 'retry', label: '失败处理', children: step.failure_policy === 'retry' ? `最多重试 ${step.max_retries} 次` : step.failure_policy === 'partial' ? '返回部分结果' : '终止' },
-      { key: 'failure_handler', label: '失败收尾工具', children: step.failure_handler ? definition?.steps.find(item => item.key === step.failure_handler)?.name ?? '步骤不可用' : '未配置' },
-      { key: 'resource', label: '依赖资源', children: step.dependency ? resourceName(step.dependency) : '沿用智能体配置' },
+      ...(step.kind !== 'script' ? [{ key: 'failure_handler', label: '失败收尾工具', children: step.failure_handler ? definition?.steps.find(item => item.key === step.failure_handler)?.name ?? '步骤不可用' : '未配置' }] : []),
+      ...((step.kind === 'tool' || step.kind === 'model') ? [{ key: 'resource', label: '依赖资源', children: step.dependency ? resourceName(step.dependency) : '沿用智能体配置' }] : []),
       ...(step.kind === 'model' ? [{ key: 'prompt', label: '提示词', children: step.prompt_id ? resourceName(step.prompt_id) : '沿用默认提示词' }] : []),
     ]} />
     <Table rowKey="name" pagination={false} size="small" dataSource={Object.entries(step.inputs ?? {}).map(([name, source]) => ({ name, source }))} columns={[
@@ -84,6 +86,7 @@ export function DifferenceValue({ field, value, definition, options }: { field: 
     ]} />
     <Typography.Text strong>输入结构</Typography.Text><SchemaView value={step.input_schema} label={`${step.name}输入结构`} />
     <Typography.Text strong>输出结构</Typography.Text><SchemaView value={step.output_schema} label={`${step.name}输出结构`} />
+    {(step.script || step.pagination) && <NodeScriptsView step={step} options={options} />}
   </Space> }))} />
   if (field === 'edges' && Array.isArray(value)) return <Table rowKey={(_, index) => String(index)} size="small" pagination={false} dataSource={value as Definition['edges']} columns={[
     { title: '来源', render: (_, edge) => stepName(edge.source) }, { title: '去向', render: (_, edge) => stepName(edge.target) },

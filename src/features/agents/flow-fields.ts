@@ -4,8 +4,8 @@ import type { Definition } from './types'
 export type Step = Definition['steps'][number]
 export type Edge = Definition['edges'][number]
 export type FlowIssue = { path?: string | null; message: string }
-export type StepTab = 'base' | 'inputs' | 'output' | 'branches'
-export const stepKinds = { model: '模型调用', tool: '工具调用', compute: '固定计算' }
+export type StepTab = 'base' | 'inputs' | 'output' | 'branches' | 'scripts'
+export const stepKinds = { model: '模型调用', tool: '工具调用', compute: '固定计算', script: '脚本处理' }
 export const businessStatuses: Record<string, string> = { COMPLETED: '已完成', NEEDS_INPUT: '需要补充信息', NO_MATCH: '没有匹配结果', INSUFFICIENT_DATA: '数据不足', PARTIAL: '部分完成' }
 
 export function fieldSchema(schema: SchemaObject, path: string): SchemaObject {
@@ -81,5 +81,5 @@ export function locateFlowIssue(definition: Definition, path = ''): { node?: str
   const index = Number(rest.split('.')[0])
   const node = byName?.key ?? (Number.isInteger(index) ? kind === 'edges' ? definition.edges[index]?.source : definition.steps[index]?.key : undefined)
   const field = byName ? rest.slice(byName.key.length + 1).split('.')[0] : rest.split('.')[1]
-  return { node, field, tab: kind === 'edges' ? 'branches' : field === 'inputs' || field === 'input_schema' ? 'inputs' : field === 'output_schema' ? 'output' : 'base' }
+  return { node, field, tab: kind === 'edges' ? 'branches' : ['script', 'pagination'].includes(field ?? '') ? 'scripts' : field === 'inputs' || field === 'input_schema' ? 'inputs' : field === 'output_schema' ? 'output' : 'base' }
 }

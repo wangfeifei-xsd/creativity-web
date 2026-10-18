@@ -213,7 +213,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
         <Form.Item name="embedding_route_id" label="语义检索模型路由" extra="仅在读取长期记忆时使用，需选择支持向量生成的路由" rules={routeRules(['embedding'], '此路由不支持向量生成，请更换或清空语义检索模型路由')}><Select allowClear showSearch optionFilterProp="label" options={routeOptions(['embedding'], '不支持向量生成')} /></Form.Item>
         </AgentSection><AgentSection title="工具与技能" icon={<SafetyCertificateOutlined aria-hidden />}><Form.Item name="tool_ids" label="工具白名单"><Select mode="multiple" optionFilterProp="label" options={depOptions('tool')} /></Form.Item>
         <Form.Item name="skill_ids" label="技能"><Select mode="multiple" optionFilterProp="label" options={depOptions('skill')} /></Form.Item>
-        {selectedSkills.map(id => <SkillLoadingFields key={id} versionId={id} label={depOptions('skill').find(d => d.value === id)?.label ?? '技能名称不可用'} />)}
+        {selectedSkills.map(id => <SkillLoadingFields key={id} versionId={id} steps={definition.steps} label={depOptions('skill').find(d => d.value === id)?.label ?? '技能名称不可用'} />)}
       </AgentSection></div>
       <div hidden={step !== 4} className="agent-editor-section agent-policy-editor"><AgentSection title="运行预算" icon={<ClockCircleOutlined aria-hidden />}><div className="agent-form-grid">
         {([

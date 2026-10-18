@@ -36,6 +36,92 @@ async function fixture(page: Page) {
   })
 }
 
+const pythonEnvironment = { profile_id: 'python_local', profile_digest: 'a'.repeat(64), name: 'Python 计算环境', seconds: 10, memory_mb: 128 }
+
+test('脚本节点只有一份代码，保存校验结果结构且不配置模型或工具', async ({ page }) => {
+  await fixture(page)
+  await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, python_environments: [pythonEnvironment] } }))
+  let saved = false
+  let source = ''
+  await page.route('**/agent-versions/draft_a', async route => {
+    const node = route.request().postDataJSON().definition.steps[0]
+    expect(node.kind).toBe('script')
+    expect(node.script).toEqual({ source, profile_id: pythonEnvironment.profile_id, profile_digest: pythonEnvironment.profile_digest })
+    expect(node.dependency).toBeNull()
+    expect(node.prompt_id).toBeNull()
+    expect(node.operator).toBeNull()
+    expect(node.failure_handler).toBeNull()
+    expect(node).not.toHaveProperty('input_script')
+    expect(node).not.toHaveProperty('output_script')
+    expect(node.output_schema.properties.data.properties.success.type).toBe('boolean')
+    expect(node.output_schema.properties.data.properties.inputs.type).toBe('object')
+    saved = true
+    await route.fulfill({ json: version })
+  })
+  await page.goto('#/agents/agent_a?edit=draft_a')
+  const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
+  await step.getByLabel('步骤类型', { exact: true }).click()
+  await page.getByText('脚本处理', { exact: true }).click()
+  await expect(step.getByLabel('模型路由', { exact: true })).toHaveCount(0)
+  await expect(step.getByLabel('提示词', { exact: true })).toHaveCount(0)
+  await expect(step.getByLabel('工具', { exact: true })).toHaveCount(0)
+  await expect(step.getByLabel('失败收尾工具', { exact: true })).toHaveCount(0)
+  await step.getByRole('tab', { name: 'Python 脚本', exact: true }).click()
+  await step.getByRole('button', { name: '填入校验示例', exact: true }).click()
+  source = await step.getByRole('textbox', { name: 'Python 脚本代码' }).inputValue()
+  expect(source).toContain('"success": success')
+  await page.getByRole('tab', { name: '基本配置', exact: true }).first().click()
+  await page.getByRole('tab', { name: '流程', exact: true }).click()
+  await step.getByRole('tab', { name: 'Python 脚本', exact: true }).click()
+  await expect(step.getByRole('textbox', { name: 'Python 脚本代码' })).toHaveValue(source)
+  await page.screenshot({ path: '.local/agent-node-python.png', fullPage: true })
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect.poll(() => saved).toBe(true)
+})
+
+test('脚本节点缺少渠道执行环境时保留代码并阻止保存', async ({ page }) => {
+  await fixture(page)
+  let saves = 0
+  await page.route('**/agent-versions/draft_a', route => { saves++; return route.fulfill({ json: version }) })
+  const configured = { ...definition, steps: [{ ...definition.steps[0], kind: 'script' }] }
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: configured }] } }))
+  await page.goto('#/agents/agent_a?edit=draft_a')
+  const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
+  await step.getByRole('tab', { name: 'Python 脚本', exact: true }).click()
+  await expect(step.getByRole('combobox', { name: '脚本执行环境' })).toBeDisabled()
+  await expect(step.getByText('当前渠道尚未配置 Python 执行环境')).toBeVisible()
+  const source = 'def transform(value, context):\n    return value\n'
+  await step.getByRole('textbox', { name: 'Python 脚本代码' }).fill(source)
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect(step.getByText('请填写 Python 代码并选择有效执行环境', { exact: true })).toBeVisible()
+  await expect(step.getByRole('textbox', { name: 'Python 脚本代码' })).toHaveValue(source)
+  expect(saves).toBe(0)
+})
+
+test('全量分页由工具节点配置，校验脚本使用独立节点', async ({ page }) => {
+  await fixture(page)
+  const tool = { resource_type: 'tool', resource_id: 'query', version_id: 'query', name: '项目分页查询', revision: 1, state: { label: '已发布' }, content_digest: 'b'.repeat(64) }
+  await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, dependencies: [...options.dependencies, tool] } }))
+  const configured = { ...definition, steps: [{ ...definition.steps[0], kind: 'tool', dependency: 'query' }], bindings: { ...definition.bindings, tool_ids: ['query'] } }
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: configured }] } }))
+  let saved = false
+  await page.route('**/agent-versions/draft_a', async route => {
+    const node = route.request().postDataJSON().definition.steps[0]
+    expect(node.pagination).toEqual({ cursor_input: 'cursor', items_path: 'items', has_more_path: 'has_more', cursor_path: 'cursor', count_path: 'count', total_path: null, max_items: 1000 })
+    expect(node.script).toBeNull()
+    saved = true
+    await route.fulfill({ json: version })
+  })
+  await page.goto('#/agents/agent_a?edit=draft_a')
+  const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
+  await expect(step.getByRole('tab', { name: 'Python 脚本', exact: true })).toHaveCount(0)
+  await step.getByRole('tab', { name: '全量分页', exact: true }).click()
+  await step.getByRole('switch', { name: '启用全量分页' }).click()
+  await step.getByRole('textbox', { name: '本页条数字段路径（可选）' }).fill('count')
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await expect.poll(() => saved).toBe(true)
+})
+
 for (const entry of ['list', 'detail'] as const) {
   test(`停用智能体从${entry === 'list' ? '列表' : '详情'}确认删除，取消不提交`, async ({ page }) => {
     await fixture(page)
@@ -523,13 +609,16 @@ test('Agent 固定技能参考文件与按需加载选择', async ({ page }) => 
   await page.route('**/agent-versions/draft_a', async route => {
     saves++
     const body = route.request().postDataJSON()
-    expect(body.definition.bindings.skill_loading).toEqual([{ skill_id: 'skill_version', selected: true, selected_files: ['references/citation.md'] }])
+    expect(body.definition.bindings.skill_loading).toEqual([{ skill_id: 'skill_version', step_keys: ['answer'], selected: true, selected_files: ['references/citation.md'] }])
     await route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '草稿已变更，请重新检查', fields: [] } } })
   })
   await page.goto('#/agents/agent_a')
   await page.getByRole('button', { name: '编辑配置', exact: true }).click()
   await page.getByRole('tab', { name: '资源依赖', exact: true }).click()
   await page.getByRole('button', { name: '档案解读 · 加载设置' }).click()
+  await page.getByLabel('生效节点', { exact: true }).click()
+  await page.locator('.ant-select-dropdown:visible').getByText('生成业务结果', { exact: true }).click()
+  await page.keyboard.press('Escape')
   await page.getByRole('switch', { name: '触发按需技能' }).click()
   await page.getByLabel('加载参考资料').click()
   await page.getByText('references/citation.md', { exact: true }).last().click()
