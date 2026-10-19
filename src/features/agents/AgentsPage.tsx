@@ -86,7 +86,7 @@ function AgentDetail({ agentId }: { agentId: string }) {
   if (editVersion && !options.data) return options.error ? <ErrorState error={options.error} onRetry={options.reload} /> : <LoadingState />
   const definition = version?.definition
   const depIds = definition ? [...new Set([definition.bindings.prompt_id, definition.bindings.model_route_id, definition.bindings.embedding_route_id,
-    ...definition.bindings.tool_ids, ...definition.bindings.skill_ids, ...definition.steps.map(step => step.dependency)].filter((id): id is string => !!id))] : []
+    ...definition.bindings.tool_ids, ...definition.bindings.skill_ids, ...definition.steps.flatMap(step => [step.dependency, step.prompt_id])].filter((id): id is string => !!id))] : []
   // 校验可能在解析依赖前失败，仍保留已保存的依赖，方便定位和修改。
   const dependencies = depIds.map(id => validation?.dependencies.find(d => d.version_id === id) ?? options.data?.dependencies.find(d => d.version_id === id)
     ?? { version_id: id, name: '依赖名称不可用', version_label: '版本不可用', resource_type: '' })
