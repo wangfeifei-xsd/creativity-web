@@ -26,19 +26,19 @@ interface UsageFlow {
 
 const flows: readonly UsageFlow[] = [
   {
-    key: 'publish', title: '配置并发布智能体', icon: <Icon component={RobotGlyph} aria-hidden />,
+    key: 'publish', title: '配置并上线智能体', icon: <Icon component={RobotGlyph} aria-hidden />,
     steps: [
       { title: '准备资源', description: '配置模型路由，按需准备提示词、工具和技能。' },
       { title: '定义智能体', description: '设置任务、输入输出和执行步骤。' },
       { title: '调试与评测', description: '用业务样例检查结果和执行过程。' },
-      { title: '发布到环境', description: '发布后，可选择下面任一方式使用。' },
+      { title: '上线智能体', description: '上线后，可选择下面任一方式使用。' },
     ],
     actions: [{ label: '配置智能体', navigationKey: 'agents' }],
   },
   {
     key: 'schedule', title: '方式一：定时运行', icon: <ClockCircleOutlined aria-hidden />,
     steps: [
-      { title: '选择已发布智能体', description: '进入业务接入 → 运行与事件 → 定时运行。' },
+      { title: '选择已上线智能体', description: '进入业务接入 → 运行与事件 → 定时运行。' },
       { title: '新增定时计划', description: '填写运行输入，设置固定间隔或每日时间。' },
       { title: '平台按时执行', description: '启用计划后，到时间自动创建一次运行。' },
       { title: '查看执行结果', description: '在运行记录查看状态、结果及每一步。' },
@@ -53,7 +53,7 @@ const flows: readonly UsageFlow[] = [
     steps: [
       { title: '开通调用权限', description: '配置接入服务、API Key 和资源授权。' },
       { title: '配置身份委托', description: '在业务接入中配置，凭据保存在业务后端。' },
-      { title: '业务后端发起调用', description: '传入已发布智能体的编码和业务输入。' },
+      { title: '业务后端发起调用', description: '传入已上线智能体的编码和业务输入。' },
       { title: '获取并展示结果', description: '查询运行结果，或订阅执行事件。' },
     ],
     actions: [

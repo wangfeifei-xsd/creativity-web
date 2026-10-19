@@ -13,11 +13,11 @@ import { SchemaFields } from '../../components/schema-fields/SchemaFields'
 import { schemaRules } from '../../components/schema-fields/schema'
 import { SkillLoadingFields } from './SkillLoadingFields'
 import { FlowEditor, type FlowEditorHandle } from './FlowEditor'
-import { type Definition, type Detail, type Options, type Version, parseObject, pretty, workflowNames } from './types'
+import { type Definition, type Detail, type Options, type Configuration, parseObject, pretty, workflowNames } from './types'
 
 type Values = {
   instructions: string
-  agent_code: string; name: string; description: string; owner: string; version_label: string; template: string
+  agent_code: string; name: string; description: string; owner: string; template: string
   input_schema: string; output_schema: string; steps: string; edges: string; start_step: string
   prompt_id: string; model_route_id: string; embedding_route_id?: string; tool_ids: string[]; skill_ids: string[]
   skill_loading_by_resource: Record<string, Omit<NonNullable<Definition['bindings']['skill_loading']>[number], 'version_id'>>
@@ -27,7 +27,7 @@ type Values = {
   memory_enabled: boolean; memory_policy: string; amount?: string; currency: string
 }
 const stepFields: (keyof Values)[][] = [
-  ['agent_code', 'name', 'description', 'owner', 'version_label', 'template', 'instructions'],
+  ['agent_code', 'name', 'description', 'owner', 'template', 'instructions'],
   ['input_schema', 'output_schema'],
   ['steps', 'edges', 'start_step'],
   ['prompt_id', 'model_route_id', 'embedding_route_id', 'tool_ids', 'skill_ids', 'skill_loading_by_resource'],
@@ -40,14 +40,14 @@ function editorField(path: string): keyof Values {
   return aliases[field] ?? field as keyof Values
 }
 
-export function AgentEditor({ options, version, name, initialIssues = [], initialFocus, initialSection, onClose, onSaved }: {
-  options: Options; version?: Version; name?: string; initialIssues?: FlowIssue[]; initialFocus?: FlowIssue; initialSection?: number; onClose: () => void; onSaved: (detail?: Detail) => void
+export function AgentEditor({ options, configuration, name, initialIssues = [], initialFocus, initialSection, onClose, onSaved }: {
+  options: Options; configuration?: Configuration; name?: string; initialIssues?: FlowIssue[]; initialFocus?: FlowIssue; initialSection?: number; onClose: () => void; onSaved: (detail?: Detail) => void
 }) {
-  const initial = version?.definition ?? options.templates[0].definition
+  const initial = configuration?.definition ?? options.templates[0].definition
   const [definition, setDefinition] = useState<Definition>(initial)
   const [form] = Form.useForm<Values>()
   const [step, setStep] = useState(() => {
-    if (!version) return 0
+    if (!configuration) return 0
     if (!initialFocus && initialSection !== undefined) return initialSection
     if (!initialFocus || /^(steps|edges|start_step)(\.|$)/.test(initialFocus.path ?? '')) return 2
     const section = stepFields.findIndex(names => names.includes(editorField(initialFocus.path ?? '')))
@@ -83,7 +83,7 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
   try { flowDefinition = { ...definition, input_schema: parseObject(liveInput ?? pretty(definition.input_schema)), bindings: { ...definition.bindings, tool_ids: liveTools ?? definition.bindings.tool_ids } } } catch { /* 输入结构修正前沿用最近有效字段列表。 */ }
   const memoryEnabled = Form.useWatch('memory_enabled', form)
   const selectedSkills: string[] = Form.useWatch('skill_ids', form) ?? initial.bindings.skill_ids ?? []
-  const templates = [...options.templates, ...(options.legacy_templates ?? []).filter(t => t.key === version?.definition.entrypoint)]
+  const templates = [...options.templates, ...(options.legacy_templates ?? []).filter(t => t.key === configuration?.definition.entrypoint)]
   function selectTemplate(key: string) {
     const next = templates.find(t => t.key === key)?.definition
     if (!next) return
@@ -129,11 +129,11 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
         context: { conversation_enabled: v.conversation_enabled, context_limit: v.context_limit, summary_policy: v.summary_policy,
           memory_policy: memoryPolicy },
       }
-      if (version) {
-        await send(`/admin/v1/agent-versions/${version.version_id}`, 'PATCH', { revision: version.revision, definition: body })
+      if (configuration) {
+        await send(`/admin/v1/agents/${configuration.agent_id}/configuration`, 'PATCH', { revision: configuration.revision, definition: body })
         leaving.current = true; onSaved()
       } else {
-        const created = await send<Detail>('/admin/v1/agents', 'POST', { agent_code: v.agent_code, name: v.name, description: v.description, owner: v.owner, version_label: v.version_label, definition: body })
+        const created = await send<Detail>('/admin/v1/agents', 'POST', { agent_code: v.agent_code, name: v.name, description: v.description, owner: v.owner, definition: body })
         leaving.current = true; onSaved(created)
       }
     } catch (failure) {
@@ -162,28 +162,28 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
   async function changeSection(next: number) {
     try { await flow.current?.flush(); setStep(next) } catch { setStep(2) }
   }
-  const actions = <Space wrap><Button icon={version ? <ArrowLeftOutlined aria-hidden /> : undefined} onClick={close} disabled={busy}>{version ? '返回详情' : '取消'}</Button>
-    {!version && step > 0 && <Button onClick={() => void changeSection(step - 1)} disabled={busy}>上一步</Button>}
-    {!version && step < 4 ? <Button type="primary" disabled={busy} onClick={() => void form.validateFields(stepFields[step]).then(() => changeSection(step + 1)).catch(() => {})}>下一步</Button> :
-      <Button type="primary" icon={<SaveOutlined aria-hidden />} loading={busy} onClick={() => void save()}>保存草稿</Button>}</Space>
+  const actions = <Space wrap><Button icon={configuration ? <ArrowLeftOutlined aria-hidden /> : undefined} onClick={close} disabled={busy}>{configuration ? '返回详情' : '取消'}</Button>
+    {!configuration && step > 0 && <Button onClick={() => void changeSection(step - 1)} disabled={busy}>上一步</Button>}
+    {!configuration && step < 4 ? <Button type="primary" disabled={busy} onClick={() => void form.validateFields(stepFields[step]).then(() => changeSection(step + 1)).catch(() => {})}>下一步</Button> :
+      <Button type="primary" icon={<SaveOutlined aria-hidden />} loading={busy} onClick={() => void save()}>保存配置</Button>}</Space>
   const content = <>
     <Modal open={blocker.state === 'blocked'} title="放弃尚未保存的配置？" okText="放弃修改" cancelText="继续编辑"
       okButtonProps={{ disabled: busy }} onOk={() => blocker.state === 'blocked' && blocker.proceed()}
       onCancel={() => blocker.state === 'blocked' && blocker.reset()} />
-    {version ? <Tabs className="agent-editor-tabs" activeKey={String(step)} onChange={key => void changeSection(Number(key))} items={titles.map((label, index) => ({ key: String(index), label, disabled: busy }))} /> :
+    {configuration ? <Tabs className="agent-editor-tabs" activeKey={String(step)} onChange={key => void changeSection(Number(key))} items={titles.map((label, index) => ({ key: String(index), label, disabled: busy }))} /> :
       <Steps size="small" current={step} items={titles.map(title => ({ title }))} style={{ marginBottom: 24 }} />}
     {error != null && <div style={{ marginBottom: 16 }}><ErrorNotice error={error} /></div>}
-    <Form form={form} layout="vertical" disabled={busy} onValuesChange={() => setDirty(true)} initialValues={{ instructions: initial.instructions ?? '', template: initial.entrypoint, version_label: '初始草稿', input_schema: pretty(initial.input_schema), output_schema: pretty(initial.output_schema),
+    <Form form={form} layout="vertical" disabled={busy} onValuesChange={() => setDirty(true)} initialValues={{ instructions: initial.instructions ?? '', template: initial.entrypoint, input_schema: pretty(initial.input_schema), output_schema: pretty(initial.output_schema),
       steps: pretty(initial.steps), edges: pretty(initial.edges), start_step: initial.start_step, ...initial.bindings, ...initial.limits, ...initial.context,
       skill_loading_by_resource: Object.fromEntries((initial.bindings.skill_loading ?? []).map(item => [item.skill_id, item])),
       amount: initial.limits.cost_limit?.amount, currency: initial.limits.cost_limit?.currency ?? 'CNY', memory_enabled: !!initial.context.memory_policy,
       memory_policy: pretty(initial.context.memory_policy ?? { allowed_types: ['PREFERENCE', 'FACT'], read_enabled: true, suggest_enabled: false, write_mode: 'DISABLED', ttl_seconds: 15552000, max_items: 100, retrieval_limit: 10, failure_mode: 'OMIT' }) }}>
       <div hidden={step !== 0} className="agent-editor-section"><AgentSection title="基本配置" icon={<FileTextOutlined aria-hidden />} className="agent-base-editor">
-        {!version && <><Form.Item name="agent_code" label="调用编码" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>
+        {!configuration && <><Form.Item name="agent_code" label="调用编码" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item>
           <Form.Item name="name" label="智能体名称" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
           <Form.Item name="description" label="用途" rules={[{ required: true }]}><Input.TextArea rows={2} /></Form.Item>
           <Form.Item name="owner" label="负责人" rules={[{ required: true }]}><Input maxLength={128} /></Form.Item>
-          <Form.Item name="version_label" label="草稿名称" rules={[{ required: true }]}><Input maxLength={64} /></Form.Item></>}
+</>}
         <Form.Item name="template" label="流程模板"><Select onChange={selectTemplate} options={templates.map(t => ({ value: t.key,
           label: t.name === workflowNames[t.workflow_type] ? t.name : `${t.name} · ${workflowNames[t.workflow_type]}` }))} /></Form.Item>
         <Form.Item name="instructions" label="任务指令"><Input.TextArea rows={6} showCount maxLength={32000} /></Form.Item>
@@ -230,8 +230,8 @@ export function AgentEditor({ options, version, name, initialIssues = [], initia
       </AgentSection></div>
     </Form>
   </>
-  return version ? <AgentWorkspace className="agent-editor-page"><PageContainer title={`${name ?? '智能体'} · 编辑配置`} actions={actions}>
-    <div className="agent-editor-state"><Tag>{version.version_label}</Tag><Tag color={dirty ? 'processing' : 'default'}>{dirty ? '有未保存的修改' : '草稿'}</Tag></div>{content}
+  return configuration ? <AgentWorkspace className="agent-editor-page"><PageContainer title={`${name ?? '智能体'} · 编辑配置`} actions={actions}>
+    <div className="agent-editor-state"><Tag color={dirty ? 'processing' : 'default'}>{dirty ? '有未保存的修改' : '已保存'}</Tag></div>{content}
   </PageContainer></AgentWorkspace> : <Modal open width={1280} title="新增智能体" onCancel={close} closable={!busy} maskClosable={false}
     styles={{ body: { maxHeight: '75vh', overflowY: 'auto' } }} footer={actions}><AgentWorkspace className="agent-create-workspace">{content}</AgentWorkspace></Modal>
 }

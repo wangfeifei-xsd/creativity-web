@@ -3,10 +3,9 @@
 .agent-workspace > .page-container > .ant-card-body { padding: 24px; }
 .agent-workspace .page-heading { gap: 20px; margin-bottom: 24px; }
 .agent-workspace .page-heading h2.ant-typography { font-size: 24px; line-height: 1.5; }
-.agent-workspace .page-heading .ant-btn, .agent-workspace .agent-version-actions .ant-btn { height: 36px; padding-inline: 14px; box-shadow: none; }
+.agent-workspace .page-heading .ant-btn, .agent-workspace .agent-configuration-actions .ant-btn { height: 36px; padding-inline: 14px; box-shadow: none; }
 .agent-workspace .agent-detail-summary { padding: 16px 20px; margin-bottom: 24px; border-radius: 10px; background: color-mix(in srgb, var(--agent-primary) 3%, var(--agent-bg)); }
-.agent-workspace .agent-version-toolbar { margin-bottom: 16px; }
-.agent-workspace .agent-version-select { height: 36px; width: 348px; }
+.agent-workspace .agent-configuration-toolbar { margin-bottom: 16px; }
 .agent-workspace .agent-detail-tabs > .ant-tabs-nav, .agent-workspace .agent-editor-tabs > .ant-tabs-nav { margin-bottom: 24px; }
 .agent-workspace .agent-detail-tabs > .ant-tabs-nav .ant-tabs-tab, .agent-workspace .agent-editor-tabs > .ant-tabs-nav .ant-tabs-tab { padding-block: 14px; }
 .agent-workspace .agent-detail-tabs > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab { margin-left: 26px; }
@@ -93,6 +92,4 @@
   .agent-workspace .agent-flow-inspector { padding: 16px; }
   .agent-section.ant-card > .ant-card-body { padding: 16px; }
   .agent-form-grid { grid-template-columns: minmax(0, 1fr); }
-  .agent-workspace .agent-version-select { width: 100%; }
-  .agent-workspace .agent-version-picker { flex-basis: 100%; }
 }

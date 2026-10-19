@@ -1,23 +1,11 @@
-import { Card, Col, Collapse, Descriptions, Empty, Row, Space, Typography } from 'antd'
+import { Card, Collapse, Descriptions, Space, Typography } from 'antd'
 import { formatAmount } from '../../api/presentation'
 import { Table } from '../../components/Table'
-import { SchemaComparison } from '../../components/schema-fields/SchemaComparison'
 import { SchemaView } from '../../components/schema-fields/SchemaFields'
 import { NodeScriptsView } from './NodeScripts'
 import { isObject } from '../../components/schema-fields/schema'
 import { displayValue, fieldName, stepKinds } from './flow-fields'
-import { type Definition, type Detail, type Options, workflowNames } from './types'
-
-export function AgentDifferences({ detail, options }: { detail: Detail; options?: Options }) {
-  const released = detail.versions.find(version => version.version_id === detail.release_version_id)?.definition
-  const draft = detail.versions.filter(version => version.status.value === 'DRAFT').at(-1)?.definition
-  if (!detail.differences.length) return <Card className="agent-section agent-empty-section"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无差异" /></Card>
-  return <Space orientation="vertical" className="agent-differences" style={{ width: '100%' }} size={20}>{detail.differences.map(item => <Card size="small" title={item.label} key={item.field}>
-    {['input_schema', 'output_schema'].includes(item.field) ? <SchemaComparison before={item.before} after={item.after} label={item.label} /> :
-      <Row gutter={[24, 20]}><Col xs={24} lg={12}><Typography.Title level={5}>当前发布</Typography.Title><DifferenceValue field={item.field} value={item.before} definition={released} options={options} /></Col>
-        <Col xs={24} lg={12}><Typography.Title level={5}>草稿</Typography.Title><DifferenceValue field={item.field} value={item.after} definition={draft} options={options} /></Col></Row>}
-  </Card>)}</Space>
-}
+import { type Definition, type Options, workflowNames } from './types'
 
 function fieldLabel(schema: Record<string, unknown> | undefined, path: string): string {
   return fieldName(schema ?? {}, path)
@@ -25,7 +13,7 @@ function fieldLabel(schema: Record<string, unknown> | undefined, path: string): 
 export function DifferenceValue({ field, value, definition, options }: { field: string; value: unknown; definition?: Definition; options?: Options }) {
   const resourceName = (id: unknown) => options?.dependencies.find(item => item.version_id === id || item.resource_id === id)?.name ?? '资源名称不可用'
   const stepName = (id: string | null | undefined) => id === 'END' ? '结束' : definition?.steps.find(step => step.key === id)?.name ?? '步骤名称不可用'
-  if (value == null) return <Typography.Text type="secondary">尚未发布</Typography.Text>
+  if (value == null) return <Typography.Text type="secondary">未设置</Typography.Text>
   if (field === 'instructions') return <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{String(value) || '未设置'}</Typography.Paragraph>
   if (field === 'workflow_type') return <>{workflowNames[value as keyof typeof workflowNames] ?? '类型不可用'}</>
   if (field === 'entrypoint') return <>{[...options?.templates ?? [], ...options?.legacy_templates ?? []].find(item => item.key === value)?.name ?? '入口名称不可用'}</>

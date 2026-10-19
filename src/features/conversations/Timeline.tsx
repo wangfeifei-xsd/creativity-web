@@ -77,7 +77,7 @@ export function Timeline({ conversationId, page, onRefresh, onError, canBranch =
             ? <Button key={a.url} href={a.url} target="_blank" rel="noopener noreferrer">{a.name}</Button>
             : <Button key={a.url} onClick={() => void download(a.url).catch(onError)}>{a.name}</Button>)}</Space>
           {message.role === 'assistant' && turn && <Space orientation="vertical" style={{ width: '100%' }}>
-            <Space wrap><Typography.Text>第 {turn.sequence} 轮 · {turn.version_label}</Typography.Text><StatusTag label={turn.state_label} />
+            <Space wrap><Typography.Text>第 {turn.sequence} 轮</Typography.Text><StatusTag label={turn.state_label} />
               <Typography.Text>耗时：{turn.duration_seconds == null ? '运行中' : `${turn.duration_seconds.toFixed(2)} 秒`}</Typography.Text>
               {turn.source_run_id && <Tag>补充上一轮信息</Tag>}
               {turn.can_cancel && <Button loading={cancelling === turn.run_id} disabled={turn.state === 'CANCEL_REQUESTED'} onClick={async () => {

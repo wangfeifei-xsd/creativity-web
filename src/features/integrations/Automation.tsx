@@ -39,7 +39,7 @@ function Schedules() {
   const scheduleId = parameters.get('schedule_id')
   const canRun = session.actions.some(action => action.action_key === 'run:create')
   const query = useQuery<Schedule[]>(scheduleId ? `/admin/v1/schedules?schedule_id=${encodeURIComponent(scheduleId)}` : '/admin/v1/schedules')
-  const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents?published_only=true')
+  const agents = useQuery<Schema<'AgentList'>>('/admin/v1/agents?online_only=true')
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<unknown>()
   const [editing, setEditing] = useState<Schedule>()
   const [form] = Form.useForm<{ name: string; agent: string; input: string; timezone: string; mode: string; daily: string; interval: number; failure_threshold: number }>()

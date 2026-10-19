@@ -12,30 +12,29 @@ import { SchemaComparison } from '../../components/schema-fields/SchemaCompariso
 import { DifferenceValue } from './AgentDifferences'
 import { AssistancePrompts } from './AssistancePrompts'
 import { Flow } from './Flow'
-import { type Definition, type Detail, type Options, type Version, workflowNames } from './types'
+import { type Definition, type Detail, type Options, type Configuration, workflowNames } from './types'
 
 type Turn = Schema<'AssistanceTurn'>
 type Message = { text: string; runId?: string; response?: Turn }
 const terminal = new Set(['SUCCEEDED', 'FAILED', 'CANCELLED', 'TIMED_OUT'])
 const fields = { instructions: '任务指令', workflow_type: '流程类型', start_step: '起始步骤', input_schema: '输入结构', output_schema: '输出结构', steps: '流程步骤', edges: '后续流转', bindings: '资源依赖', limits: '运行限制', context: '会话与记忆' } as const
 
-export function AgentAssistance({ agentId, versionId }: { agentId?: string; versionId?: string }) {
+export function AgentAssistance({ agentId }: { agentId?: string }) {
   const navigate = useNavigate()
   const query = useQuery<Detail>(agentId ? `/admin/v1/agents/${agentId}` : null)
   if (agentId && !query.data) return <Space orientation="vertical" className="agent-flow-full-width">
     <Button icon={<ArrowLeftOutlined aria-hidden />} onClick={() => navigate('/agents')}>返回智能体列表</Button>
     {query.error ? <ErrorState error={query.error} onRetry={query.reload} /> : <LoadingState />}
   </Space>
-  const base = query.data?.versions.find(version => version.version_id === versionId)
-    ?? (versionId ? undefined : query.data?.versions.filter(version => version.status.value === 'DRAFT').at(-1) ?? query.data?.versions.at(-1))
+  const base = query.data?.configuration
   if (agentId && (!query.data?.agent.actions.some(action => action.action_key === 'edit') || !base)) return <Space orientation="vertical">
     <Button icon={<ArrowLeftOutlined aria-hidden />} onClick={() => navigate('/agents')}>返回智能体列表</Button>
-    <Alert type="warning" showIcon title="当前智能体或版本不可修改，请返回列表重新选择" />
+    <Alert type="warning" showIcon title="当前智能体不可修改，请返回列表重新选择" />
   </Space>
   return <AssistanceWorkspace agent={query.data?.agent} base={base} onReset={agentId ? query.reload : undefined} />
 }
 
-function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']; base?: Version; onReset?: () => void }) {
+function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']; base?: Configuration; onReset?: () => void }) {
   const navigate = useNavigate()
   const { token } = theme.useToken()
   const { notification } = App.useApp()
@@ -112,7 +111,7 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
     if (busyRef.current || !canGenerate || !messageText.trim()) return
     busyRef.current = true; setSending(true); setError(undefined)
     const previous = [...messages].reverse().find(message => message.response?.state === 'SUCCEEDED')
-    const body = { message: messageText.trim(), agent_id: agent?.agent_id ?? null, base_version_id: base?.version_id ?? null,
+    const body = { message: messageText.trim(), agent_id: agent?.agent_id ?? null,
       model_route_id: selectedRoute ?? null, previous_run_id: previous?.runId ?? null }
     const encoded = JSON.stringify(body)
     if (pendingRequest.current?.body !== encoded) pendingRequest.current = { body: encoded, key: crypto.randomUUID() }
@@ -129,14 +128,14 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
     try {
       const result = await send<Schema<'AssistanceSaved'>>(`/admin/v1/agents/assistance/runs/${candidate.runId}/apply`, 'POST')
       if (result.prompts?.length) notification.success({
-        title: '智能体草稿和提示词已保存', duration: 0,
+        title: '智能体配置和提示词已保存', duration: 0,
         description: <Space orientation="vertical">
           <span>以下提示词已自动发布并关联到对应步骤。</span>
           {result.prompts.map(prompt => <Link key={prompt.prompt_id} to={`/prompts?prompt=${encodeURIComponent(prompt.prompt_id)}`} target="_blank" rel="noopener noreferrer">{prompt.name}</Link>)}
         </Space>,
       })
       leaving.current = true
-      navigate(`/agents/${result.agent_id}?edit=${result.version_id}`)
+      navigate(`/agents/${result.agent_id}?edit=true`)
     } catch (failure) { setError(failure) } finally { busyRef.current = false; setSaving(false) }
   }
   function reset() {
@@ -176,7 +175,7 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
     <div className="agent-assistance-layout">
       <section className="agent-assistance-panel agent-assistance-conversation" data-active={pane === 'conversation'} aria-label="智能协助对话">
         <div className="agent-assistance-panel-heading"><span><ThunderboltOutlined aria-hidden />需求对话</span></div>
-        {agent && <div className="agent-assistance-target"><FormOutlined aria-hidden /><div><strong>{agent.name}</strong><span>{base?.version_label}</span></div><Tag>修改对象</Tag></div>}
+        {agent && <div className="agent-assistance-target"><FormOutlined aria-hidden /><div><strong>{agent.name}</strong></div><Tag>修改对象</Tag></div>}
         <div className={`agent-assistance-messages${messages.length ? '' : ' is-empty'}`} role="log" aria-live="polite">
           {!messages.length && <div className="agent-assistance-empty">
             <span className="agent-assistance-welcome-icon"><ThunderboltOutlined aria-hidden /></span>
@@ -217,11 +216,11 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
         <div className="agent-assistance-panel-heading"><span><FileTextOutlined aria-hidden />{proposal || !agent ? '方案预览' : '当前配置'}</span>
           <Badge status={pending ? 'processing' : proposal ? 'success' : 'default'} text={pending ? '生成中' : proposal ? candidate === last ? '已生成' : '待更新' : agent ? '修改前' : '等待生成'} /></div>
         {preview ? <><div className="agent-assistance-preview-content">
-          <div className="agent-assistance-preview-header"><Typography.Title level={4}>{proposal?.name ?? agent?.name}</Typography.Title><Tag>{proposal ? '待保存' : base?.status.label}</Tag></div>
+          <div className="agent-assistance-preview-header"><Typography.Title level={4}>{proposal?.name ?? agent?.name}</Typography.Title><Tag>{proposal ? '待保存' : '已保存'}</Tag></div>
           <Descriptions size="small" column={{ xs: 1, sm: 2 }} items={[{ key: 'owner', label: '负责人', children: proposal?.owner ?? agent?.owner }, { key: 'type', label: '流程', children: workflowNames[preview.workflow_type] }]} />
           <Typography.Paragraph className="agent-assistance-purpose">{proposal?.description ?? agent?.description}</Typography.Paragraph>
           <Tabs className="agent-assistance-preview-tabs" items={[
-            { key: 'flow', label: '流程', children: <Flow key={candidate?.runId ?? base?.version_id} definition={preview} options={options.data} compact /> },
+            { key: 'flow', label: '流程', children: <Flow key={candidate?.runId ?? base?.agent_id} definition={preview} options={options.data} compact /> },
             { key: 'schema', label: '输入输出', children: <Space orientation="vertical" className="agent-flow-full-width"><Typography.Text strong>输入字段</Typography.Text><SchemaView value={preview.input_schema} label="输入结构" /><Typography.Text strong>输出字段</Typography.Text><SchemaView value={preview.output_schema} label="输出结构" /></Space> },
             { key: 'instructions', label: '任务指令', children: <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }}>{preview.instructions || '沿用绑定的提示词'}</Typography.Paragraph> },
             ...(promptDrafts.length ? [{ key: 'prompt-drafts', label: `待创建提示词（${promptDrafts.length}）`, children: <AssistancePrompts key={candidate?.runId} drafts={promptDrafts} definition={preview} /> }] : []),
@@ -231,8 +230,8 @@ function AssistanceWorkspace({ agent, base, onReset }: { agent?: Detail['agent']
             ]} /> },
             ...(proposal && candidate?.response?.base_definition ? [{ key: 'changes', label: '变更对照', children: <ProposalChanges before={candidate.response.base_definition} after={proposal.definition} options={options.data} /> }] : []),
           ]} />
-        </div><div className="agent-assistance-save"><span>{proposal ? candidate === last ? promptDrafts.length ? `同时发布并关联 ${promptDrafts.length} 个提示词` : '保存为草稿' : '等待最新方案' : '当前版本的配置'}</span>
-          {proposal && <Button type="primary" loading={saving} disabled={!canSave} onClick={() => void save()}>{agent ? '保存为新草稿' : '创建并保存草稿'}</Button>}
+        </div><div className="agent-assistance-save"><span>{proposal ? candidate === last ? promptDrafts.length ? `同时发布并关联 ${promptDrafts.length} 个提示词` : '保存配置' : '等待最新方案' : '当前配置'}</span>
+          {proposal && <Button type="primary" loading={saving} disabled={!canSave} onClick={() => void save()}>{agent ? '保存修改' : '创建智能体'}</Button>}
         </div></> : <div className="agent-assistance-preview-empty"><span><FileTextOutlined aria-hidden /></span><Typography.Text>方案生成后在这里预览</Typography.Text></div>}
       </section>
     </div>

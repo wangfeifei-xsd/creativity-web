@@ -212,8 +212,8 @@ export const workspaceGuides: readonly WorkspaceGuide[] = [
         action: agents,
       },
       {
-        title: '发布到当前环境',
-        description: '核对配置差异、依赖和权限，完成发布。需要定时执行时，进入“业务接入 → 运行与事件 → 定时运行”配置计划及输入，再查看运行记录。',
+        title: '在当前环境上线',
+        description: '核对当前配置、依赖和权限，完成上线。需要定时执行时，进入“业务接入 → 运行与事件 → 定时运行”配置计划及输入，再查看运行记录。',
         action: agents,
       },
     ],

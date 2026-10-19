@@ -1,7 +1,7 @@
 import type { Schema } from '../../components/Management'
 
 export type Definition = Schema<'AgentDefinition-Output'>
-export type Version = Schema<'AgentVersionView'>
+export type Configuration = Schema<'AgentConfigurationView'>
 export type Detail = Schema<'AgentDetail'>
 export type Options = Schema<'AgentOptions'>
 export const workflowNames = { structured: '单步结构化任务', template: '通用流程', tool_loop: '受约束工具循环', stateful: '有状态流程' }

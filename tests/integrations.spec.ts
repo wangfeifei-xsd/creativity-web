@@ -138,7 +138,7 @@ test('主体复核从 MCP 发现绑定，保存不含用户或数据域覆盖', 
 
 test('定时运行按时区保存，批量失败保留条目并重用幂等键', async ({ page }) => {
   await fixture(page)
-  await page.route('**/admin/v1/agents?published_only=true', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }], actions: [] } }))
+  await page.route('**/admin/v1/agents?online_only=true', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }], actions: [] } }))
   let scheduleSaved = false
   await page.route('**/admin/v1/schedules', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: [] })
@@ -180,7 +180,7 @@ test('定时运行按时区保存，批量失败保留条目并重用幂等键',
 
 test('定时计划回填配置，编辑失败保留输入，保存不改变暂停状态', async ({ page }) => {
   await fixture(page)
-  await page.route('**/admin/v1/agents?published_only=true', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }, { agent_id: 'review', agent_code: 'review', name: '订单检查' }], actions: [] } }))
+  await page.route('**/admin/v1/agents?online_only=true', route => route.fulfill({ json: { items: [{ agent_id: 'report', agent_code: 'report', name: '通用报告' }, { agent_id: 'review', agent_code: 'review', name: '订单检查' }], actions: [] } }))
   let schedule = { id: 'schedule_a', name: '订单协助巡检', revision: 7, state: 'PAUSED', state_label: '暂停', next_at: '2026-10-12T01:30:00Z', spec: { name: '订单协助巡检', request: { agent_code: 'report', input: { request: '巡检' }, delivery: 'async', conversation_id: null }, timezone: 'Asia/Shanghai', interval_seconds: 60 as number | null, daily_at: null as string | null } }
   let writes = 0
   await page.route('**/admin/v1/schedules', route => {

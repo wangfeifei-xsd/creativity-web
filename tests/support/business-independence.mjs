@@ -182,23 +182,22 @@ try {
       await choose(dialog(), '加载参考资料', 'references/output.md')
       await button(dialog(), '下一步').click()
       await dialog().getByLabel('运行限时（秒）', { exact: true }).fill('180')
-      result.agent = await capture('/admin/v1/agents', () => button(dialog(), '保存草稿').click(), 201)
+      result.agent = await capture('/admin/v1/agents', () => button(dialog(), '保存配置').click(), 201)
       await expect(dialog()).toBeHidden()
-      const versionId = result.agent.versions[0].version_id
-      result.validation = await capture(`/admin/v1/agent-versions/${versionId}/validate`, () => button(page, '校验').click())
+      const agentId = result.agent.agent.agent_id
+      result.validation = await capture(`/admin/v1/agents/${agentId}/validate`, () => button(page, '校验').click())
       expect(result.validation.valid, JSON.stringify(result.validation)).toBe(true)
       await page.getByRole('tab', { name: '调试', exact: true }).click()
       for (const [key, value] of Object.entries(config.scenario.input)) {
         await page.getByLabel(config.definition.input_schema.properties[key].title, { exact: true })
           .fill(typeof value === 'string' ? value : JSON.stringify(value))
       }
-      result.debug = await capture(`/admin/v1/agent-versions/${versionId}/tests`, () => button(page, '开始调试').click())
+      result.debug = await capture(`/admin/v1/agents/${agentId}/tests`, () => button(page, '开始调试').click())
       await expect(page.getByText('工具缺少符合约定的受信业务主体', { exact: true }).first()).toBeVisible({ timeout: 30000 })
-      await button(page, '发布').click()
-      await dialog().getByLabel('发布说明').fill('23 受控测试环境配置验证')
-      result.release = await capture(`/admin/v1/agents/${result.agent.agent.agent_id}/releases`, () => confirm('确认发布'))
-      await page.getByRole('tab', { name: '发布记录', exact: true }).click()
-      await expect(page.getByRole('cell', { name: '23 受控测试环境配置验证', exact: true })).toBeVisible()
+      await button(page, '上线').click()
+      await dialog().getByLabel('操作原因').fill('受控测试环境配置验证')
+      result.release = await capture(`/admin/v1/agents/${agentId}/state`, () => confirm())
+      await expect(page.getByText('已上线', { exact: true })).toBeVisible()
       if (config.screenshot) await page.screenshot({ path: config.screenshot, fullPage: true, animations: 'disabled' })
     } else {
       throw new Error('未知验证步骤')

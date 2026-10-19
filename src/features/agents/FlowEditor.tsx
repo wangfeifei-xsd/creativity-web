@@ -125,7 +125,7 @@ export function FlowEditor({ ref, value, options, onChange, onDirty, disabled, i
         </Space>
       </aside>
     </div>
-    <Modal open={jsonDraft !== undefined} title="流程 JSON" width={800} okText="应用到草稿" cancelText="取消" onCancel={() => setJsonDraft(undefined)} onOk={() => {
+    <Modal open={jsonDraft !== undefined} title="流程 JSON" width={800} okText="应用到配置" cancelText="取消" onCancel={() => setJsonDraft(undefined)} onOk={() => {
       try { const next = { ...value, ...parseFlowJson(jsonDraft ?? '') }; pending.current = false; setGeneration(n => n + 1); change(next); setSelection({ kind: 'step', key: next.start_step }); setJsonDraft(undefined) }
       catch (failure) { setJsonError(failure) }
     }}><ErrorNotice error={jsonError} /><Input.TextArea aria-label="流程 JSON" rows={18} spellCheck={false} value={jsonDraft} onChange={event => setJsonDraft(event.target.value)} /></Modal>

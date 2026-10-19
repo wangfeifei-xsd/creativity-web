@@ -3,7 +3,7 @@ import { type Definition, parseObject } from './types'
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const text = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 
-/** 先校验画布所需结构；完整业务契约继续由保存及发布接口复核。 */
+/** 先校验画布所需结构；完整业务契约继续由保存及上线接口复核。 */
 export function parseFlowJson(source: string): Pick<Definition, 'start_step' | 'steps' | 'edges'> {
   const value = parseObject(source)
   if (Object.keys(value).some(key => !['start_step', 'steps', 'edges'].includes(key))) throw new Error('流程 JSON 仅包含 start_step、steps 和 edges')

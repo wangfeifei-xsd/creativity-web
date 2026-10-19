@@ -12,12 +12,10 @@ const definition = { workflow_type: 'structured', entrypoint: 'structured.v1', s
   context: { conversation_enabled: false, context_limit: 8000, summary_policy: 'none', memory_policy: null },
 }
 const agent = { agent_id: 'agent_a', agent_code: 'business_task', name: '业务助手', description: '处理业务诉求', owner: '配置人员', revision: 3,
-  status: { value: 'ACTIVE', label: '已启用', tone: 'success' }, actions: [action('edit', '编辑信息'), action('create_version', '新增草稿'), action('emergency_stop', '紧急停用')] }
-const version = { version_id: 'draft_a', version_label: '初始草稿', revision: 7, content_digest: 'a'.repeat(64), status: { value: 'DRAFT', label: '草稿', tone: 'default' }, definition,
-  actions: [action('edit', '编辑配置'), action('validate', '校验'), action('test', '调试'), action('release', '发布')] }
-const detail = { agent, versions: [version], release_revision: 2, release_version_id: 'published_a', differences: [{ field: 'limits', label: '运行限制', before: { max_model_rounds: 3 }, after: { max_model_rounds: 6 } }], releases: [
-  { release_id: 'release_a', environment: 'test', environment_label: '测试', version_id: 'published_a', version_label: '发布版本 1', operation: 'publish', operation_label: '发布', note: '增加结果校验', actor_name: '发布人员', created_at: '2026-10-02T03:00:00Z', evidence_refs: [] },
-] }
+  status: { value: 'ACTIVE', label: '已启用', tone: 'success' }, online: false, enabled: true, online_status: { value: 'OFFLINE', label: '已下线', tone: 'default' }, actions: [action('edit', '编辑信息'), action('online', '上线'), action('disable', '停用')] }
+const version = { agent_id: 'agent_a', revision: 7, content_digest: 'a'.repeat(64), definition,
+  actions: [action('edit', '编辑配置'), action('validate', '校验'), action('test', '调试')] }
+const detail = { agent, configuration: version }
 const options = { environment: 'test', environment_label: '测试', templates: [{ key: 'structured.v1', name: '单步结构化任务', workflow_type: 'structured', definition }], dependencies: [
   { resource_type: 'prompt', resource_id: 'prompt_a', version_id: 'prompt_version', name: '业务提示词', version_label: '提示词初版', revision: 1, state: { label: '已发布' }, content_digest: 'c'.repeat(64) },
   { resource_type: 'model_route', required_capabilities: ['text'], resource_id: 'route_a', version_id: 'route_version', name: '结构化路由', version_label: '模型初版', revision: 1, state: { label: '已发布' }, content_digest: 'd'.repeat(64) },
@@ -43,7 +41,7 @@ test('脚本节点只有一份代码，保存校验结果结构且不配置模�
   await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, python_environments: [pythonEnvironment] } }))
   let saved = false
   let source = ''
-  await page.route('**/agent-versions/draft_a', async route => {
+  await page.route('**/agents/agent_a/configuration', async route => {
     const node = route.request().postDataJSON().definition.steps[0]
     expect(node.kind).toBe('script')
     expect(node.script).toEqual({ source, profile_id: pythonEnvironment.profile_id, profile_digest: pythonEnvironment.profile_digest })
@@ -58,7 +56,7 @@ test('脚本节点只有一份代码，保存校验结果结构且不配置模�
     saved = true
     await route.fulfill({ json: version })
   })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.goto('#/agents/agent_a?edit=true')
   const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
   await step.getByLabel('步骤类型', { exact: true }).click()
   await page.getByText('脚本处理', { exact: true }).click()
@@ -75,24 +73,24 @@ test('脚本节点只有一份代码，保存校验结果结构且不配置模�
   await step.getByRole('tab', { name: 'Python 脚本', exact: true }).click()
   await expect(step.getByRole('textbox', { name: 'Python 脚本代码' })).toHaveValue(source)
   await page.screenshot({ path: '.local/agent-node-python.png', fullPage: true })
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => saved).toBe(true)
 })
 
 test('脚本节点缺少渠道执行环境时保留代码并阻止保存', async ({ page }) => {
   await fixture(page)
   let saves = 0
-  await page.route('**/agent-versions/draft_a', route => { saves++; return route.fulfill({ json: version }) })
+  await page.route('**/agents/agent_a/configuration', route => { saves++; return route.fulfill({ json: version }) })
   const configured = { ...definition, steps: [{ ...definition.steps[0], kind: 'script' }] }
-  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: configured }] } }))
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, configuration: { ...version, definition: configured } } }))
+  await page.goto('#/agents/agent_a?edit=true')
   const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
   await step.getByRole('tab', { name: 'Python 脚本', exact: true }).click()
   await expect(step.getByRole('combobox', { name: '脚本执行环境' })).toBeDisabled()
   await expect(step.getByText('当前渠道尚未配置 Python 执行环境')).toBeVisible()
   const source = 'def transform(value, context):\n    return value\n'
   await step.getByRole('textbox', { name: 'Python 脚本代码' }).fill(source)
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect(step.getByText('请填写 Python 代码并选择有效执行环境', { exact: true })).toBeVisible()
   await expect(step.getByRole('textbox', { name: 'Python 脚本代码' })).toHaveValue(source)
   expect(saves).toBe(0)
@@ -103,22 +101,22 @@ test('全量分页由工具节点配置，校验脚本使用独立节点', async
   const tool = { resource_type: 'tool', resource_id: 'query', version_id: 'query', name: '项目分页查询', revision: 1, state: { label: '已发布' }, content_digest: 'b'.repeat(64) }
   await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, dependencies: [...options.dependencies, tool] } }))
   const configured = { ...definition, steps: [{ ...definition.steps[0], kind: 'tool', dependency: 'query' }], bindings: { ...definition.bindings, tool_ids: ['query'] } }
-  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: configured }] } }))
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, configuration: { ...version, definition: configured } } }))
   let saved = false
-  await page.route('**/agent-versions/draft_a', async route => {
+  await page.route('**/agents/agent_a/configuration', async route => {
     const node = route.request().postDataJSON().definition.steps[0]
     expect(node.pagination).toEqual({ cursor_input: 'cursor', items_path: 'items', has_more_path: 'has_more', cursor_path: 'cursor', count_path: 'count', total_path: null, max_items: 1000 })
     expect(node.script).toBeNull()
     saved = true
     await route.fulfill({ json: version })
   })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.goto('#/agents/agent_a?edit=true')
   const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
   await expect(step.getByRole('tab', { name: 'Python 脚本', exact: true })).toHaveCount(0)
   await step.getByRole('tab', { name: '全量分页', exact: true }).click()
   await step.getByRole('switch', { name: '启用全量分页' }).click()
   await step.getByRole('textbox', { name: '本页条数字段路径（可选）' }).fill('count')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => saved).toBe(true)
 })
 
@@ -178,25 +176,19 @@ test('智能体删除时引用变化，错误保留在确认框中', async ({ pa
   await expect(page).toHaveURL(/#\/agents\/agent_a$/)
 })
 
-test('运行限制直达选择原运行版本，编辑草稿直接定位运行策略', async ({ page }) => {
+test('运行限制直达当前配置，编辑直接定位运行策略且刷新保留', async ({ page }) => {
   await fixture(page)
-  const published = { ...version, version_id: 'published_a', version_label: '运行使用版本', status: { value: 'PUBLISHED', label: '已发布', tone: 'success' }, actions: [], definition: { ...definition, limits: { ...definition.limits, token_limit: 96000 } } }
-  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [published, version] } }))
-  await page.goto('#/agents/agent_a?version=published_a&tab=limits')
+  await page.goto('#/agents/agent_a?tab=limits')
   await expect(page.getByRole('tab', { name: '运行限制', exact: true })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByText('96000 Token', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: '编辑配置', exact: true })).toHaveCount(0)
-  await page.getByRole('combobox', { name: '智能体版本' }).click()
-  await page.getByText('初始草稿 · 草稿', { exact: true }).click()
+  await expect(page.getByText('16000 Token', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '编辑配置', exact: true }).click()
   await expect(page.getByRole('tab', { name: '运行策略', exact: true })).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByLabel('单次运行 Token 上限', { exact: true })).toHaveValue('16000')
-  await expect(page.getByText(/包含输入、输出及重试/)).toBeVisible()
   await page.reload()
   await expect(page.getByRole('tab', { name: '运行策略', exact: true })).toHaveAttribute('aria-selected', 'true')
 })
 
-const assistedProposal = { agent_code: 'business_task', name: '咨询摘要助手', description: '整理咨询要点', owner: '客服团队', version_label: '智能协助草稿',
+const assistedProposal = { agent_code: 'business_task', name: '咨询摘要助手', description: '整理咨询要点', owner: '客服团队',
   definition: { ...definition, instructions: '总结咨询问题并列出待办事项。' } }
 async function assistanceFixture(page: Page) {
   await fixture(page)
@@ -233,7 +225,7 @@ test('智能协助追问后生成方案，确认保存前没有创建资源', as
   await dialog.getByLabel('创建或修改需求').fill('创建一个咨询摘要助手')
   await dialog.getByRole('button', { name: '发送', exact: true }).click()
   await expect(dialog.getByText('需要输出哪些信息？')).toBeVisible()
-  await expect(dialog.getByRole('button', { name: '创建并保存草稿' })).toHaveCount(0)
+  await expect(dialog.getByRole('button', { name: '创建智能体' })).toHaveCount(0)
   await dialog.getByLabel('创建或修改需求').fill('输出问题、关键信息和待办事项')
   await dialog.getByRole('button', { name: '发送', exact: true }).click()
   await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
@@ -241,17 +233,17 @@ test('智能协助追问后生成方案，确认保存前没有创建资源', as
   const conversationBox = await dialog.getByRole('region', { name: '智能协助对话', exact: true }).boundingBox()
   const previewBox = await dialog.getByRole('region', { name: '候选智能体方案', exact: true }).boundingBox()
   expect(conversationBox!.x + conversationBox!.width).toBeLessThan(previewBox!.x)
-  await expect(dialog.getByRole('button', { name: '创建并保存草稿' })).toBeInViewport()
+  await expect(dialog.getByRole('button', { name: '创建智能体' })).toBeInViewport()
   await page.screenshot({ path: '.local/agent-assistance-create.png', fullPage: true })
-  await dialog.getByRole('button', { name: '创建并保存草稿' }).click()
-  await expect(page).toHaveURL(/agents\/agent_a\?edit=draft_a/)
+  await dialog.getByRole('button', { name: '创建智能体' }).click()
+  await expect(page).toHaveURL(/agents\/agent_a\?edit=true/)
   expect(saved).toBe(1)
 })
 
 test('智能协助修改有变更预览，冲突保留方案与对话', async ({ page }) => {
   await assistanceFixture(page)
   await page.route('**/admin/v1/agents/assistance', async route => {
-    expect(route.request().postDataJSON()).toMatchObject({ agent_id: 'agent_a', base_version_id: 'draft_a' })
+    expect(route.request().postDataJSON()).toMatchObject({ agent_id: 'agent_a' })
     await route.fulfill({ status: 202, json: { run_id: 'assist_edit' } })
   })
   await page.route('**/admin/v1/agents/assistance/runs/assist_edit', route => route.fulfill({ json: { run_id: 'assist_edit', state: 'SUCCEEDED', state_label: '已完成',
@@ -266,7 +258,7 @@ test('智能协助修改有变更预览，冲突保留方案与对话', async ({
   await dialog.getByRole('tab', { name: '变更对照' }).click()
   await expect(dialog.getByText('修改前', { exact: true })).toBeVisible()
   await expect(dialog.getByText('总结咨询问题并列出待办事项。', { exact: true })).toBeVisible()
-  await dialog.getByRole('button', { name: '保存为新草稿' }).click()
+  await dialog.getByRole('button', { name: '保存修改' }).click()
   await expect(dialog.getByText('智能体已被修改，请开始新对话生成方案；本次方案仍保留')).toBeVisible()
   await expect(dialog.getByText('补充任务指令，保留原流程。')).toBeVisible()
   await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
@@ -304,8 +296,8 @@ test('复杂提示词预览带来源名称，保存后自动发布并关联步�
   await expect(page.getByText('同时发布并关联 1 个提示词')).toBeVisible()
   expect(saves).toBe(0)
   await page.screenshot({ path: '.local/agent-extracted-prompts.png', fullPage: true })
-  await page.getByRole('button', { name: '创建并保存草稿' }).click()
-  await expect(page).toHaveURL(/agents\/agent_a\?edit=draft_a/)
+  await page.getByRole('button', { name: '创建智能体' }).click()
+  await expect(page).toHaveURL(/agents\/agent_a\?edit=true/)
   await expect(page.getByText('以下提示词已自动发布并关联到对应步骤。')).toBeVisible()
   await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute('href', /#\/prompts\?prompt=prompt_extracted$/)
   expect(saves).toBe(1)
@@ -333,7 +325,7 @@ test('智能协助查询失败可恢复，不重复生成；窄屏预览不溢�
   await dialog.getByRole('button', { name: '查看生成的方案' }).click()
   await expect(dialog.getByRole('radio', { name: /方案预览/ })).toBeChecked()
   await expect(dialog.getByRole('region', { name: '候选智能体方案' })).toBeVisible()
-  await expect(dialog.getByRole('button', { name: '创建并保存草稿' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: '创建智能体' })).toBeVisible()
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: '.local/agent-assistance-mobile.png', fullPage: true })
 })
@@ -415,14 +407,13 @@ test('列表智能修改带入对象与草稿，直达刷新仍保留修改上�
   await page.reload()
   await expect(page.getByRole('heading', { name: '智能修改', exact: true })).toBeVisible()
   await expect(page.locator('.agent-assistance-target')).toContainText('业务助手')
-  await expect(page.locator('.agent-assistance-target')).toContainText('初始草稿')
   await expect(page.getByLabel('创建或修改需求')).toHaveValue('')
   await expect(page.getByRole('region', { name: '方案预览', exact: true })).toContainText('生成业务结果')
   await page.getByRole('button', { name: '增加补充信息分支' }).click()
   await expect(page.getByLabel('创建或修改需求')).toHaveValue(/增加补充信息的分支/)
   await page.goto('#/agents/assistance?agent=agent_a&version=missing')
-  await expect(page.getByText('当前智能体或版本不可修改，请返回列表重新选择')).toBeVisible()
-  await expect(page.getByRole('button', { name: '发送', exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('创建或修改需求')).toBeVisible()
+  await expect(page.getByRole('button', { name: '发送', exact: true })).toBeDisabled()
 })
 
 test('继续生成时保留上一版方案且禁止误保存', async ({ page }) => {
@@ -438,11 +429,11 @@ test('继续生成时保留上一版方案且禁止误保存', async ({ page }) 
   await page.goto('#/agents/assistance')
   await page.getByLabel('创建或修改需求').fill('创建咨询摘要助手')
   await page.getByRole('button', { name: '发送', exact: true }).click()
-  await expect(page.getByRole('button', { name: '创建并保存草稿' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '创建智能体' })).toBeEnabled()
   await page.getByLabel('创建或修改需求').fill('再增加回复建议')
   await page.getByRole('button', { name: '发送', exact: true }).click()
   await expect(page.getByRole('region', { name: '候选智能体方案' })).toContainText('咨询摘要助手')
-  await expect(page.getByRole('button', { name: '创建并保存草稿' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '创建智能体' })).toBeDisabled()
   await expect(page.getByText('等待最新方案', { exact: true })).toBeVisible()
 })
 
@@ -460,7 +451,7 @@ test('列表仅在打开新增窗口后读取依赖选项', async ({ page }) => 
   await expect.poll(() => calls).toBe(1)
 })
 
-test('配置、流程、资源名称和发布记录可查看', async ({ page }) => {
+test('配置、流程及资源名称可查看', async ({ page }) => {
   await fixture(page)
   await page.goto('#/agents')
   await page.getByRole('link', { name: '业务助手' }).click()
@@ -470,48 +461,64 @@ test('配置、流程、资源名称和发布记录可查看', async ({ page }) 
   await page.getByRole('tab', { name: '模型、提示词与工具技能' }).click()
   await expect(page.getByRole('cell', { name: '业务提示词', exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: '结构化路由', exact: true })).toBeVisible()
-  await page.getByRole('tab', { name: '发布记录', exact: true }).click()
-  await expect(page.getByRole('cell', { name: '发布人员' })).toBeVisible()
-  await expect(page.getByRole('cell', { name: '2026年10月2日 11:00:00' })).toBeVisible()
+
 })
 
-test('生产门禁错误明确显示，发布携带修订与工作区环境', async ({ page }) => {
+test('上下线与启停用分别切换，页面没有版本、草稿和发布入口', async ({ page }) => {
   await fixture(page)
-  await page.route('**/agents/agent_a/releases', async route => {
-    expect(route.request().postDataJSON()).toEqual({ version_id: 'draft_a', revision: 7, expected_mapping_revision: 2, environment: 'test', operation: 'publish', note: '验证改动', evaluation_refs: [] })
-    await route.fulfill({ status: 422, json: { error: { code: 'EVALUATION_REQUIRED', message: '生产发布需要有效评测报告', fields: [] } } })
+  let online = false, enabled = true, revision = agent.revision
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, agent: { ...agent, revision, online, enabled,
+    online_status: { value: online ? 'ONLINE' : 'OFFLINE', label: online ? '已上线' : '已下线', tone: 'default' },
+    status: { value: enabled ? 'ACTIVE' : 'DISABLED', label: enabled ? '已启用' : '已停用', tone: 'default' },
+    actions: [action('edit', '编辑信息'), action(online ? 'offline' : 'online', online ? '下线' : '上线'), action(enabled ? 'disable' : 'enable', enabled ? '停用' : '启用')],
+  } } }))
+  await page.route('**/agents/agent_a/state', async route => {
+    const body = route.request().postDataJSON()
+    expect(body.revision).toBe(revision)
+    expect(body).not.toHaveProperty('version_id')
+    if (['online', 'offline'].includes(body.operation)) online = body.operation === 'online'
+    else enabled = body.operation === 'enable'
+    revision++
+    await route.fulfill({ json: detail })
   })
   await page.goto('#/agents/agent_a')
-  await page.getByRole('button', { name: '发布', exact: true }).click()
-  await page.getByLabel('发布说明').fill('验证改动')
-  await page.getByRole('button', { name: '确认发布' }).click()
-  await expect(page.getByText('生产发布需要有效评测报告', { exact: true })).toBeVisible()
-  await expect(page.getByLabel('发布说明')).toHaveValue('验证改动')
+  await expect(page.getByRole('combobox', { name: '智能体版本' })).toHaveCount(0)
+  for (const name of ['新增草稿', '发布']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0)
+  for (const name of ['草稿与当前发布差异', '发布记录']) await expect(page.getByRole('tab', { name, exact: true })).toHaveCount(0)
+  for (const [operation, state, remaining] of [['上线', '已上线', '停用'], ['停用', '已停用', '下线'], ['下线', '已下线', '启用'], ['启用', '已启用', '上线']]) {
+    await page.getByRole('button', { name: operation, exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('操作原因').fill('验证状态切换')
+    await dialog.getByRole('button', { name: '确认', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page.getByText(state, { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: remaining, exact: true })).toBeVisible()
+  }
 })
 
 test('窄屏修改冲突保留草稿，提交不覆盖受信渠道', async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.route('**/agent-versions/draft_a', async route => {
+  await page.route('**/agents/agent_a/configuration', async route => {
     const body = route.request().postDataJSON()
     expect(body.revision).toBe(7)
     expect(body.definition.limits.max_model_rounds).toBe(9)
     expect(body).not.toHaveProperty('channel_id')
-    await route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '草稿已变更，请刷新后重新检查', fields: [] } } })
+    await route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '配置已变更，请刷新后重新检查', fields: [] } } })
   })
   await page.goto('#/agents/agent_a')
   await page.getByRole('button', { name: '编辑配置', exact: true }).click()
   await page.getByRole('tab', { name: '运行策略', exact: true }).click()
   await page.getByLabel('模型轮数上限（次）').fill('9')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
-  await expect(page.getByText('草稿已变更，请刷新后重新检查', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
+  await expect(page.getByText('配置已变更，请刷新后重新检查', { exact: true })).toBeVisible()
   await expect(page.getByLabel('模型轮数上限（次）')).toHaveValue('9')
   await page.screenshot({ path: '.local/agent-mobile.png', fullPage: true })
 })
 
 test('调试按字段标题生成输入，执行服务未接通时不显示成功结果', async ({ page }) => {
   await fixture(page)
-  await page.route('**/agent-versions/draft_a/tests', async route => {
+  await page.route('**/agents/agent_a/tests', async route => {
     const body = route.request().postDataJSON()
     expect(body.input).toEqual({ request: '整理最近咨询' })
     expect(body.revision).toBe(7)
@@ -530,7 +537,7 @@ test('调试结果的步骤轨迹通过 Hash 路由进入运行详情', async ({
   await fixture(page)
   const run = { run_id: 'run_a', name: '业务助手', state: 'SUCCEEDED', state_label: '已完成', purpose_label: '调试',
     created_at: '2026-10-02T03:00:00Z', content_allowed: false, result: null, actions: [] }
-  await page.route('**/admin/v1/agent-versions/draft_a/tests', route => route.fulfill({ json: {
+  await page.route('**/admin/v1/agents/agent_a/tests', route => route.fulfill({ json: {
     run_id: run.run_id, state: { value: run.state, label: run.state_label }, trace_url: '/runs/run_a',
   } }))
   await page.route('**/admin/v1/runs/run_a/detail', route => route.fulfill({ json: run }))
@@ -565,7 +572,7 @@ test('新增向导使用模板并提交完整依赖及限制', async ({ page }) 
   await page.getByLabel('用途', { exact: true }).fill('业务验证')
   await page.getByLabel('负责人').fill('负责人')
   for (let i = 0; i < 4; i++) await page.getByRole('button', { name: '下一步', exact: true }).click()
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect(page).toHaveURL(/\/#\/agents\/agent_a$/)
 })
 
@@ -577,8 +584,8 @@ test('旧入口编辑保留版本，新增可选择通用流程', async ({ page 
     templates: [...options.templates, { key: 'workflow.v1', name: '通用流程', workflow_type: 'template', definition: generic }],
     legacy_templates: [{ key: 'risk.v1', name: '风险评估（旧版）', workflow_type: 'template', definition: legacy }],
   } }))
-  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: legacy }] } }))
-  await page.route('**/agent-versions/draft_a', async route => {
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, configuration: { ...version, definition: legacy } } }))
+  await page.route('**/agents/agent_a/configuration', async route => {
     expect(route.request().postDataJSON().definition.entrypoint).toBe('risk.v1')
     await route.fulfill({ json: { ...version, definition: legacy } })
   })
@@ -587,7 +594,7 @@ test('旧入口编辑保留版本，新增可选择通用流程', async ({ page 
   await page.getByRole('tab', { name: '基本配置', exact: true }).click()
   await expect(page.getByText('风险评估（旧版） · 通用流程', { exact: true })).toBeVisible()
   await page.getByRole('tab', { name: '运行策略', exact: true }).click()
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect(page.getByRole('button', { name: '编辑配置', exact: true })).toBeVisible()
   await page.goto('#/agents')
   await page.getByRole('button', { name: '新增智能体', exact: true }).click()
@@ -601,16 +608,16 @@ test('Agent 固定技能参考文件与按需加载选择', async ({ page }) => 
   await fixture(page)
   const skillDependency = { resource_type: 'skill', resource_id: 'skill_a', version_id: 'skill_version', name: '档案解读', version_label: '技能初版', revision: 1, state: { label: '已冻结' }, content_digest: 'e'.repeat(64) }
   await page.route('**/admin/v1/agents/options', route => route.fulfill({ json: { ...options, dependencies: [...options.dependencies, skillDependency] } }))
-  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: { ...definition, bindings: { ...definition.bindings, skill_ids: ['skill_version'] } } }] } }))
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, configuration: { ...version, definition: { ...definition, bindings: { ...definition.bindings, skill_ids: ['skill_version'] } } } } }))
   await page.route('**/skills/skill_version/configuration', route => route.fulfill({ json: { files: [
     { relative_path: 'SKILL.md', loadable: true }, { relative_path: 'references/citation.md', loadable: true }, { relative_path: 'scripts/check.py', loadable: false, unavailable_reason: '脚本执行未启用' },
   ] } }))
   let saves = 0
-  await page.route('**/agent-versions/draft_a', async route => {
+  await page.route('**/agents/agent_a/configuration', async route => {
     saves++
     const body = route.request().postDataJSON()
     expect(body.definition.bindings.skill_loading).toEqual([{ skill_id: 'skill_version', step_keys: ['answer'], selected: true, selected_files: ['references/citation.md'] }])
-    await route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '草稿已变更，请重新检查', fields: [] } } })
+    await route.fulfill({ status: 409, json: { error: { code: 'REVISION_CONFLICT', message: '配置已变更，请重新检查', fields: [] } } })
   })
   await page.goto('#/agents/agent_a')
   await page.getByRole('button', { name: '编辑配置', exact: true }).click()
@@ -625,15 +632,15 @@ test('Agent 固定技能参考文件与按需加载选择', async ({ page }) => 
   await page.keyboard.press('Escape')
   await expect(page.locator('.ant-select-dropdown:visible')).toHaveCount(0)
   await page.screenshot({ path: '.local/agent-skill-loading.png', fullPage: true })
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
-  await expect(page.getByText('草稿已变更，请重新检查', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
+  await expect(page.getByText('配置已变更，请重新检查', { exact: true })).toBeVisible()
   expect(saves).toBe(1)
 })
 
 test('可视化新增审批步骤与连线，保存带原草稿修订', async ({ page }) => {
   await fixture(page)
   let saved = false
-  await page.route('**/agent-versions/draft_a', async route => {
+  await page.route('**/agents/agent_a/configuration', async route => {
     const body = route.request().postDataJSON()
     expect(body.revision).toBe(7)
     expect(body.definition.steps).toContainEqual(expect.objectContaining({ key: 'approval_step', name: '业务审批', kind: 'compute', operator: 'approval' }))
@@ -657,7 +664,7 @@ test('可视化新增审批步骤与连线，保存带原草稿修订', async ({
   await page.locator('.ant-select-dropdown:visible').getByText('业务审批', { exact: true }).click()
   await edge.getByRole('button', { name: '应用配置', exact: true }).click()
   await page.screenshot({ path: '.local/agent-flow-edit.png', fullPage: true, animations: 'disabled' })
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => saved).toBe(true)
 })
 
@@ -677,14 +684,14 @@ const branchedDefinition = { ...definition, workflow_type: 'stateful', entrypoin
 }
 async function branchFixture(page: Page) {
   await fixture(page)
-  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, versions: [{ ...version, definition: branchedDefinition }] } }))
+  await page.route('**/admin/v1/agents/agent_a', route => route.fulfill({ json: { ...detail, configuration: { ...version, definition: branchedDefinition } } }))
 }
 
 test('新增步骤后直接连线使用新步骤，返回步骤保留连线，直连可再次编辑', async ({ page }) => {
   await branchFixture(page)
   let body: { definition: typeof branchedDefinition } | undefined
-  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/agents/agent_a/configuration', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=true')
   await page.getByRole('button', { name: '新增步骤', exact: true }).click()
   const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
   await step.getByLabel('步骤名称').fill('补充复核')
@@ -699,7 +706,7 @@ test('新增步骤后直接连线使用新步骤，返回步骤保留连线，�
   const graph = page.getByRole('region', { name: '流程图', exact: true })
   await graph.getByRole('button', { name: '补充复核：直接进入，进入保存模型分析' }).click()
   await expect(edge.locator('.ant-select').last()).toContainText('保存模型分析')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => body?.definition.edges.at(-1)).toMatchObject({ source: 'review', target: 'save' })
   expect(body?.definition.steps.filter(item => item.key === 'review')).toHaveLength(1)
 })
@@ -711,8 +718,8 @@ test('在步骤后新增自动接续原连线，多模型节点的独立资源�
     { ...options.dependencies[1], resource_id: 'review_route', version_id: 'review_route', name: '复核模型路由' },
   ] } }))
   let body: { definition: typeof branchedDefinition & { steps: { key: string; dependency?: string; prompt_id?: string }[] } } | undefined
-  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/agents/agent_a/configuration', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=true')
   const graph = page.getByRole('region', { name: '流程图', exact: true })
   await graph.getByRole('button', { name: '分析本单问题与下一步', exact: true }).click()
   const step = page.getByRole('complementary', { name: '步骤配置', exact: true })
@@ -732,7 +739,7 @@ test('在步骤后新增自动接续原连线，多模型节点的独立资源�
   await row.getByRole('button', { name: '配置步骤' }).click()
   await expect(step.getByLabel('步骤名称')).toHaveValue('复核分析')
   await expect(step.locator('.ant-select').filter({ hasText: '复核提示词' })).toBeVisible()
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => body?.definition.steps.find(item => item.key === 'review')).toMatchObject({ dependency: 'review_route', prompt_id: 'review_prompt' })
   expect(body?.definition.edges.filter(item => item.source === 'analyze')).toEqual([{ source: 'analyze', target: 'review' }])
   expect(body?.definition.edges.at(-1)).toMatchObject({ source: 'review', target: 'save' })
@@ -742,13 +749,13 @@ test('在步骤后新增自动接续原连线，多模型节点的独立资源�
 test('真实分支条件可读，侧栏修改随节点及分区切换保留，保存包括未点应用的内容', async ({ page }) => {
   await branchFixture(page)
   let body: { definition: typeof branchedDefinition } | undefined
-  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.route('**/agents/agent_a/configuration', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
   await page.goto('#/agents/agent_a')
   const graph = page.getByRole('region', { name: '流程图', exact: true })
   await expect(graph.getByRole('button', { name: /领取分析资格：1. 需要分析 等于 是/ })).toBeVisible()
   await page.screenshot({ path: '.local/agent-branches-view.png', fullPage: true })
   await page.getByRole('button', { name: '编辑配置', exact: true }).click()
-  await expect(page).toHaveURL(/edit=draft_a/)
+  await expect(page).toHaveURL(/edit=true/)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   const inspector = page.getByRole('complementary', { name: '步骤配置', exact: true })
   await expect(inspector).toBeVisible()
@@ -765,7 +772,7 @@ test('真实分支条件可读，侧栏修改随节点及分区切换保留，�
   await page.getByRole('tab', { name: '流程', exact: true }).click()
   await graph.getByRole('button', { name: '分析本单问题与下一步', exact: true }).click()
   await inspector.getByLabel('超时（秒）', { exact: true }).fill('150')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => body?.definition.steps[2].timeout_seconds).toBe(150)
   expect(body?.definition.steps[1].name).toBe('领取本单分析资格')
   expect(body?.definition.edges.filter(edge => edge.source === 'claim').map(edge => edge.target)).toEqual(['publish', 'analyze', 'finish'])
@@ -774,8 +781,8 @@ test('真实分支条件可读，侧栏修改随节点及分区切换保留，�
 test('条件和固定值使用布尔控件，保存保留布尔类型', async ({ page }) => {
   await branchFixture(page)
   let body: { definition: typeof branchedDefinition } | undefined
-  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/agents/agent_a/configuration', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=true')
   await page.getByRole('region', { name: '流程图', exact: true }).getByRole('button', { name: /领取分析资格：1. 需要分析 等于 是/ }).click()
   const edge = page.getByRole('complementary', { name: '流转配置' })
   await edge.getByLabel('比较值', { exact: true }).click()
@@ -785,18 +792,18 @@ test('条件和固定值使用布尔控件，保存保留布尔类型', async ({
   await inspector.getByRole('tab', { name: '输入映射', exact: true }).click()
   await inspector.getByLabel('固定值', { exact: true }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('否', { exact: true }).click()
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => body?.definition.edges[2].condition?.value).toBe(false)
   expect(body?.definition.steps[1].inputs.enabled.value).toBe(false)
 })
 
 test('服务端字段错误定位节点并保留其他分区的修改', async ({ page }) => {
   await branchFixture(page)
-  await page.route('**/agent-versions/draft_a', route => route.fulfill({ status: 422, json: { error: { code: 'VALIDATION_ERROR', message: '请修正步骤配置', fields: [{ path: ['definition', 'steps', 2, 'timeout_seconds'], message: '分析步骤的超时超过允许范围' }] } } }))
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/agents/agent_a/configuration', route => route.fulfill({ status: 422, json: { error: { code: 'VALIDATION_ERROR', message: '请修正步骤配置', fields: [{ path: ['definition', 'steps', 2, 'timeout_seconds'], message: '分析步骤的超时超过允许范围' }] } } }))
+  await page.goto('#/agents/agent_a?edit=true')
   await page.getByRole('tab', { name: '运行策略', exact: true }).click()
   await page.getByLabel('模型轮数上限（次）').fill('9')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   const inspector = page.getByRole('complementary', { name: '步骤配置' })
   await expect(inspector.getByRole('heading', { name: '分析本单问题与下一步' })).toBeVisible()
   await expect(inspector.getByText('分析步骤的超时超过允许范围').last()).toBeVisible()
@@ -820,19 +827,19 @@ test('窄屏流程在自身区域滚动，页面不溢出，查看和编辑使�
 test('高级 JSON 替换当前节点后侧栏同步，复杂结构与其他分区配置保持完整', async ({ page }) => {
   await branchFixture(page)
   let body: { definition: typeof branchedDefinition } | undefined
-  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/agents/agent_a/configuration', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=true')
   await page.getByRole('button', { name: '高级', exact: true }).click()
   await page.getByRole('menuitem', { name: '高级 JSON', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '流程 JSON', exact: true })
   const next = { start_step: branchedDefinition.start_step, edges: branchedDefinition.edges,
     steps: branchedDefinition.steps.map((step, i) => i ? step : { ...step, name: '新的查询步骤', output_schema: { ...step.output_schema, 'x-preserved': { nested: [1, false, '保留'] } } }) }
   await dialog.getByLabel('流程 JSON').fill(JSON.stringify(next))
-  await dialog.getByRole('button', { name: '应用到草稿' }).click()
+  await dialog.getByRole('button', { name: '应用到配置' }).click()
   const inspector = page.getByRole('complementary', { name: '步骤配置' })
   await expect(inspector.getByLabel('步骤名称', { exact: true })).toHaveValue('新的查询步骤')
   await inspector.getByLabel('超时（秒）').fill('45')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => body?.definition.steps[0].timeout_seconds).toBe(45)
   expect(body?.definition.steps[0].output_schema).toHaveProperty('x-preserved', { nested: [1, false, '保留'] })
   expect(body?.definition.bindings).toMatchObject(definition.bindings)
@@ -841,8 +848,8 @@ test('高级 JSON 替换当前节点后侧栏同步，复杂结构与其他分�
 test('数值与文本条件按类型保存，普通文本不要求 JSON 引号', async ({ page }) => {
   await branchFixture(page)
   let body: { definition: typeof branchedDefinition } | undefined
-  await page.route('**/agent-versions/draft_a', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
-  await page.goto('#/agents/agent_a?edit=draft_a')
+  await page.route('**/agents/agent_a/configuration', async route => { body = route.request().postDataJSON(); await route.fulfill({ json: version }) })
+  await page.goto('#/agents/agent_a?edit=true')
   const graph = page.getByRole('region', { name: '流程图', exact: true })
   await graph.getByRole('button', { name: /领取分析资格：1. 需要分析 等于 是/ }).click()
   const edge = page.getByRole('complementary', { name: '流转配置' })
@@ -853,7 +860,7 @@ test('数值与文本条件按类型保存，普通文本不要求 JSON 引号',
   await edge.getByLabel('输出字段', { exact: true }).click()
   await page.locator('.ant-select-dropdown:visible').getByText('说明 · note', { exact: true }).click()
   await edge.getByLabel('比较值', { exact: true }).fill('需要"复核"的订单')
-  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  await page.getByRole('button', { name: '保存配置', exact: true }).click()
   await expect.poll(() => body?.definition.edges[2].condition?.value).toBe(12.5)
   expect(body?.definition.edges[3].condition?.value).toBe('需要"复核"的订单')
 })

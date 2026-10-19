@@ -4,8 +4,8 @@ const action = (action_key: string, label: string) => ({ action_key, label })
 const workspace = { channel_id: 'channel_a', channel_name: '示例渠道', environment: 'prod', environment_name: '生产',  }
 const sample = { case_key: 'normal', title: '固定结果样本', input: { request: '固定输入' }, assertions: [{ kind: 'equal', path: 'data.answer', expected: '完成', name: '结果一致' }], labels: ['正常'], label_source: '人工固定预期', human_label: { decision: 'approved', reason: '已审阅' }, fixture: [] }
 const dataset = { dataset_id: 'dataset_a', name: '结构输出样本', scenario: '结构契约', owner: '审阅人员', applicability: '通用结构输出', revision: 2, current_version_id: 'version_a', actions: [action('version', '新建样本版本'), action('import', '导入样本'), action('review', '人工标注')], versions: [{ version_id: 'version_a', version_label: '固定第一版', content_digest: 'a'.repeat(64), captured_at: '2026-10-02T10:00:00Z', reference_versions: [], cases: [{ case_id: 'case_a', case_key: 'normal', title: '固定结果样本', valid: true, payload: sample }] }] }
-const task = { evaluation_id: 'evaluation_a', name: '生产发布回归', dataset_name: dataset.name, dataset_version_label: '固定第一版', revision: 3, state: { value: 'PAUSED', label: '已暂停派发', tone: 'default' }, execution_mode: 'fixture', execution_mode_label: '固定数据评测', candidates: [], config: {}, human_review: null, created_at: '2026-10-02T10:00:00Z', actions: [action('refresh', '更新报告'), action('resume', '继续派发'), action('cancel', '取消评测')] }
-const report = { report_id: 'evaluation_a', evaluation_id: 'evaluation_a', revision: 3, report_digest: 'b'.repeat(64), reproducible: true, complete: false, candidates: [{ candidate_id: 'candidate_a', agent_name: '条目整理助手', version_id: 'draft_a', version_label: '候选第二版', total: 2, counts: { PASSED: 1, UNEXECUTED: 1 }, pass_rate: 0.5, regression: null, critical_failures: 0, release_passed: false }], results: [{ result_id: 'result_a', candidate_id: 'candidate_a', title: '固定结果样本', state: 'UNEXECUTED', state_label: '未执行', run_id: null, attempt_number: 1, labels: ['正常'], judgment: null }], cost: { amounts: {}, unknown_count: 1, pending_count: 1, run_count: 1 }, latency: { mean_ms: 12 }, baseline: null, warnings: ['任务未全部完成，当前为部分报告'], human_review: null }
+const task = { evaluation_id: 'evaluation_a', name: '当前配置回归', dataset_name: dataset.name, dataset_version_label: '固定第一版', revision: 3, state: { value: 'PAUSED', label: '已暂停派发', tone: 'default' }, execution_mode: 'fixture', execution_mode_label: '固定数据评测', candidates: [], config: {}, human_review: null, created_at: '2026-10-02T10:00:00Z', actions: [action('refresh', '更新报告'), action('resume', '继续派发'), action('cancel', '取消评测')] }
+const report = { report_id: 'evaluation_a', evaluation_id: 'evaluation_a', revision: 3, report_digest: 'b'.repeat(64), reproducible: true, complete: false, candidates: [{ candidate_id: 'candidate_a', agent_name: '条目整理助手', agent_id: 'agent_a', version_id: 'agent_a', version_label: '当前配置', total: 2, counts: { PASSED: 1, UNEXECUTED: 1 }, pass_rate: 0.5, regression: null, critical_failures: 0, release_passed: false }], results: [{ result_id: 'result_a', candidate_id: 'candidate_a', title: '固定结果样本', state: 'UNEXECUTED', state_label: '未执行', run_id: null, attempt_number: 1, labels: ['正常'], judgment: null }], cost: { amounts: {}, unknown_count: 1, pending_count: 1, run_count: 1 }, latency: { mean_ms: 12 }, baseline: null, warnings: ['任务未全部完成，当前为部分报告'], human_review: null }
 
 async function fixture(page: Page) {
   await page.route('**/admin/v1/**', async route => {
@@ -51,24 +51,24 @@ test('部分报告不显示整集通过，暂停和冲突反馈保留上下文',
   await expect(page.getByText('任务未全部完成，当前为部分报告')).toBeVisible()
   await page.getByRole('button', { name: '继续派发' }).click()
   await expect(page.getByText('评测状态已变化，请刷新')).toBeVisible()
-  await page.screenshot({ path: '/tmp/creativity-evaluation-report.png', fullPage: true })
+  await page.screenshot({ path: '.local/creativity-evaluation-report.png', fullPage: true })
 })
 
-test('窄屏发布检查显示服务端阻断原因', async ({ page }) => {
+test('窄屏配置验证显示服务端阻断原因', async ({ page }) => {
   await fixture(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.route('**/agent-versions/draft_a', route => route.fulfill({ json: { revision: 7 } }))
-  await page.route('**/agent-versions/draft_a/release-check', async route => {
+  await page.route('**/agents/agent_a/configuration', route => route.fulfill({ json: { revision: 7 } }))
+  await page.route('**/agents/agent_a/evaluation-check', async route => {
     expect(route.request().postDataJSON()).toEqual({ revision: 7, evaluation_refs: ['evaluation_a'] })
-    await route.fulfill({ json: { valid: false, checks: [{ key: 'evaluation', label: '生产评测证据', passed: false, issues: [{ message: '关键样本失败，禁止发布' }] }] } })
+    await route.fulfill({ json: { valid: false, checks: [{ key: 'evaluation', label: '生产评测证据', passed: false, issues: [{ message: '关键样本失败，验证未通过' }] }] } })
   })
   await page.goto('#/evaluations/evaluation_a')
-  await page.getByRole('tab', { name: '发布检查' }).click()
-  await page.getByLabel('发布候选').click()
-  await page.getByText('条目整理助手 · 候选第二版', { exact: true }).last().click()
-  await page.getByRole('button', { name: '检查当前版本' }).click()
-  await expect(page.getByText('关键样本失败，禁止发布')).toBeVisible()
-  await page.screenshot({ path: '/tmp/creativity-evaluation-mobile.png', fullPage: true })
+  await page.getByRole('tab', { name: '配置验证' }).click()
+  await page.getByLabel('待验证智能体').click()
+  await page.getByText('条目整理助手', { exact: true }).last().click()
+  await page.getByRole('button', { name: '检查当前配置' }).click()
+  await expect(page.getByText('关键样本失败，验证未通过')).toBeVisible()
+  await page.screenshot({ path: '.local/creativity-evaluation-mobile.png', fullPage: true })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy()
 })
 
