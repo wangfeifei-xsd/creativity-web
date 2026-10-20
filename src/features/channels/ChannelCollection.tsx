@@ -2,7 +2,7 @@ import { StatusTag } from '../../components/StatusTag'
 import { names, send, statuses, environments, actionsAsOptions } from '../../api/management'
 import { Button, Space } from 'antd'
 import { Table } from '../../components/Table'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { apiClient } from '../../api/client'
 import { formatTimestamp } from '../../api/presentation'
 import { useQuery } from '../../api/useQuery'
@@ -25,6 +25,7 @@ export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'
   const clients = useQuery<Schema<'ClientView'>[]>(kind === 'keys' ? `/admin/v1/channels/${channelId}/clients` : null)
   const [editor, setEditor] = useState<Omit<EditorProps, 'onClose' | 'onSaved'>>()
   const [secret, setSecret] = useState<string>()
+  const secretPending = useRef(false)
   const definition = definitions[kind]
   if (!definition) return null
   const catalogError = envs.error || clients.error
@@ -60,7 +61,10 @@ export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'
         }
         if (kind === 'keys') body.expires_at = new Date(String(body.expires_at)).toISOString()
         const response = await send<Schema<'KeyCreated'> | Item>(row ? `${path}/${String(row[definition.id])}` : path, row ? 'PATCH' : 'POST', body)
-        if (prefix === 'key' && 'api_key' in response) setSecret(String(response.api_key))
+        if (prefix === 'key' && 'api_key' in response) {
+          secretPending.current = true
+          setSecret(String(response.api_key))
+        }
       },
     })
   }
@@ -69,7 +73,7 @@ export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'
       fields: [{ name: 'expires_at', label: '新 Key 有效期至', kind: 'datetime', required: true },
         { name: 'overlap_seconds', label: '新旧 Key 重叠时长（秒）', kind: 'number', required: true }],
       onSave: async values => { const response = await send<Schema<'KeyCreated'>>(`${path}/${String(row.key_id)}/rotate`, 'POST',
-        { ...values, expires_at: new Date(String(values.expires_at)).toISOString() }); setSecret(response.api_key) },
+        { ...values, expires_at: new Date(String(values.expires_at)).toISOString() }); secretPending.current = true; setSecret(response.api_key) },
     })
   }
   function revoke(row: Item) {
@@ -99,7 +103,13 @@ export function ChannelCollection({ page, kind, onConfigured }: { page: Schema<'
             { [`${definition.prefix}:edit`]: () => edit(row) }} />
         </Space> },
       ]} />}
-    {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => { setEditor(undefined); query.reload(); onConfigured?.() }} />}
-    {secret && <SecretDialog secret={secret} onClose={() => setSecret(undefined)} />}
+    {editor && <EditorDialog {...editor} onClose={() => setEditor(undefined)} onSaved={() => {
+      setEditor(undefined); query.reload()
+      // 等用户保存一次性凭据后再刷新父页面，避免刷新卸载当前弹窗。
+      if (!secretPending.current) onConfigured?.()
+    }} />}
+    {secret && <SecretDialog secret={secret} onClose={() => {
+      secretPending.current = false; setSecret(undefined); onConfigured?.()
+    }} />}
   </Space>
 }

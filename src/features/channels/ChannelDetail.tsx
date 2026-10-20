@@ -1,5 +1,5 @@
 import { StatusTag } from '../../components/StatusTag'
-import { send } from '../../api/management'
+import { actionsAsOptions, send } from '../../api/management'
 import { Button, Descriptions, Space, Tabs } from 'antd'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -33,6 +33,7 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
     return next
   })
   const [editing, setEditing] = useState(false)
+  const [editingAccess, setEditingAccess] = useState(false)
   const [impact, setImpact] = useState<'suspend' | 'resume' | 'archive'>()
   const [generation, setGeneration] = useState(0)
   if (query.error) return <ErrorState error={query.error} onRetry={query.reload} />
@@ -43,6 +44,7 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
   const titles = { suspend: '暂停渠道', resume: '恢复渠道', archive: '归档渠道' }
   return <PageContainer title={channel.name} actions={<Space wrap><StatusTag label={channel.status_label} /><Link to="/channels">渠道列表</Link>
     <Button onClick={refresh}>刷新</Button><ActionButtons actions={page.actions} handlers={{ 'channel:edit': () => setEditing(true),
+      'channel:administrator-access': () => setEditingAccess(true),
       'channel:suspend': () => setImpact('suspend'), 'channel:resume': () => setImpact('resume'), 'channel:archive': () => setImpact('archive') }} /></Space>}>
     <Tabs key={generation} activeKey={page.tabs.some(t => t.navigation_key === tab) ? tab : page.tabs[0]?.navigation_key} onChange={setTab} destroyOnHidden
       items={page.tabs.map(item => ({ key: item.navigation_key, label: item.label,
@@ -62,7 +64,26 @@ export function ChannelDetail({ channelId }: { channelId: string }) {
       onSave={values => { const body = { ...values }; const retention_policy = Object.fromEntries(retentionFields.map(field => { const value = body[field.name]; delete body[field.name]; return [field.name, value] })); return send(`/admin/v1/channels/${channelId}`, 'PATCH', { ...body, retention_policy }) }} />}
     {impact && <ImpactDialog title={titles[impact]} previewPath={`/admin/v1/channels/${channelId}/impact?action=${impact}`}
       submitPath={`/admin/v1/channels/${channelId}/${impact}`} onClose={() => setImpact(undefined)} onSaved={() => { setImpact(undefined); refresh() }} />}
+    {editingAccess && <AdministratorAccess channelId={channelId} onClose={() => setEditingAccess(false)} />}
   </PageContainer>
+}
+
+function AdministratorAccess({ channelId, onClose }: { channelId: string; onClose: () => void }) {
+  const path = `/admin/v1/channels/${channelId}/administrator-access` as const
+  const query = useQuery<Schema<'AdministratorAccessView'>>(path)
+  const options = useQuery<Schema<'ChannelCreateOptions'>>('/admin/v1/channel-create-options')
+  if (query.error || options.error) return <ErrorState error={query.error || options.error} onRetry={() => { query.reload(); options.reload() }} />
+  if (!query.data || !options.data) return <LoadingState />
+  return <EditorDialog title="首位管理员独立授权" initial={{ ...query.data }}
+    fields={[{ name: 'independent_actions', label: '独立授权', kind: 'multiple', options: actionsAsOptions(options.data.independent_actions) }]}
+    latestRevision={async () => (await apiClient.request<Schema<'AdministratorAccessView'>>(path)).revision}
+    onClose={onClose} onSaved={onClose}
+    onSave={values => send(path, 'PATCH', { revision: values.revision, independent_actions: values.independent_actions ?? [] })}>
+    <Descriptions items={[
+      { key: 'administrator', label: '管理员', children: query.data.administrator_name },
+      { key: 'environment', label: '授权环境', children: query.data.environment_names.join('、') || '未配置' },
+    ]} />
+  </EditorDialog>
 }
 function Overview({ channelId }: { channelId: string }) {
   const query = useQuery<Schema<'OverviewView'>>(`/admin/v1/channels/${channelId}/overview`)
