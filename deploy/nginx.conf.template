@@ -3,6 +3,9 @@ server {
     listen 80;
     server_name _;
 
+    # 使用相对跳转，避免非 80 端口访问时丢失端口
+    absolute_redirect off;
+
     # 站点根跳转到应用入口
     location = / {
         return 302 /creativity/;
