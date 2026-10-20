@@ -1,4 +1,4 @@
-# creativity-web 容器入口配置（nginx 官方镜像启动时自动 envsubst ${API_UPSTREAM}）
+# creativity-web 容器入口配置（nginx 官方镜像启动时自动 envsubst ${API_UPSTREAM}） 
 server {
     listen 80;
     server_name _;
