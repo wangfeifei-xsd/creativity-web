@@ -9817,6 +9817,11 @@ export interface components {
             artifacts: components["schemas"]["Artifact"][];
             /** Channel Id */
             channel_id: string;
+            /**
+             * Current Step Name
+             * @default null
+             */
+            current_step_name: string | null;
             error: components["schemas"]["RunError"] | null;
             partial_output: components["schemas"]["JsonValue"] | null;
             /** Release Snapshot Id */
