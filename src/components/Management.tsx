@@ -87,15 +87,16 @@ export function EditorDialog({ title, fields, initial, children, onSave, onClose
     </Space>
   </Modal>
 }
-export function SecretDialog({ secret, onClose }: { secret: string; onClose: () => void }) {
+export function SecretDialog({ secret, keyId, onClose }: { secret: string; keyId?: string; onClose: () => void }) {
   const [error, setError] = useState<unknown>()
   const [copied, setCopied] = useState(false)
-  return <Modal open title="接入 Key" onCancel={onClose} footer={<Button onClick={onClose}>完成</Button>}>
+  return <Modal open title={keyId ? '渠道 Key 与密钥' : '接入 Key'} onCancel={onClose} footer={<Button onClick={onClose}>完成</Button>}>
     <Space orientation="vertical" style={{ width: '100%' }}>
-      <Alert type="warning" title="完整 Key 仅显示本次，请复制并妥善保存" />
-      <Input.TextArea readOnly value={secret} aria-label="完整 Key" autoSize />
+      {keyId && <Typography.Paragraph copyable={{ text: keyId }}>渠道 Key：{keyId}</Typography.Paragraph>}
+      <Alert type="info" title={keyId ? '密钥仅显示本次，请复制保存' : '完整 Key 仅显示本次，请复制并妥善保存'} />
+      <Input.TextArea readOnly value={secret} aria-label={keyId ? '密钥' : '完整 Key'} autoSize />
       <Button onClick={async () => { try { await navigator.clipboard.writeText(secret); setCopied(true) }
-        catch (failure) { setError(failure) } }}>{copied ? '已复制' : '复制 Key'}</Button>
+        catch (failure) { setError(failure) } }}>{copied ? '已复制' : keyId ? '复制密钥' : '复制 Key'}</Button>
       <ErrorNotice error={error} />
       <Typography.Text type="secondary">关闭后仅可查看掩码。</Typography.Text>
     </Space>

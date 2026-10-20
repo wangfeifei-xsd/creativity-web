@@ -50,6 +50,7 @@ function ChannelList() {
       <Table rowKey="channel_id" dataSource={query.data.items} pagination={directory.pagination(query.data.total)} scroll={{ x: 1050 }} columns={[
         { title: '渠道名称', render: (_, row) => <Link to={`/channels/${row.channel_id}`}>{row.name}</Link> },
         { title: '负责人', dataIndex: 'owner' },
+        { title: '接入凭据', render: (_, row) => <Link to={`/channels/${row.channel_id}?tab=keys`}>Key 与密钥</Link> },
         { title: '状态', render: (_, row) => <StatusTag label={row.status_label} /> }, { title: '开通时间', width: 210, render: (_, row) => formatTimestamp(row.created_at) },
         { title: '环境配置', width: 140, render: (_, row) => row.configuration_status?.some(item => item.key === 'environments') ? <Space wrap size={[4, 4]}>
           {row.configuration_status.filter(item => item.key === 'environments').map(item => <Tooltip key={item.key} title={item.message}>

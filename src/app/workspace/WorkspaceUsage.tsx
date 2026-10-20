@@ -51,14 +51,13 @@ const flows: readonly UsageFlow[] = [
   {
     key: 'api', title: '方式二：外部接口调用', icon: <LinkOutlined aria-hidden />,
     steps: [
-      { title: '开通调用权限', description: '配置接入服务、API Key 和资源授权。' },
-      { title: '配置身份委托', description: '在业务接入中配置，凭据保存在业务后端。' },
+      { title: '取得渠道凭据', description: '在渠道凭据管理中创建 Key 和密钥。' },
+      { title: '配置业务后端', description: '用渠道凭据获取访问令牌，按需传递用户编号。' },
       { title: '业务后端发起调用', description: '传入已上线智能体的编码和业务输入。' },
       { title: '获取并展示结果', description: '查询运行结果，或订阅执行事件。' },
     ],
     actions: [
-      { label: '配置接入服务', navigationKey: 'channels', channelDetail: true, search: '?tab=clients' },
-      { label: '配置身份委托', navigationKey: 'integrations', search: '?tab=delegation', requiredAction: 'key:manage' },
+      { label: '渠道 Key 与密钥', navigationKey: 'integrations', search: '?tab=credentials', requiredAction: 'key:manage' },
     ],
   },
 ]

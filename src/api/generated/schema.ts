@@ -899,6 +899,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/channels/{channel_id}/keys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Key */
+        delete: operations["delete_key_admin_v1_channels__channel_id__keys__key_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/channels/{channel_id}/keys/{key_id}/revoke": {
         parameters: {
             query?: never;
@@ -1448,75 +1465,6 @@ export interface paths {
         put?: never;
         /** Request Deletion */
         post: operations["request_deletion_admin_v1_data_lifecycle_deletions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/delegation-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Keys */
-        get: operations["keys_admin_v1_delegation_keys_get"];
-        put?: never;
-        /** Create Key */
-        post: operations["create_key_admin_v1_delegation_keys_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/delegation-keys/{kid}/revoke": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Revoke */
-        post: operations["revoke_admin_v1_delegation_keys__kid__revoke_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/delegation-keys/{kid}/rotate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Rotate */
-        post: operations["rotate_admin_v1_delegation_keys__kid__rotate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/delegation-keys/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Key Options */
-        get: operations["key_options_admin_v1_delegation_keys_options_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3590,41 +3538,6 @@ export interface paths {
         };
         /** Tool Options */
         get: operations["tool_options_admin_v1_skills_tool_options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/subject-review-bindings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Subject Reviews */
-        get: operations["subject_reviews_admin_v1_subject_review_bindings_get"];
-        put?: never;
-        /** Save Subject Review */
-        post: operations["save_subject_review_admin_v1_subject_review_bindings_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/v1/subject-review-bindings/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Subject Review Options */
-        get: operations["subject_review_options_admin_v1_subject_review_bindings_options_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7013,91 +6926,6 @@ export interface components {
             /** Versions */
             versions?: components["schemas"]["DatasetVersionView"][];
         };
-        /** DelegationKeyCreate */
-        DelegationKeyCreate: {
-            /** Audience */
-            audience: string;
-            /** Client Id */
-            client_id: string;
-            /**
-             * Clock Skew Seconds
-             * @default 30
-             */
-            clock_skew_seconds: number;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-            /** Issuer */
-            issuer: string;
-            /**
-             * Max Ttl Seconds
-             * @default 300
-             */
-            max_ttl_seconds: number;
-        };
-        /** DelegationKeyIssued */
-        DelegationKeyIssued: {
-            key: components["schemas"]["DelegationKeyView"];
-            /** Signing Secret */
-            signing_secret: string;
-        };
-        /** DelegationKeyOptions */
-        DelegationKeyOptions: {
-            /** Clients */
-            clients: components["schemas"]["NamedOption"][];
-        };
-        /** DelegationKeyRotate */
-        DelegationKeyRotate: {
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-            /**
-             * Overlap Seconds
-             * @default 330
-             */
-            overlap_seconds: number;
-            /** Revision */
-            revision: number;
-        };
-        /** DelegationKeyView */
-        DelegationKeyView: {
-            /** Audience */
-            audience: string;
-            /** Client Id */
-            client_id: string;
-            /** Client Name */
-            client_name: string;
-            /** Clock Skew Seconds */
-            clock_skew_seconds: number;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-            /** Issuer */
-            issuer: string;
-            /** Kid */
-            kid: string;
-            /** Max Ttl Seconds */
-            max_ttl_seconds: number;
-            /**
-             * Not Before
-             * Format: date-time
-             */
-            not_before: string;
-            /** Revision */
-            revision: number;
-            /** Rotated From */
-            rotated_from: string | null;
-            /** Status */
-            status: string;
-            /** Status Name */
-            status_name: string;
-        };
         /** DeletionGuardResult */
         DeletionGuardResult: {
             /**
@@ -7858,7 +7686,7 @@ export interface components {
         /** KeyCreate */
         KeyCreate: {
             /** Client Id */
-            client_id: string;
+            client_id?: string | null;
             /**
              * Environment
              * @enum {string}
@@ -7872,7 +7700,7 @@ export interface components {
             /** Name */
             name: string;
             /** Scopes */
-            scopes: string[];
+            scopes?: string[] | null;
         };
         /** KeyCreated */
         KeyCreated: {
@@ -11265,68 +11093,6 @@ export interface components {
              */
             required: boolean;
         };
-        /** SubjectReviewSave */
-        SubjectReviewSave: {
-            /** Client Id */
-            client_id: string;
-            /** Connection Id */
-            connection_id: string;
-            /** Discovery Id */
-            discovery_id: string;
-            /**
-             * Enabled
-             * @default true
-             */
-            enabled: boolean;
-            /** Remote Tool Name */
-            remote_tool_name: string;
-            /** Revision */
-            revision?: number | null;
-            /**
-             * Timeout Seconds
-             * @default 5
-             */
-            timeout_seconds: number;
-        };
-        /** SubjectReviewView */
-        SubjectReviewView: {
-            /** Binding Id */
-            binding_id: string;
-            /** Client Id */
-            client_id: string;
-            /** Client Name */
-            client_name: string;
-            /** Connection Id */
-            connection_id: string;
-            /** Connection Name */
-            connection_name: string;
-            /** Connection Revision */
-            connection_revision: number;
-            /** Discovery Id */
-            discovery_id: string;
-            /**
-             * Enabled
-             * @default true
-             */
-            enabled: boolean;
-            /** Remote Tool Name */
-            remote_tool_name: string;
-            /** Revision */
-            revision: number;
-            /** Schema Hash */
-            schema_hash: string;
-            /** Status Name */
-            status_name: string;
-            /**
-             * Timeout Seconds
-             * @default 5
-             */
-            timeout_seconds: number;
-            /** Tool Name */
-            tool_name: string;
-            /** Unavailable Reason */
-            unavailable_reason: string | null;
-        };
         /** SummaryView */
         SummaryView: {
             /** Content */
@@ -11414,9 +11180,13 @@ export interface components {
         TokenExchange: {
             /**
              * Api Key
-             * Format: password
+             * @deprecated
              */
-            api_key: string;
+            api_key?: string | null;
+            /** Key Id */
+            key_id?: string | null;
+            /** Secret */
+            secret?: string | null;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -21188,6 +20958,143 @@ export interface operations {
             };
         };
     };
+    delete_key_admin_v1_channels__channel_id__keys__key_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel_id: string;
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method Not Allowed */
+            405: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    /** @description 请求标识 */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     revoke_key_admin_v1_channels__channel_id__keys__key_id__revoke_post: {
         parameters: {
             query?: never;
@@ -26538,682 +26445,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LifecycleProgress"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    keys_admin_v1_delegation_keys_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationKeyView"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    create_key_admin_v1_delegation_keys_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DelegationKeyCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationKeyIssued"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    revoke_admin_v1_delegation_keys__kid__revoke_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                kid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RevisionInput"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationKeyView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    rotate_admin_v1_delegation_keys__kid__rotate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                kid: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DelegationKeyRotate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationKeyIssued"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    key_options_admin_v1_delegation_keys_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DelegationKeyOptions"];
                 };
             };
             /** @description Bad Request */
@@ -48374,406 +47605,6 @@ export interface operations {
             };
         };
     };
-    subject_reviews_admin_v1_subject_review_bindings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubjectReviewView"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    save_subject_review_admin_v1_subject_review_bindings_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubjectReviewSave"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubjectReviewView"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    subject_review_options_admin_v1_subject_review_bindings_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NamedOption"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Method Not Allowed */
-            405: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Too Many Requests */
-            429: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    /** @description 请求标识 */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     bindings_admin_v1_tool_bindings_get: {
         parameters: {
             query?: {
@@ -53139,9 +51970,11 @@ export interface operations {
     download_artifact_api_v1_artifacts__artifact_id__content_get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 artifact_id: string;
@@ -53478,9 +52311,11 @@ export interface operations {
     retry_item_api_v1_batch_items__identifier__retry_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 identifier: string;
@@ -53654,8 +52489,10 @@ export interface operations {
             query?: never;
             header: {
                 "idempotency-key": string;
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -53825,9 +52662,11 @@ export interface operations {
     batch_api_v1_batches__identifier__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 identifier: string;
@@ -53995,9 +52834,11 @@ export interface operations {
     cancel_batch_api_v1_batches__identifier__cancel_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 identifier: string;
@@ -54178,9 +53019,11 @@ export interface operations {
                 status?: string | null;
                 subject?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -54346,9 +53189,11 @@ export interface operations {
     create_api_v1_conversations_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -54518,9 +53363,11 @@ export interface operations {
     detail_api_v1_conversations__conversation_id__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -54688,9 +53535,11 @@ export interface operations {
     delete_api_v1_conversations__conversation_id__delete: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -54858,9 +53707,11 @@ export interface operations {
     title_api_v1_conversations__conversation_id__patch: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -55032,9 +53883,11 @@ export interface operations {
     archive_api_v1_conversations__conversation_id__archive_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -55204,9 +54057,11 @@ export interface operations {
             query: {
                 name: string;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -55379,9 +54234,11 @@ export interface operations {
     download_api_v1_conversations__conversation_id__attachments__artifact_id__content_get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 artifact_id: string;
@@ -55550,9 +54407,11 @@ export interface operations {
     branch_api_v1_conversations__conversation_id__branches_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -55724,9 +54583,11 @@ export interface operations {
     preview_api_v1_conversations__conversation_id__deletion_preview_get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -55894,9 +54755,11 @@ export interface operations {
     export_api_v1_conversations__conversation_id__exports_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -56068,9 +54931,11 @@ export interface operations {
                 latest?: boolean;
                 limit?: number;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -56238,9 +55103,11 @@ export interface operations {
     submit_api_v1_conversations__conversation_id__messages_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -56412,9 +55279,11 @@ export interface operations {
     restore_api_v1_conversations__conversation_id__restore_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -56582,9 +55451,11 @@ export interface operations {
     run_detail_api_v1_conversations__conversation_id__runs__run_id__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -56753,9 +55624,11 @@ export interface operations {
     cancel_api_v1_conversations__conversation_id__runs__run_id__cancel_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 conversation_id: string;
@@ -56924,9 +55797,11 @@ export interface operations {
     preview_api_v1_data_lifecycle_deletion_preview_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -57096,9 +55971,11 @@ export interface operations {
     request_deletion_api_v1_data_lifecycle_deletions_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -57268,9 +56145,11 @@ export interface operations {
     deletion_api_v1_deletions__deletion_id__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 deletion_id: string;
@@ -57438,9 +56317,11 @@ export interface operations {
     progress_api_v1_deletions__deletion_id__progress_get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 deletion_id: string;
@@ -57608,9 +56489,11 @@ export interface operations {
     retry_api_v1_deletions__deletion_id__retry_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 deletion_id: string;
@@ -57778,9 +56661,11 @@ export interface operations {
     upload_file_api_v1_files_upload_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -57953,9 +56838,11 @@ export interface operations {
     oauth_profiles_api_v1_mcp_connections__connection_id__oauth_profiles_get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 connection_id: string;
@@ -58125,9 +57012,11 @@ export interface operations {
     oauth_revoke_api_v1_mcp_connections__connection_id__oauth_revoke_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 connection_id: string;
@@ -58301,9 +57190,11 @@ export interface operations {
     oauth_start_api_v1_mcp_connections__connection_id__oauth_start_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 connection_id: string;
@@ -58477,9 +57368,11 @@ export interface operations {
     oauth_callback_api_v1_mcp_connections_oauth_callback_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -58656,9 +57549,11 @@ export interface operations {
                 limit?: number;
                 status?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -58826,9 +57721,11 @@ export interface operations {
             query?: {
                 anchor_id?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -58998,9 +57895,11 @@ export interface operations {
     detail_api_v1_memories__memory_id__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 memory_id: string;
@@ -59168,9 +58067,11 @@ export interface operations {
     forget_api_v1_memories__memory_id__delete: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 memory_id: string;
@@ -59338,9 +58239,11 @@ export interface operations {
     update_api_v1_memories__memory_id__patch: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 memory_id: string;
@@ -59512,9 +58415,11 @@ export interface operations {
     confirm_api_v1_memories__memory_id__confirm_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 memory_id: string;
@@ -59688,9 +58593,11 @@ export interface operations {
             query?: {
                 anchor_id?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -59858,9 +58765,11 @@ export interface operations {
             query?: {
                 anchor_id?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -60026,9 +58935,11 @@ export interface operations {
     retry_consolidation_api_v1_memory_consolidations__identifier__retry_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 identifier: string;
@@ -60200,9 +59111,11 @@ export interface operations {
     deletion_api_v1_memory_deletions__deletion_id__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 deletion_id: string;
@@ -60372,9 +59285,11 @@ export interface operations {
             query?: {
                 anchor_id?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -60542,9 +59457,11 @@ export interface operations {
             query?: {
                 anchor_id?: string | null;
             };
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -60716,8 +59633,10 @@ export interface operations {
             query?: never;
             header: {
                 "Idempotency-Key": string;
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path?: never;
             cookie?: never;
@@ -60898,9 +59817,11 @@ export interface operations {
     get_run_api_v1_runs__run_id__get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 run_id: string;
@@ -61068,9 +59989,11 @@ export interface operations {
     cancel_api_v1_runs__run_id__cancel_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 run_id: string;
@@ -61240,11 +60163,13 @@ export interface operations {
             query?: {
                 after_sequence?: number;
             };
-            header: {
+            header?: {
                 /** @description 最后已处理的事件序号；优先于 after_sequence */
                 "Last-Event-ID"?: string | null;
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 run_id: string;
@@ -61412,9 +60337,11 @@ export interface operations {
     interruption_api_v1_runs__run_id__interruption_get: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 run_id: string;
@@ -61582,9 +60509,11 @@ export interface operations {
     resume_api_v1_runs__run_id__resume_post: {
         parameters: {
             query?: never;
-            header: {
-                /** @description 业务后端签发并绑定实际请求的 business-delegation-v2 委托 */
-                "X-Business-Delegation": string;
+            header?: {
+                /** @description 业务用户编号，仅用于本渠道内的会话和内容归属 */
+                "X-Subject-ID"?: string;
+                /** @description 业务用户类型，与用户编号成对提供 */
+                "X-Subject-Type"?: string;
             };
             path: {
                 run_id: string;
