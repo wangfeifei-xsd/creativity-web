@@ -1,0 +1,49 @@
+# creativity-web 容器入口配置（nginx 官方镜像启动时自动 envsubst ${API_UPSTREAM}） 
+server {
+    listen 80;
+    server_name _;
+
+    # 使用相对跳转，避免非 80 端口访问时丢失端口
+    absolute_redirect off;
+
+    # 站点根跳转到应用入口
+    location = / {
+        return 302 /creativity/;
+    }
+
+    # Vite base=/creativity/ 的静态资源
+    location = /creativity {
+        return 301 /creativity/;
+    }
+    location /creativity/ {
+        alias /usr/share/nginx/html/;
+    }
+
+    # 管理接口：原样透传给 creativity-service
+    location /admin/v1 {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 300s;
+    }
+
+    # 业务接口：SSE 流式响应需要关闭缓冲
+    location /api/v1 {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+    location /health {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_set_header Host $host;
+    }
+}
